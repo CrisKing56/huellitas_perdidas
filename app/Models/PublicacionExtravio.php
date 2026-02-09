@@ -13,6 +13,8 @@ class PublicacionExtravio extends Model
     protected $table = 'publicaciones_extravio';
     protected $primaryKey = 'id_publicacion';
 
+    public $timestamps = false;
+
     // 2. Permitimos que estos campos se guarden
     protected $fillable = [
         'autor_usuario_id', // Importante
@@ -27,12 +29,25 @@ class PublicacionExtravio extends Model
         'colonia_barrio',
         'calle_referencias', 
         'descripcion', 
-        'estado'
+        'estado',
+        'foto',
     ];
+
+    
 
     // 3. Relación: Una publicación tiene muchas fotos
     public function fotos()
     {
         return $this->hasMany(ExtravioFoto::class, 'publicacion_id', 'id_publicacion');
+    }
+
+    public function fotoPrincipal()
+    {
+        return $this->hasOne(ExtravioFoto::class, 'publicacion_id', 'id_publicacion')->orderBy('orden', 'asc');
+    }
+
+    public function autor()
+    {
+        return $this->belongsTo(User::class, 'autor_usuario_id');
     }
 }

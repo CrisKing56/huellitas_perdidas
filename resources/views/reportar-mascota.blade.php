@@ -10,6 +10,18 @@
             <h1 class="text-3xl font-bold text-gray-900 mb-2">Reportar mascota extraviada</h1>
             <p class="text-gray-500">Completa la información para ayudar a encontrarla.</p>
         </div>
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                <strong class="font-bold">¡Faltan datos!</strong>
+                <ul class="list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+
 
         <form action="{{ route('mascotas.store')}}" method="POST" enctype="multipart/form-data" class="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             @csrf <div class="mb-10">
@@ -27,10 +39,10 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Especie <span class="text-red-500">*</span></label>
-                        <select name="especie" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-white border">
+                        <select name="especie_id" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-white border">
                             <option value="">Seleccionar...</option>
-                            <option value="perro">Perro</option>
-                            <option value="gato">Gato</option>
+                            <option value="1">Perro</option>
+                            <option value="2">Gato</option>
                             <option value="otro">Otro</option>
                         </select>
                     </div>
@@ -87,10 +99,22 @@
                     </div>
                     <p class="text-gray-900 font-medium mb-1">Sube al menos una fotografía de la mascota</p>
                     <p class="text-xs text-gray-500 mb-4">Arrastra y suelta o haz clic para seleccionar</p>
-                    <button type="button" class="bg-primary hover:bg-orange-600 text-white font-medium py-2 px-6 rounded-lg shadow transition text-sm">
+
+                    <label class="bg-primary hover:bg-orange-600 text-white font-medium py-2 px-6 rounded-lg shadow cursor-pointer inline-block text-center">
+    
                         Seleccionar archivo
-                    </button>
-                    <input type="file" name="imagen" class="hidden">
+                        <input type="file" name="foto" class="hidden">
+                        
+                    </label>
+
+                    <span id="nombre-archivo" class="ml-3 text-gray-500 text-sm">Ningún archivo seleccionado</span>
+                    <script>
+                        // Pequeño script para que aparezca el nombre del archivo al seleccionarlo
+                        document.querySelector('input[name="foto"]').addEventListener('change', function(e) {
+                            var fileName = e.target.files[0].name;
+                            document.getElementById('nombre-archivo').innerText = fileName;
+                        });
+                    </script>
                 </div>
             </div>
 
@@ -105,11 +129,11 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Colonia o barrio <span class="text-red-500">*</span></label>
-                        <input type="text" name="colonia" placeholder="Ej: Centro, Retiro" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-gray-50 border">
+                        <input type="text" name="colonia_barrio" placeholder="Ej: Centro, Retiro" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-gray-50 border">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Calle y referencias (opcional)</label>
-                        <input type="text" name="calle" placeholder="Ej: Cerca del parque principal" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-gray-50 border">
+                        <input type="text" name="calle_referencias" placeholder="Ej: Cerca del parque principal" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-gray-50 border">
                     </div>
                 </div>
 
@@ -142,7 +166,7 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del dueño</label>
-                    <input type="text" value="Carlos Martínez" readonly class="w-full border-gray-200 rounded-lg bg-gray-100 text-gray-500 py-2.5 px-3 cursor-not-allowed">
+                    <input type="text" value="{{ Auth::user()->nombre }}" readonly class="w-full border-gray-200 rounded-lg bg-gray-100 text-gray-500 py-2.5 px-3 cursor-not-allowed">
                     <p class="text-xs text-gray-400 mt-1">Este nombre se muestra porque estás logueado</p>
                 </div>
 

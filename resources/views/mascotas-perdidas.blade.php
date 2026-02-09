@@ -4,9 +4,18 @@
 <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
     
     <div class="mb-8">
+        @guest
+        <a href="{{ route('login')}}">
+            <h2 class="text-xl font-medium text-gray-700 mb-4">Reportar mascota perdida</h2>
+        </a>
+
+        @endguest
+
+        @auth
         <a href="{{ route('mascotas.create')}}">
             <h2 class="text-xl font-medium text-gray-700 mb-4">Reportar mascota perdida</h2>
         </a>
+        @endauth
         
         
         <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
@@ -21,9 +30,11 @@
                 <button class="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition shadow-sm">
                     Ver todas
                 </button>
-                <a href="#" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition text-center whitespace-nowrap">
+            @auth
+                <a href="{{ route('extravios.index')}}" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition text-center whitespace-nowrap">
                     Mis reportes
                 </a>
+            @endauth
             </div>
         </div>
     </div>
@@ -35,6 +46,7 @@
     @else
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             @foreach($mascotas as $mascota)
+            <a href="{{route('extravios.show', $mascota->id_publicacion)}}">
             <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition duration-300 border border-gray-100 overflow-hidden group flex flex-col h-full relative">
                 
                 <div class="h-64 relative overflow-hidden bg-gray-100">
@@ -79,6 +91,9 @@
                     </div>
                 </div>
             </div>
+            </a>
+            
+            
             @endforeach
         </div>
     @endif

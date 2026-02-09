@@ -41,7 +41,7 @@
                 </a>
             </div>
             <div class="hidden md:flex gap-8 text-sm font-medium text-gray-600">
-                <a href="{{ route('mascotas.index') }}" class="hover:text-primary transition">Mascotas perdidas</a>
+                <a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition">Mascotas perdidas</a>
                 <a href="{{ route('mascotas.adopcion') }}" class="hover:text-primary transition">Mascotas en Adopción</a>
                 <div class="relative group cursor-pointer">
                     <span class="flex items-center gap-1 hover:text-primary transition">
