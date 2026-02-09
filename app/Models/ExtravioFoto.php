@@ -11,7 +11,7 @@ class ExtravioFoto extends Model
 
     protected $table = 'extravio_fotos';
     protected $primaryKey = 'id_foto';
-    public $timestamps = false; // Asumo que esta tabla no tiene created_at
+    public $timestamps = false; 
 
     protected $fillable = ['publicacion_id', 'url', 'orden'];
 }

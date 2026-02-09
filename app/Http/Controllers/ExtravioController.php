@@ -19,23 +19,22 @@ class ExtravioController extends Controller
     // Guarda los datos
     public function store(Request $request)
     {
-        // 1. Validamos que no envíen basura
+        //Validacion
 
         
         $request->validate([
             'nombre' => 'required|string',
             'especie_id' => 'required', 
             'foto' => 'required|image|max:5120',
-            'colonia_barrio' => 'required' // Máximo 5MB
+            'colonia_barrio' => 'required' 
         ]);
 
         
         $rutaFoto = $request->file('foto')->store('mascotas', 'public');
 
-        // 2. Guardamos la Mascota
-        // OJO: Aquí ponemos '1' manual para saltarnos el Login
+
         $publicacion = PublicacionExtravio::create([
-            'autor_usuario_id' => Auth::id(), // <--- EL TRUCO TEMPORAL
+            'autor_usuario_id' => Auth::id(), 
             'nombre' => $request->nombre,
             'especie_id' => $request->especie_id,
             'color' => $request->color,
@@ -48,7 +47,7 @@ class ExtravioController extends Controller
             'estado' => 'ACTIVA'
         ]);
 
-        // 3. Guardamos la Foto (Si subieron una)
+
         
         if ($rutaFoto) {
         DB::table('extravio_fotos')->insert([

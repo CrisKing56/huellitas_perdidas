@@ -42,7 +42,7 @@
             </div>
             <div class="hidden md:flex gap-8 text-sm font-medium text-gray-600">
                 <a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition">Mascotas perdidas</a>
-                <a href="{{ route('mascotas.adopcion') }}" class="hover:text-primary transition">Mascotas en Adopción</a>
+                <a href="{{ route('adopciones.index') }}" class="hover:text-primary transition">Mascotas en Adopción</a>
                 <div class="relative group cursor-pointer">
                     <span class="flex items-center gap-1 hover:text-primary transition">
                         Cuidado Animal <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>

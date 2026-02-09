@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdopcionController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AuthController;
@@ -14,14 +15,6 @@ Route::get('/', function () {
     return view('home');
 })->name('inicio');
 
-// Route::get('/perdidas', function () {
-//     return view('mascotas-perdidas');
-// })->name('mascotas.perdidas');
-
-Route::get('/adopcion', function () {
-    return view('mascotas-adopcion');
-})->name('mascotas.adopcion');
-
 Route::get('/detalle', function () {
     return view('mascota-detalle');
 })->name('detalle');
@@ -29,14 +22,6 @@ Route::get('/detalle', function () {
 Route::get('/reportar', function () {
     return view('reportar-mascota');
 })->name('reportar.mascota');
-
-Route::get('/publicar-adopcion', function () {
-    return view('publicar-adopcion');
-})->name('pub.adopcion');
-
-// Route::get('/mascotas-perdidas', function () {
-//     return view('publicar-adopcion');
-// })->name('pub.adopcion');
 
 
 Route::get('/registro', [AuthController::class, 'showRegister'])->name('registro.usuario');
@@ -80,5 +65,21 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/mascota/{id}', [ExtravioController::class, 'update'])->name('extravios.update'); 
 
     Route::delete('/mascota/{id}', [ExtravioController::class, 'destroy'])->name('extravios.destroy');
+    
 
+
+    //Adopciones
+    Route::get('/mis-adopciones', [AdopcionController::class, 'misAdopciones'])->name('adopciones.mis-adopciones');
+    
+    Route::get('/publicar-adopcion', [AdopcionController::class, 'create'])->name('adopciones.create');
+    Route::post('/adopciones', [AdopcionController::class, 'store'])->name('adopciones.store');
+    
+    Route::get('/adopciones/{id}/editar', [AdopcionController::class, 'edit'])->name('adopciones.edit');
+    Route::put('/adopciones/{id}', [AdopcionController::class, 'update'])->name('adopciones.update');
+    Route::delete('/adopciones/{id}', [AdopcionController::class, 'destroy'])->name('adopciones.destroy');
 });
+
+
+Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
+
+Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->name('adopciones.show');
