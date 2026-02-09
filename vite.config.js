@@ -11,8 +11,9 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
-        watch: {
-            ignored: ['**/storage/framework/views/**'],
-        },
+        // Esto es vital para Herd/Laragon
+        host: '127.0.0.1',
+        port: 5173,
+        cors: true, 
     },
 });
