@@ -8,6 +8,9 @@
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">Mis publicaciones</h1>
                 <p class="text-gray-500 mt-1">Consulta y administra tus publicaciones realizadas.</p>
+                <a href="{{ route('adopciones.create')}}">
+                    <h2 class="text-xl font-medium text-gray-700 mb-4">Publicar mascota en adopción </h2>
+                </a>
             </div>
             
         </div>

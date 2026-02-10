@@ -9,6 +9,10 @@
             <div class="mb-8">
                 <h1 class="text-2xl font-bold text-gray-800">Mis publicaciones</h1>
                 <p class="text-gray-500">Consulta y administra tus publicaciones realizadas.</p>
+                <br>
+                <a href="{{ route('mascotas.create')}}">
+                    <h2 class="text-xl font-medium text-gray-700 mb-4">Reportar mascota perdida</h2>
+                </a>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">

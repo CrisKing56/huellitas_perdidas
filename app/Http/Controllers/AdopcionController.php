@@ -84,7 +84,7 @@ class AdopcionController extends Controller
             $foto->save();
         }
 
-        return redirect()->route('adopciones.mis-adopciones')->with('success', 'Mascota publicada para adopción correctamente.');
+        return redirect()->route('adopciones.index')->with('success', 'Mascota publicada para adopción correctamente.');
     }
 
 

@@ -23,7 +23,7 @@
                 description="Perro pequeño con collar rojo"
                 location="Barrio Lindavista, Ocosingo"
                 image="https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=500&q=60"
-                status="Perdida"
+                status="Perdido"
                 tagColor="bg-primary"
                 btnText="Reportar avistamiento"
             />
@@ -34,18 +34,29 @@
                 description="Gato anaranjado muy amigable"
                 location="Centro, Ocosingo"
                 image="https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=500&q=60"
-                status="Perdida"
+                status="Perdido"
                 tagColor="bg-primary"
                 btnText="Reportar avistamiento"
             />
 
             <x-pet-card 
-                name="Rorro" 
-                type="Gatisimo"
-                description="Gato rey en celo"
-                location="En cualquier esquina de Ocosingo"
+                name="Chencho" 
+                type="Gato"
+                description="Gato del oriente"
+                location="Mi casa"
                 image="https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=500&q=60"
-                status="Super perdida"
+                status="Perdido"
+                tagColor="bg-primary"
+                btnText="Reportar avistamiento"
+            />
+
+            <x-pet-card 
+                name="Garfield" 
+                type="Gato"
+                description="Color blanco"
+                location="En cualquier esquina de Ocosingo"
+                image="https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=500&q=60"
+                status="Perdido"
                 tagColor="bg-primary"
                 btnText="Reportar avistamiento"
             />
@@ -75,7 +86,29 @@
                     type="Gato"
                     description="Gato naranja muy sociable"
                     location="¡Amistoso y juguetón!"
-                    image="https://images.unsplash.com/photo-1529778873920-4da4926a7071?auto=format&fit=crop&w=500&q=60"
+                    image="https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=500&q=60"
+                    status="En adopción"
+                    tagColor="bg-adoption"
+                    btnText="¡Adoptar!"
+                />
+
+                <x-pet-card 
+                    name="Rirri" 
+                    type="Perro"
+                    description="Perro salchicha"
+                    location="¡Buscando un hogar!"
+                    image="https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&w=500&q=60"
+                    status="En adopción"
+                    tagColor="bg-adoption"
+                    btnText="¡Adoptar!"
+                />
+
+                <x-pet-card 
+                    name="Pinky" 
+                    type="Perro"
+                    description="Chow Chow"
+                    location="¡Buscando un hogar!"
+                    image="https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=500&q=60"
                     status="En adopción"
                     tagColor="bg-adoption"
                     btnText="¡Adoptar!"

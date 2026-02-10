@@ -43,16 +43,46 @@
             <div class="hidden md:flex gap-8 text-sm font-medium text-gray-600">
                 <a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition">Mascotas perdidas</a>
                 <a href="{{ route('adopciones.index') }}" class="hover:text-primary transition">Mascotas en Adopción</a>
-                <div class="relative group cursor-pointer">
-                    <span class="flex items-center gap-1 hover:text-primary transition">
-                        Cuidado Animal <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </span>
+
+                                {{-- DROPDOWN CUIDADO ANIMAL (Hover + Click sin JS) --}}
+                <div class="relative group" tabindex="0">
+                    <button type="button"
+                        class="flex items-center gap-1 hover:text-primary transition focus:outline-none">
+                        Cuidado Animal
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    {{-- “Puente” invisible para que NO se cierre al bajar el mouse --}}
+                    <div class="absolute left-0 top-full pt-2
+                                opacity-0 invisible
+                                group-hover:opacity-100 group-hover:visible
+                                group-focus-within:opacity-100 group-focus-within:visible
+                                transition z-50">
+                        <div class="w-48 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
+                            <a href="{{ route('veterinarias.index') }}"
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                Veterinarias
+                            </a>
+                            <a href="{{ route('refugios.index') }}"
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                Refugios
+                            </a>
+                            <a href="{{ route('consejos.index') }}"
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                Consejos
+                            </a>
+                        </div>
+                    </div>
                 </div>
+
             </div>
+
             <div class="flex items-center gap-4">
                 @guest
-                <a href="{{ route ('registro.usuario')}}">
-                    <span class="text-orange-500 font-medium text-sm">Registrarse</span>
+                <a href="{{ route('login') }}">
+                    <span class="text-orange-500 font-medium text-sm">Iniciar sesión</span>
                 </a>
                 <button class="bg-orange-100 p-2 rounded-full text-primary hover:bg-orange-200 transition">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>

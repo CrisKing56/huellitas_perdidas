@@ -199,7 +199,7 @@
                 <button type="submit" class="w-full md:w-1/2 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg shadow-lg transition transform hover:scale-[1.02]">
                     ✓ Publicar en adopción
                 </button>
-                <a href="{{ route('adopciones.mis-adopciones') }}" class="w-full md:w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-lg transition text-center">
+                <a href="{{ route('adopciones.index') }}" class="w-full md:w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-lg transition text-center">
                     Cancelar
                 </a>
             </div>
