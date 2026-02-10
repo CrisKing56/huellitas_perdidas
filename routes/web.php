@@ -1,9 +1,13 @@
 <?php
 
-use App\Http\Controllers\AdopcionController;
-use App\Http\Controllers\ExtravioController;
-use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ExtravioController;
+use App\Http\Controllers\AdopcionController;
+
+// ✅ Admin
+use App\Http\Controllers\Admin\AdminUsuarioController;
 
 // ========================
 // RUTAS PÚBLICAS
@@ -78,6 +82,12 @@ Route::get('/consejos', function () {
 Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
 Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->name('adopciones.show');
 
+// ✅ CREAR / GUARDAR (solo logueados)
+Route::middleware(['auth'])->group(function () {
+    Route::get('/adopciones/create', [AdopcionController::class, 'create'])->name('adopciones.create');
+    Route::post('/adopciones', [AdopcionController::class, 'store'])->name('adopciones.store');
+});
+
 // ========================
 // RUTAS PROTEGIDAS
 // ========================
@@ -92,7 +102,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reportar-mascota', [ExtravioController::class, 'create'])->name('mascotas.create');
     Route::post('/reportar-mascota', [ExtravioController::class, 'store'])->name('mascotas.store');
 
-    Route::get('/admin/usuarios', function () {
-        return view('usuarios-admin');
-    })->name('admin.usuarios');
+    // ✅ ADMIN (solo admins) - CRUD usuarios con BD (YA NO usa usuarios-admin.blade.php)
+    Route::middleware(['admin'])->group(function () {
+
+        // (Opcional) si tienes dashboard admin
+        Route::get('/admin/dashboard', function () {
+            return view('admin.dashboard');
+        })->name('admin.dashboard');
+
+        // CRUD Usuarios
+        Route::get('/admin/usuarios', [AdminUsuarioController::class, 'index'])->name('admin.usuarios.index');
+        Route::get('/admin/usuarios/create', [AdminUsuarioController::class, 'create'])->name('admin.usuarios.create');
+        Route::post('/admin/usuarios', [AdminUsuarioController::class, 'store'])->name('admin.usuarios.store');
+        Route::get('/admin/usuarios/{id_usuario}/edit', [AdminUsuarioController::class, 'edit'])->name('admin.usuarios.edit');
+        Route::put('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'update'])->name('admin.usuarios.update');
+        Route::delete('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'destroy'])->name('admin.usuarios.destroy');
+    });
 });
