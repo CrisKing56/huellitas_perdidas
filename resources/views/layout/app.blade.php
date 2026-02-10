@@ -105,7 +105,7 @@
                 <h4 class="text-white font-bold mb-4">Enlaces rápidos</h4>
                 <ul class="space-y-2">
                     <li><a href="{{ route ('inicio')}}" class="hover:text-primary transition">Inicio</a></li>
-                    <li><a href="#" class="hover:text-primary transition">Mascotas Perdidas</a></li>
+                    <li><a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition">Mascotas Perdidas</a></li>
                 </ul>
             </div>
             <div>

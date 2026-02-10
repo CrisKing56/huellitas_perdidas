@@ -138,7 +138,7 @@ class AdopcionController extends Controller
         }
 
         //cambiar estado
-        $adopcion->estado = 'ELIMINADA'; // [cite: 381]
+        $adopcion->estado = 'ELIMINADA'; 
         $adopcion->save();
 
         // Borrado físico

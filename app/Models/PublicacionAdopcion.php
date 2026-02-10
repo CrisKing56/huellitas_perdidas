@@ -16,7 +16,7 @@ class PublicacionAdopcion extends Model
 
 
     protected $fillable = [
-        'autor_usuario_id',     // [cite: 362]
+        'autor_usuario_id',
         // 'autor_organizacion_id', 
         'nombre',               
         'especie_id',           

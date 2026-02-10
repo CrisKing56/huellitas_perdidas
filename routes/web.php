@@ -30,7 +30,7 @@ Route::post('/registro', [AuthController::class, 'register'])->name('registro.st
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-
+Route::get('/mascotas-perdidas', [ExtravioController::class, 'index'])->name('mascotas.index');
 Route::get('/mascotas-perdidas', [ExtravioController::class, 'index2'])->name('mascotas.index2');
 
 

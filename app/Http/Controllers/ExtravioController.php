@@ -57,7 +57,7 @@ class ExtravioController extends Controller
         ]);
     }
 
-        return redirect()->route('mascotas.index')->with('success', '¡Reporte guardado!');
+        return redirect()->route('mascotas.index2')->with('success', '¡Reporte guardado!');
     }
 
     // Muestra el catálogo
