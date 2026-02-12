@@ -134,7 +134,7 @@ class ExtravioController extends Controller
             $rutaFoto = $request->file('foto')->store('mascotas', 'public');
 
             
-            DB::table('fotos_publicacion')
+            DB::table('extravio_fotos')
                 ->updateOrInsert(
                     ['publicacion_id' => $publicacion->id_publicacion], 
                     ['url' => $rutaFoto, 'orden' => 1] 

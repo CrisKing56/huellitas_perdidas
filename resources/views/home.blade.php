@@ -8,7 +8,19 @@
             <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Reporta o busca una mascota fácilmente.</h1>
             <p class="text-white text-lg mb-8">¡Conectando familias con mascotas perdidas!</p>
             <button class="bg-primary hover:bg-orange-600 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition transform hover:scale-105">
-                <a href="{{ route ('reportar.mascota')}}">Reportar mascota</a>
+                @guest
+                    <a href="{{ route('login')}}">
+                        Reportar mascota perdida
+                    </a>
+
+                @endguest
+
+                @auth
+                <a href="{{ route('mascotas.create')}}">
+                    Reportar mascota perdida
+                </a>
+                @endauth
+                
             </button>
         </div>
     </header>

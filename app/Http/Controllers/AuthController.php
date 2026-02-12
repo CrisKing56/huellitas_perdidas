@@ -57,7 +57,7 @@ public function login(Request $request)
 
         $request->session()->regenerate();
 
-        // ✅ Redirección por rol
+        //  Redirección por rol
         if (Auth::user()->rol === 'ADMIN') {
             return redirect()->route('admin.usuarios.index')->with('success', '¡Bienvenido Administrador!');
         }

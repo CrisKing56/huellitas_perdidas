@@ -107,8 +107,6 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/mis-reportes', [ExtravioController::class, 'index'])->name('extravios.index');
     Route::get('/reportar-mascota/{id}/editar', [ExtravioController::class, 'edit'])->name('extravios.edit');
-    
-
     Route::put('/reportar-mascota/{id}', [ExtravioController::class, 'update'])->name('extravios.update');
     Route::delete('/reportar-mascota/{id}', [ExtravioController::class, 'destroy'])->name('extravios.destroy');
 
