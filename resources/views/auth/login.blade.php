@@ -94,10 +94,10 @@
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-8">
-                <button class="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600 font-medium text-sm">
+                <a href="{{ route('google.login') }}" class="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600 font-medium text-sm">
                     <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="h-5 w-5 mr-2" alt="Google">
                     Google
-                </button>
+                </a>
                 <button class="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600 font-medium text-sm">
                     <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" class="h-5 w-5 mr-2" alt="Facebook">
                     Facebook

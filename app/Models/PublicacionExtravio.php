@@ -31,7 +31,14 @@ class PublicacionExtravio extends Model
         'descripcion', 
         'estado',
         'foto',
+        'ubicacion_id'
     ];
+
+        public function ubicacion()
+    {
+        // Busca en la tabla ubicaciones el id que coincida con mi 'ubicacion_id'
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id', 'id_ubicacion'); 
+    }
 
     
 

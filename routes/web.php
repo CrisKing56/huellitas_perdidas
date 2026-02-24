@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
-
-// ✅ Admin
+ use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\Admin\AdminUsuarioController;
 
 // ========================
@@ -29,6 +28,9 @@ Route::get('/reportar', function () {
 // ------------------------
 Route::get('/registro', [AuthController::class, 'showRegister'])->name('registro.usuario');
 Route::post('/registro', [AuthController::class, 'register'])->name('registro.store');
+
+Route::get('/auth/google', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.store');

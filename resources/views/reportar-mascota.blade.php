@@ -137,14 +137,12 @@
                     </div>
                 </div>
 
-                <div class="w-full h-64 bg-gray-200 rounded-xl flex flex-col items-center justify-center text-gray-500 border border-gray-300 relative overflow-hidden mb-2">
-                    <div class="absolute inset-0 opacity-10 bg-[url('https://upload.wikimedia.org/wikipedia/commons/e/ec/World_map_blank_without_borders.svg')] bg-cover bg-center"></div>
-                    <svg class="w-12 h-12 text-primary mb-2 z-10" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
-                    <p class="font-semibold z-10">Mapa interactivo</p>
-                    <p class="text-xs z-10">Mueve el pin para indicar el lugar donde se extravió</p>
+                <div id="mapa-formulario" class="w-full h-64 bg-gray-200 rounded-xl shadow-sm border border-gray-300 mb-2 z-10"></div>
+                <p class="text-center text-xs text-gray-400">Mueve el pin rojo para indicar el lugar exacto donde se extravió.</p>
+
+                <input type="hidden" name="latitud" id="latitud" value="16.9060">
+                <input type="hidden" name="longitud" id="longitud" value="-92.0933">
                 </div>
-                <p class="text-center text-xs text-gray-400">Mueve el pin para indicar el lugar donde se extravió.</p>
-            </div>
 
             <div class="mb-10">
                 <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -166,7 +164,7 @@
 
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre del dueño</label>
-                    <input type="text" value="{{ Auth::user()->nombre }}" readonly class="w-full border-gray-200 rounded-lg bg-gray-100 text-gray-500 py-2.5 px-3 cursor-not-allowed">
+                    <input type="text" value="{{ Auth::user()->nombre ?? 'Usuario' }}" readonly class="w-full border-gray-200 rounded-lg bg-gray-100 text-gray-500 py-2.5 px-3 cursor-not-allowed">
                     <p class="text-xs text-gray-400 mt-1">Este nombre se muestra porque estás logueado</p>
                 </div>
 
@@ -212,4 +210,44 @@
         </form>
     </div>
 </div>
+
+<script>
+    function initMapFormulario() {
+        let latInput = document.getElementById('latitud');
+        let lngInput = document.getElementById('longitud');
+        
+        let ubicacionInicial = { 
+            lat: parseFloat(latInput.value), 
+            lng: parseFloat(lngInput.value) 
+        };
+
+        const mapa = new google.maps.Map(document.getElementById('mapa-formulario'), {
+            zoom: 15,
+            center: ubicacionInicial,
+            streetViewControl: false,
+            mapTypeControl: false
+        });
+
+        let marcador = new google.maps.Marker({
+            position: ubicacionInicial,
+            map: mapa,
+            draggable: true, 
+            animation: google.maps.Animation.DROP
+        });
+
+        marcador.addListener('dragend', function() {
+            latInput.value = marcador.getPosition().lat();
+            lngInput.value = marcador.getPosition().lng();
+        });
+
+        mapa.addListener('click', function(event) {
+            marcador.setPosition(event.latLng);
+            latInput.value = event.latLng.lat();
+            lngInput.value = event.latLng.lng();
+        });
+    }
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMapFormulario" async defer></script>
+
 @endsection

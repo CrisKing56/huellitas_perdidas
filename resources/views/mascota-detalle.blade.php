@@ -109,23 +109,43 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-                    <h3 class="text-xl font-bold text-gray-900 mb-6">Ubicación del Último Avistamiento</h3>
-                    
-                    <div class="relative w-full h-64 bg-slate-100 rounded-xl overflow-hidden border border-gray-200 flex flex-col items-center justify-center group">
-                        <div class="absolute inset-0 bg-slate-200 opacity-50"></div>
+                <div class="mt-8">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">Última ubicación conocida</h3>
                         
-                        <div class="relative z-10 bg-white p-3 rounded-full shadow-lg mb-3 animate-bounce">
-                            <svg class="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path></svg>
-                        </div>
-                        
-                        <a href="https://www.google.com/maps/search/?api=1&query={{ urlencode($publicacion->colonia_barrio . ' ' . $publicacion->calle_referencias) }}" target="_blank" class="relative z-10 px-6 py-2 bg-white text-gray-800 font-semibold rounded-lg shadow hover:bg-gray-50 transition flex items-center gap-2">
-                            Ver mapa completo
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                        </a>
-                        <p class="relative z-10 text-xs text-gray-500 mt-2">Haz clic para abrir en Google Maps</p>
+                        @if($publicacion->ubicacion)
+                            <div id="mapa-detalle" style="width: 100%; height: 350px;" class="rounded shadow-md"></div>
+                            <p class="text-sm text-gray-500 mt-2">Cerca de: {{ $publicacion->colonia_barrio }}</p>
+                        @else
+                            <p class="text-red-500">No hay coordenadas exactas para esta mascota.</p>
+                        @endif
                     </div>
-                </div>
+
+                    @if($publicacion->ubicacion)
+                    <script>
+                        function initMapDetalle() {
+                            // Tomamos las coordenadas directamente de la base de datos usando Blade
+                            const latitud = {{ $publicacion->ubicacion->latitud }};
+                            const longitud = {{ $publicacion->ubicacion->longitud }};
+                            const ubicacionMascota = { lat: latitud, lng: longitud };
+
+                            // Creamos el mapa centrado en esa ubicación
+                            const mapa = new google.maps.Map(document.getElementById('mapa-detalle'), {
+                                zoom: 16,
+                                center: ubicacionMascota,
+                                mapTypeControl: false,
+                                streetViewControl: false
+                            });
+
+                            // Colocamos el marcador FIJO (sin "draggable")
+                            new google.maps.Marker({
+                                position: ubicacionMascota,
+                                map: mapa,
+                                title: "{{ $publicacion->nombre }}"
+                            });
+                        }
+                    </script>
+                    <script src="https://maps.googleapis.com/maps/api/js?key={{ env('GOOGLE_MAPS_API_KEY') }}&callback=initMapDetalle" async defer></script>
+                    @endif
 
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">Comentarios</h3>
@@ -183,7 +203,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-500 font-bold uppercase tracking-wider">Dueño</p>
-                            <p class="font-bold text-gray-900">{{ $publicacion->autor->name ?? 'Usuario' }}</p>
+                            <p class="font-bold text-gray-900">{{ $publicacion->autor->nombre ?? 'Usuario' }}</p>
                             <p class="text-xs text-gray-400">Miembro desde {{ $publicacion->autor->created_at ? $publicacion->autor->created_at->format('Y') : '2026' }}</p>
                         </div>
                     </div>
@@ -194,7 +214,7 @@
                          </div>
                          <div>
                              <p class="text-xs text-gray-400">Teléfono</p>
-                             <p class="text-sm font-semibold text-gray-800">{{ $publicacion->telefono ?? 'No visible' }}</p>
+                             <p class="text-sm font-semibold text-gray-800">{{ $publicacion->autor-> telefono ?? 'No visible' }}</p>
                          </div>
                     </div>
 
@@ -263,7 +283,7 @@
     <div class="mt-4 pt-2 border-t-4 border-red-600">
         <p class="text-xl font-bold text-gray-800 uppercase">Si tienes información llama al:</p>
         <div class="bg-red-600 text-white rounded-xl py-2 px-4 mt-2 inline-block w-full">
-            <h2 class="text-6xl font-black tracking-widest">{{ $telefono }}</h2>
+            <h2 class="text-6xl font-black tracking-widest">{{ $publicacion->autor-> telefono }}</h2>
             <p class="text-lg font-medium">{{ $publicacion->autor->name ?? 'Contacto' }}</p>
         </div>
         <p class="mt-2 text-xs text-gray-400">Generado en HuellitasPerdidas.com</p>

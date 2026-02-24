@@ -51,7 +51,7 @@
                 
                 <div class="h-64 relative overflow-hidden bg-gray-100">
                     @if($mascota->fotos->count() > 0)
-                        <img src="{{ asset($mascota->fotos->first()->url) }}" class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
+                        <img src="{{ asset('storage/' . $mascota->fotos->first()->url) }}" class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
                     @else
                         <div class="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
                             <span class="text-sm">Sin imagen</span>

@@ -21,13 +21,13 @@ class User extends Authenticatable
         'telefono',
         'rol',
         'estado',
+        'google_id'
     ];
 
     protected $hidden = [
         'password_hash',
     ];
 
-    // Laravel usará password_hash como contraseña
     public function getAuthPassword()
     {
         return $this->password_hash;
