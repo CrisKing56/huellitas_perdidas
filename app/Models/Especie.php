@@ -6,5 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class Especie extends Model
 {
-    //
+    protected $table = 'especies';
+    protected $primaryKey = 'id_especie';
+    public $timestamps = false;
+
+    protected $fillable = [
+        'nombre',
+        'activo',
+    ];
+
+    public function razas()
+    {
+        return $this->hasMany(Raza::class, 'especie_id', 'id_especie');
+    }
+
+    public function publicacionesAdopcion()
+    {
+        return $this->hasMany(PublicacionAdopcion::class, 'especie_id', 'id_especie');
+    }
+
+    public function publicacionesExtravio()
+    {
+        return $this->hasMany(PublicacionExtravio::class, 'especie_id', 'id_especie');
+    }
 }

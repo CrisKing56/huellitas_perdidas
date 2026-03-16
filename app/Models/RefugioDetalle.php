@@ -4,19 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class VeterinariaDetalle extends Model
+class RefugioDetalle extends Model
 {
-    protected $table = 'veterinaria_detalle';
+    protected $table = 'refugio_detalle';
     protected $primaryKey = 'organizacion_id';
     public $incrementing = false;
     public $timestamps = false;
 
     protected $fillable = [
         'organizacion_id',
-        'medico_responsable',
-        'cedula_profesional',
-        'num_veterinarios',
-        'otros_servicios',
+        'tipo_organizacion',
+        'anio_fundacion',
+        'capacidad_total',
+        'animales_actuales',
+        'animales_dados_adopcion',
+        'anios_operacion',
+        'nombre_responsable',
+        'cargo_responsable',
+        'num_voluntarios',
+        'otras_especies',
     ];
 
     public function organizacion()
