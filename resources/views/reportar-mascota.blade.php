@@ -64,7 +64,7 @@
                         <label class="block text-sm font-medium text-gray-700 mb-1">Tamaño <span class="text-red-500">*</span></label>
                         <select name="tamano" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 py-2.5 px-3 bg-white border">
                             <option value="">Seleccionar...</option>
-                            <option value="pequeno">Pequeño</option>
+                            <option value="pequeño">Pequeño</option>
                             <option value="mediano">Mediano</option>
                             <option value="grande">Grande</option>
                         </select>
