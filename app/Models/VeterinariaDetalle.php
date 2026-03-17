@@ -19,6 +19,8 @@ class VeterinariaDetalle extends Model
         'otros_servicios',
     ];
 
+   
+
     public function organizacion()
     {
         return $this->belongsTo(Organizacion::class, 'organizacion_id', 'id_organizacion');
