@@ -288,12 +288,7 @@
                         @endif
                     </div>
 
-                    @if($whatsappUrl)
-                        <a href="{{ $whatsappUrl }}" target="_blank"
-                           class="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all transform hover:-translate-y-0.5 flex justify-center items-center gap-2 mb-4">
-                            Contactar por WhatsApp
-                        </a>
-                    @endif
+                    
 
                     <hr class="my-6 border-gray-100">
 
