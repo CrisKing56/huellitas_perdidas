@@ -25,7 +25,8 @@
             <p class="text-gray-500 text-sm mb-8">Regístrate para reportar, buscar y ayudar.</p>
 
             <form action="{{ route('registro.store') }}" method="POST" class="space-y-4">
-                @csrf <div>
+                @csrf
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
                     <input type="text" name="nombre" placeholder="Juan Pérez" required
                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition">
@@ -72,6 +73,13 @@
 
             <p class="text-center text-sm text-gray-500 mt-6">
                 ¿Ya tienes cuenta? <a href="{{route ('login')}}" class="text-orange-500 font-bold hover:underline">Inicia sesión</a>
+            </p>
+
+            <p class="text-center text-sm text-gray-500 mt-3">
+                ¿Quieres registrar una veterinaria?
+                <a href="{{ route('registro.veterinaria') }}" class="text-orange-500 font-bold hover:underline">
+                    Ir al formulario de veterinaria
+                </a>
             </p>
         </div>
     </div>

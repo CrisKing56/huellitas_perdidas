@@ -1,12 +1,17 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\DB;
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
- use App\Http\Controllers\GoogleLoginController;
+use App\Http\Controllers\GoogleLoginController;
+use App\Http\Controllers\VeterinariaRegistroController;
+
 use App\Http\Controllers\Admin\AdminUsuarioController;
+use App\Http\Controllers\Admin\AdminVeterinariaController;
+use App\Http\Controllers\Admin\AdminRefugioController;
 
 // ========================
 // RUTAS PÚBLICAS
@@ -36,11 +41,20 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-Route::get('/mascotas-perdidas', [ExtravioController::class, 'index'])->name('mascotas.index');
+
+// ------------------------
+// REGISTRO VETERINARIA
+// ------------------------
+Route::get('/registro-veterinaria', function () {
+    return view('veterinarias.alta-veterinaria');
+})->name('registro.veterinaria');
+
+Route::post('/registro-veterinaria', [VeterinariaRegistroController::class, 'store'])
+    ->name('registro.veterinaria.store');
+
 // ------------------------
 // MASCOTAS PERDIDAS
 // ------------------------
-
 Route::get('/mascotas-perdidas', [ExtravioController::class, 'index2'])->name('mascotas.index2');
 Route::get('/mascota/{id}', [ExtravioController::class, 'show'])->name('extravios.show');
 
@@ -48,28 +62,83 @@ Route::get('/mascota/{id}', [ExtravioController::class, 'show'])->name('extravio
 // CUIDADO ANIMAL (PÚBLICO)
 // ------------------------
 Route::get('/veterinarias', function () {
-
-    $veterinarias = [
-        [
-            'imagen' => 'https://images.unsplash.com/photo-1581888227599-779811939961?auto=format&fit=crop&w=900&q=60',
-            'nombre' => 'Veterinaria Ocosingo',
-            'direccion' => 'Av. Central #123, Ocosingo',
-            'telefono' => '919 123 4567',
-            'horario' => 'Lun - Sáb 9:00 a 18:00',
-            'abierto' => true,
-        ],
-        [
-            'imagen' => 'https://images.unsplash.com/photo-1551601651-2a8555f1a136?auto=format&fit=crop&w=900&q=60',
-            'nombre' => 'Clínica Animal Selva',
-            'direccion' => 'Col. Centro, Ocosingo',
-            'telefono' => '919 765 4321',
-            'horario' => 'Lun - Dom 10:00 a 20:00',
-            'abierto' => false,
-        ],
-    ];
+    $veterinarias = DB::table('organizaciones as o')
+        ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
+        ->leftJoin('organizacion_fotos as f', function ($join) {
+            $join->on('f.organizacion_id', '=', 'o.id_organizacion')
+                 ->where('f.orden', '=', 1);
+        })
+        ->where('o.tipo', 'VETERINARIA')
+        ->where('o.estado_revision', 'APROBADA')
+        ->select(
+            'o.id_organizacion',
+            'o.nombre',
+            'o.descripcion',
+            'o.telefono',
+            'd.calle_numero',
+            'd.colonia',
+            'd.ciudad',
+            'd.estado as estado_direccion',
+            'f.url as imagen'
+        )
+        ->orderByDesc('o.id_organizacion')
+        ->get();
 
     return view('veterinarias.index', compact('veterinarias'));
 })->name('veterinarias.index');
+
+Route::get('/veterinarias/{id}', function ($id) {
+    $veterinaria = DB::table('organizaciones as o')
+        ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'o.usuario_dueno_id')
+        ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
+        ->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'o.ubicacion_id')
+        ->leftJoin('veterinaria_detalle as vd', 'vd.organizacion_id', '=', 'o.id_organizacion')
+        ->where('o.tipo', 'VETERINARIA')
+        ->where('o.estado_revision', 'APROBADA')
+        ->where('o.id_organizacion', $id)
+        ->select(
+            'o.*',
+            'u.correo',
+            'u.whatsapp',
+            'd.calle_numero',
+            'd.colonia',
+            'd.codigo_postal',
+            'd.ciudad',
+            'd.estado as estado_direccion',
+            'ub.latitud',
+            'ub.longitud',
+            'vd.medico_responsable',
+            'vd.cedula_profesional',
+            'vd.num_veterinarios',
+            'vd.otros_servicios'
+        )
+        ->first();
+
+    abort_if(!$veterinaria, 404);
+
+    $horarios = DB::table('horarios_atencion')
+        ->where('organizacion_id', $id)
+        ->orderBy('dia_semana')
+        ->get();
+
+    $servicios = DB::table('organizacion_servicio as os')
+        ->join('servicios as s', 's.id_servicio', '=', 'os.servicio_id')
+        ->where('os.organizacion_id', $id)
+        ->pluck('s.nombre');
+
+    $costos = DB::table('organizacion_costo_servicio as ocs')
+        ->join('servicios as s', 's.id_servicio', '=', 'ocs.servicio_id')
+        ->where('ocs.organizacion_id', $id)
+        ->select('s.nombre', 'ocs.precio', 'ocs.moneda')
+        ->get();
+
+    $fotos = DB::table('organizacion_fotos')
+        ->where('organizacion_id', $id)
+        ->orderBy('orden')
+        ->get();
+
+    return view('veterinarias.show', compact('veterinaria', 'horarios', 'servicios', 'costos', 'fotos'));
+})->name('veterinarias.show');
 
 Route::get('/refugios', function () {
     return view('refugios.index');
@@ -78,7 +147,6 @@ Route::get('/refugios', function () {
 Route::get('/consejos', function () {
     return view('consejos.index');
 })->name('consejos.index');
-
 
 // ✅ CREAR / GUARDAR (solo logueados)
 Route::middleware(['auth'])->group(function () {
@@ -90,13 +158,12 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/adopciones/{id}', [AdopcionController::class, 'update'])->name('adopciones.update');
     Route::delete('/adopciones/{id}', [AdopcionController::class, 'destroy'])->name('adopciones.destroy');
 });
+
 // ------------------------
 // ADOPCIONES
 // ------------------------
 Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
 Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->name('adopciones.show');
-
-
 
 // ========================
 // RUTAS PROTEGIDAS
@@ -115,10 +182,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reportar-mascota', [ExtravioController::class, 'create'])->name('mascotas.create');
     Route::post('/reportar-mascota', [ExtravioController::class, 'store'])->name('mascotas.store');
 
-    // ✅ ADMIN (solo admins) - CRUD usuarios con BD (YA NO usa usuarios-admin.blade.php)
+    // ✅ ADMIN (solo admins)
     Route::middleware(['admin'])->group(function () {
 
-        // (Opcional) si tienes dashboard admin
         Route::get('/admin/dashboard', function () {
             return view('admin.dashboard');
         })->name('admin.dashboard');
@@ -130,5 +196,17 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/admin/usuarios/{id_usuario}/edit', [AdminUsuarioController::class, 'edit'])->name('admin.usuarios.edit');
         Route::put('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'update'])->name('admin.usuarios.update');
         Route::delete('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'destroy'])->name('admin.usuarios.destroy');
+
+        // Veterinarias
+        Route::get('/admin/veterinarias', [AdminVeterinariaController::class, 'index'])->name('admin.veterinarias.index');
+        Route::get('/admin/veterinarias/{id}', [AdminVeterinariaController::class, 'show'])->name('admin.veterinarias.show');
+        Route::post('/admin/veterinarias/{id}/aprobar', [AdminVeterinariaController::class, 'aprobar'])->name('admin.veterinarias.aprobar');
+        Route::post('/admin/veterinarias/{id}/rechazar', [AdminVeterinariaController::class, 'rechazar'])->name('admin.veterinarias.rechazar');
+
+        // Refugios
+        Route::get('/admin/refugios', [AdminRefugioController::class, 'index'])->name('admin.refugios.index');
+        Route::get('/admin/refugios/{id}', [AdminRefugioController::class, 'show'])->name('admin.refugios.show');
+        Route::post('/admin/refugios/{id}/aprobar', [AdminRefugioController::class, 'aprobar'])->name('admin.refugios.aprobar');
+        Route::post('/admin/refugios/{id}/rechazar', [AdminRefugioController::class, 'rechazar'])->name('admin.refugios.rechazar');
     });
 });

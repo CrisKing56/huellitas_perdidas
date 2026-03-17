@@ -30,7 +30,8 @@
                 </a>
             </div>
 
-            <a href="#" class="text-gray-600 hover:text-orange-500 text-sm font-medium flex items-center gap-1">
+            <a href="{{ route('registro.veterinaria') }}"
+               class="text-gray-600 hover:text-orange-500 text-sm font-medium flex items-center gap-1">
                 Publicar veterinaria
                 <span class="text-lg leading-none">+</span>
             </a>
@@ -43,34 +44,39 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
             @forelse(($veterinarias ?? []) as $vet)
+                @php
+                    $direccion = collect([
+                        $vet->calle_numero,
+                        $vet->colonia,
+                        $vet->ciudad,
+                    ])->filter()->implode(', ');
+
+                    $imagen = $vet->imagen
+                        ? asset('storage/' . $vet->imagen)
+                        : 'https://images.unsplash.com/photo-1581888227599-779811939961?auto=format&fit=crop&w=900&q=60';
+                @endphp
+
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
 
                     <div class="relative h-48">
-                        <img src="{{ $vet['imagen'] }}" alt="{{ $vet['nombre'] }}"
+                        <img src="{{ $imagen }}" alt="{{ $vet->nombre }}"
                              class="w-full h-full object-cover">
 
-                        @if($vet['abierto'])
-                            <span class="absolute top-4 left-4 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
-                                Abierto ahora
-                            </span>
-                        @else
-                            <span class="absolute top-4 left-4 bg-red-100 text-red-700 text-xs font-bold px-3 py-1 rounded-full">
-                                Cerrado
-                            </span>
-                        @endif
+                        <span class="absolute top-4 left-4 bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+                            Disponible
+                        </span>
                     </div>
 
                     <div class="p-5">
-                        <h3 class="text-lg font-bold text-gray-900 mb-3">{{ $vet['nombre'] }}</h3>
+                        <h3 class="text-lg font-bold text-gray-900 mb-3">{{ $vet->nombre }}</h3>
 
                         <div class="space-y-2 mb-6 text-sm text-gray-500">
-                            <div>{{ $vet['direccion'] }}</div>
-                            <div>{{ $vet['telefono'] }}</div>
-                            <div>{{ $vet['horario'] }}</div>
+                            <div>{{ $direccion ?: 'Dirección no registrada' }}</div>
+                            <div>{{ $vet->telefono }}</div>
+                            <div>{{ \Illuminate\Support\Str::limit($vet->descripcion, 80) }}</div>
                         </div>
-
-                        <a href="#"
-                           class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center font-medium py-2.5 rounded-lg transition">
+                        <a href="{{ route('veterinarias.show', $vet->id_organizacion) }}"
+                        class="block w-full bg-orange-500 hover:bg-orange-600 text-white text-center font-medium py-2.5 rounded-lg transition">
                             Ver detalles
                         </a>
                     </div>
