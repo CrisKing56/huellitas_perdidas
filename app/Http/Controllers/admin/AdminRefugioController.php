@@ -88,7 +88,7 @@ class AdminRefugioController extends Controller
             ->where('tipo', 'REFUGIO')
             ->update([
                 'estado_revision' => 'APROBADA',
-                'updated_at' => now(),
+                // 'updated_at' => now(),
             ]);
 
         return redirect()->route('admin.refugios.index')->with('success', 'Refugio aprobado correctamente.');
@@ -101,7 +101,7 @@ class AdminRefugioController extends Controller
             ->where('tipo', 'REFUGIO')
             ->update([
                 'estado_revision' => 'RECHAZADA',
-                'updated_at' => now(),
+                // 'updated_at' => now(),
             ]);
 
         return redirect()->route('admin.refugios.index')->with('success', 'Refugio rechazado correctamente.');

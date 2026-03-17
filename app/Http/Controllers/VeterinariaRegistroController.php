@@ -61,8 +61,8 @@ class VeterinariaRegistroController extends Controller
                 'telefono'      => $request->telefono,
                 'whatsapp'      => $request->whatsapp,
                 'estado'        => 'ACTIVA',
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                // 'created_at'    => now(),
+                // 'updated_at'    => now(),
             ]);
 
             $direccionId = DB::table('direcciones')->insertGetId([
@@ -71,15 +71,15 @@ class VeterinariaRegistroController extends Controller
                 'codigo_postal' => $request->codigo_postal,
                 'ciudad'        => $request->ciudad,
                 'estado'        => $request->estado_direccion,
-                'created_at'    => now(),
-                'updated_at'    => now(),
+                // 'created_at'    => now(),
+                // 'updated_at'    => now(),
             ]);
 
             $ubicacionId = DB::table('ubicaciones')->insertGetId([
                 'latitud'    => $request->latitud,
                 'longitud'   => $request->longitud,
-                'created_at' => now(),
-                'updated_at' => now(),
+                // 'created_at' => now(),
+                // 'updated_at' => now(),
             ]);
 
             $organizacionId = DB::table('organizaciones')->insertGetId([
@@ -91,8 +91,8 @@ class VeterinariaRegistroController extends Controller
                 'direccion_id'     => $direccionId,
                 'ubicacion_id'     => $ubicacionId,
                 'estado_revision'  => 'PENDIENTE',
-                'created_at'       => now(),
-                'updated_at'       => now(),
+                // 'created_at'       => now(),
+                // 'updated_at'       => now(),
             ]);
 
             DB::table('veterinaria_detalle')->insert([
@@ -170,8 +170,8 @@ class VeterinariaRegistroController extends Controller
                 'hora_apertura'   => $cerrado ? null : $horario['hora_apertura'],
                 'hora_cierre'     => $cerrado ? null : $horario['hora_cierre'],
                 'cerrado'         => $cerrado ? 1 : 0,
-                'created_at'      => now(),
-                'updated_at'      => now(),
+                // 'created_at'      => now(),
+                // 'updated_at'      => now(),
             ]);
         }
     }
@@ -213,8 +213,8 @@ class VeterinariaRegistroController extends Controller
                 DB::table('organizacion_servicio')->insert([
                     'organizacion_id' => $organizacionId,
                     'servicio_id'     => $servicio->id_servicio,
-                    'created_at'      => now(),
-                    'updated_at'      => now(),
+                    // 'created_at'      => now(),
+                    // 'updated_at'      => now(),
                 ]);
             }
         }
@@ -256,7 +256,7 @@ class VeterinariaRegistroController extends Controller
                     'precio'          => $precio,
                     'moneda'          => 'MXN',
                     'nota'            => null,
-                    'actualizado_en'  => now(),
+                    // 'actualizado_en'  => now(),
                 ]);
             }
         }
@@ -281,7 +281,7 @@ class VeterinariaRegistroController extends Controller
                 'organizacion_id' => $organizacionId,
                 'url'             => $ruta,
                 'orden'           => $orden,
-                'creado_en'       => now(),
+                // 'creado_en'       => now(),
             ]);
 
             $orden++;

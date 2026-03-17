@@ -104,7 +104,7 @@ class AdminVeterinariaController extends Controller
             ->where('tipo', 'VETERINARIA')
             ->update([
                 'estado_revision' => 'APROBADA',
-                'updated_at' => now(),
+                // 'updated_at' => now(),
             ]);
 
         return redirect()->route('admin.veterinarias.show', $id)
@@ -118,7 +118,7 @@ class AdminVeterinariaController extends Controller
             ->where('tipo', 'VETERINARIA')
             ->update([
                 'estado_revision' => 'RECHAZADA',
-                'updated_at' => now(),
+                // 'updated_at' => now(),
             ]);
 
         return redirect()->route('admin.veterinarias.show', $id)

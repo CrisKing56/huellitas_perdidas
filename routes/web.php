@@ -2,13 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-
+use App\Http\Controllers\ConsejoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
+use App\Http\Controllers\RefugioController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\VeterinariaRegistroController;
-
+use App\Http\Controllers\RefugioRegistroController;
 use App\Http\Controllers\Admin\AdminUsuarioController;
 use App\Http\Controllers\Admin\AdminVeterinariaController;
 use App\Http\Controllers\Admin\AdminRefugioController;
@@ -210,3 +211,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/refugios/{id}/rechazar', [AdminRefugioController::class, 'rechazar'])->name('admin.refugios.rechazar');
     });
 });
+Route::get('/consejos', [ConsejoController::class, 'index'])->name('consejos.index');
+Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->name('consejos.show');
+Route::get('/consejos/publicar', [ConsejoController::class, 'create'])->name('consejos.create');
+Route::post('/consejos/guardar', [ConsejoController::class, 'store'])->name('consejos.store');
+
+Route::get('/registro-refugio', [RefugioRegistroController::class, 'create'])->name('registro.refugio');
+Route::post('/registro-refugio', [RefugioRegistroController::class, 'store'])->name('registro.refugio.store');
+
+Route::get('/refugios', [RefugioController::class, 'index'])->name('refugios.index');
+Route::get('/refugios/{id}', [RefugioController::class, 'show'])->name('refugios.show');
