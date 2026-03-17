@@ -10,6 +10,7 @@ Route::prefix('mobile')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 
     Route::get('/extravios', [MobilePublicacionController::class, 'extravios']);
+    Route::get('/extravios/{id}', [MobilePublicacionController::class, 'detalleExtravio']);
     Route::get('/adopciones', [MobilePublicacionController::class, 'adopciones']);
 
     Route::get('/organizaciones', [MobileOrganizacionController::class, 'index']);
