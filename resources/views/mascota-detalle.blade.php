@@ -33,8 +33,7 @@
                     {{ $publicacion->estado }}
                 </span>
                 <span class="text-sm text-gray-500 font-medium">
-                    Publicado {{ $publicacion->created_at ? $publicacion->created_at->diffForHumans() : '' }}
-                </span>
+                Publicado {{ $publicacion->created_at ? \Carbon\Carbon::parse($publicacion->created_at)->diffForHumans() : '' }}                </span>
             </div>
             
             <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">{{ $publicacion->nombre }}</h1>

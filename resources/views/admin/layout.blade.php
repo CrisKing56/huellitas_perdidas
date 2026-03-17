@@ -58,6 +58,26 @@
             <div class="pt-4">
                 <p class="px-4 text-xs uppercase text-gray-500 font-semibold mb-2">Secciones</p>
 
+                <a href="{{ route('admin.veterinarias.index') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   {{ request()->routeIs('admin.veterinarias.*') ? 'bg-primary text-white' : 'text-gray-300 hover:bg-gray-700' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M19.428 15.428a4 4 0 00-5.656 0M6 20h12M9 10h.01M15 10h.01M12 14h.01M8 6h8a2 2 0 012 2v8a2 2 0 01-2 2H8a2 2 0 01-2-2V8a2 2 0 012-2z"/>
+                    </svg>
+                    <span>Veterinarias</span>
+                </a>
+
+                <a href="{{ route('admin.refugios.index') }}"
+                   class="flex items-center gap-3 px-4 py-3 rounded-lg transition
+                   {{ request()->routeIs('admin.refugios.*') ? 'bg-primary text-white' : 'text-gray-300 hover:bg-gray-700' }}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M3 10l9-7 9 7v9a2 2 0 01-2 2h-4v-6H9v6H5a2 2 0 01-2-2v-9z"/>
+                    </svg>
+                    <span>Refugios</span>
+                </a>
+
                 <span class="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-500 cursor-not-allowed">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -131,6 +151,7 @@
                         {{ session('success') }}
                     </div>
                 @endif
+
                 @if(session('error'))
                     <div class="mb-4 bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
                         {{ session('error') }}

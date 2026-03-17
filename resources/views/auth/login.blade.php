@@ -22,7 +22,6 @@
                 <p class="text-gray-500 text-sm">Bienvenido de nuevo, ingresa para continuar.</p>
             </div>
 
-
             @if ($errors->any())
                 <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
                     <strong class="font-bold">¡Ups!</strong>
@@ -33,6 +32,7 @@
                     </ul>
                 </div>
             @endif
+
             <form action="{{ route('login.store') }}" method="POST" class="space-y-6">
                 @csrf
 
@@ -112,6 +112,13 @@
 
             <p class="text-center text-sm text-gray-500">
                 ¿No tienes cuenta? <a href="{{ route('registro.usuario') }}" class="text-orange-500 font-bold hover:underline">Regístrate</a>
+            </p>
+
+            <p class="text-center text-sm text-gray-500 mt-3">
+                ¿Tienes una veterinaria?
+                <a href="{{ route('registro.veterinaria') }}" class="text-orange-500 font-bold hover:underline">
+                    Registra tu veterinaria
+                </a>
             </p>
         </div>
     </div>
