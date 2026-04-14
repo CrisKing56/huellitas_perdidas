@@ -149,43 +149,87 @@
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
                     <h3 class="text-xl font-bold text-gray-900 mb-6">Comentarios</h3>
 
-                    <div class="mb-8">
-                        <textarea class="w-full border border-gray-200 rounded-lg p-4 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none h-24 bg-gray-50" placeholder="Escribe un comentario si tienes información sobre esta mascota..."></textarea>
-                        <div class="flex justify-end mt-2">
-                            <button class="bg-orange-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition flex items-center gap-2 shadow-sm">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
-                                Comentar
-                            </button>
+                    @if(session('success'))
+                        <div class="mb-6 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                            {{ session('success') }}
                         </div>
-                    </div>
+                    @endif
+
+                    @auth
+                        <div class="mb-8">
+                            <form action="{{ route('extravios.comentarios.store', $publicacion->id_publicacion) }}" method="POST">
+                                @csrf
+
+                                <textarea 
+                                    name="comentario"
+                                    class="w-full border border-gray-200 rounded-lg p-4 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none h-24 bg-gray-50"
+                                    placeholder="Escribe un comentario si tienes información sobre esta mascota..."
+                                >{{ old('comentario') }}</textarea>
+
+                                @error('comentario')
+                                    <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                                @enderror
+
+                                <div class="flex justify-end mt-2">
+                                    <button type="submit" class="bg-orange-600 text-white px-6 py-2 rounded-lg text-sm font-semibold hover:bg-orange-700 transition flex items-center gap-2 shadow-sm">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+                                        Comentar
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="mb-8 rounded-xl border border-orange-200 bg-orange-50 p-5">
+                            <p class="text-sm text-gray-700 mb-3">
+                                Inicia sesión para poder comentar en esta publicación.
+                            </p>
+                            <a href="{{ route('login') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold rounded-lg transition">
+                                Iniciar sesión
+                            </a>
+                        </div>
+                    @endauth
 
                     <div class="space-y-6">
-                        
-                        <div class="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
-                            <div class="flex gap-3 mb-2">
-                                <div class="w-8 h-8 rounded-full bg-orange-400 text-white flex items-center justify-center text-xs font-bold shadow-sm">M</div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-900">María López <span class="text-xs text-gray-400 font-normal ml-2">hace 2 horas</span></p>
-                                </div>
-                            </div>
-                            <p class="text-sm text-gray-700 ml-11">Creo que vi a un perrito parecido cerca del parque central ayer por la tarde. ¿Tenía collar?</p>
-                            <button class="ml-11 mt-2 text-xs text-orange-600 font-medium hover:underline flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Responder
-                            </button>
-                        </div>
+                        @forelse($comentarios as $comentario)
+                            @php
+                                $nombre = trim($comentario->usuario_nombre ?? 'Usuario');
+                                $partes = preg_split('/\s+/', $nombre);
+                                $iniciales = '';
 
-                        <div class="border border-gray-100 rounded-lg p-4 bg-white">
-                            <div class="flex gap-3 mb-2">
-                                <div class="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold shadow-sm">J</div>
-                                <div>
-                                    <p class="text-sm font-bold text-gray-900">Juan Pérez <span class="text-xs text-gray-400 font-normal ml-2">hace 5 horas</span></p>
+                                foreach (array_slice($partes, 0, 2) as $parte) {
+                                    $iniciales .= mb_strtoupper(mb_substr($parte, 0, 1));
+                                }
+
+                                $fotoUrl = null;
+                                if (!empty($comentario->usuario_foto)) {
+                                    if (\Illuminate\Support\Str::startsWith($comentario->usuario_foto, ['http://', 'https://'])) {
+                                        $fotoUrl = $comentario->usuario_foto;
+                                    } else {
+                                        $fotoUrl = asset('storage/' . ltrim(str_replace('storage/', '', $comentario->usuario_foto), '/'));
+                                    }
+                                }
+                            @endphp
+
+                            <div class="border border-gray-100 rounded-lg p-4 bg-gray-50/50">
+                                <div class="flex gap-3 mb-2">
+                                    <div class="w-8 h-8 rounded-full overflow-hidden bg-orange-400 text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                                        @if($fotoUrl)
+                                            <img src="{{ $fotoUrl }}" alt="Foto de perfil" class="w-full h-full object-cover">
+                                        @else
+                                            {{ $iniciales ?: 'U' }}
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-gray-900">{{ $comentario->usuario_nombre }} <span class="text-xs text-gray-400 font-normal ml-2">{{ \Carbon\Carbon::parse($comentario->creado_en)->diffForHumans() }}</span></p>
+                                    </div>
                                 </div>
+                                <p class="text-sm text-gray-700 ml-11">{{ $comentario->comentario }}</p>
                             </div>
-                            <p class="text-sm text-gray-700 ml-11">Compartido en el grupo de vecinos de la colonia. ¡Espero que aparezca pronto!</p>
-                             <button class="ml-11 mt-2 text-xs text-orange-600 font-medium hover:underline flex items-center gap-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"></path></svg> Responder
-                            </button>
-                        </div>
+                        @empty
+                            <div class="text-center py-8 border border-dashed border-gray-200 rounded-xl bg-gray-50">
+                                <p class="text-gray-500 text-sm">Aún no hay comentarios en esta publicación.</p>
+                            </div>
+                        @endforelse
                     </div>
                 </div>
 

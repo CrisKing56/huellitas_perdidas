@@ -13,12 +13,26 @@ use App\Http\Controllers\RefugioRegistroController;
 use App\Http\Controllers\Admin\AdminUsuarioController;
 use App\Http\Controllers\Admin\AdminVeterinariaController;
 use App\Http\Controllers\Admin\AdminRefugioController;
+use App\Models\PublicacionExtravio;
+use App\Models\PublicacionAdopcion;
 
 // ========================
 // RUTAS PÚBLICAS
 // ========================
 Route::get('/', function () {
-    return view('home');
+    $mascotasRecientes = PublicacionExtravio::with('fotoPrincipal')
+        ->where('estado', '!=', 'RESUELTA')
+        ->orderBy('id_publicacion', 'desc')
+        ->take(4)
+        ->get();
+
+    $adopcionesRecientes = PublicacionAdopcion::with('fotoPrincipal')
+        ->where('estado', 'DISPONIBLE')
+        ->orderBy('id_publicacion', 'desc')
+        ->take(4)
+        ->get();
+
+    return view('home', compact('mascotasRecientes', 'adopcionesRecientes'));
 })->name('inicio');
 
 Route::get('/detalle', function () {
@@ -183,6 +197,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reportar-mascota', [ExtravioController::class, 'create'])->name('mascotas.create');
     Route::post('/reportar-mascota', [ExtravioController::class, 'store'])->name('mascotas.store');
 
+    Route::post('/mascota/{id}/comentarios', [ExtravioController::class, 'storeComment'])
+        ->name('extravios.comentarios.store');
+
     // ✅ ADMIN (solo admins)
     Route::middleware(['admin'])->group(function () {
 
@@ -212,9 +229,9 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 Route::get('/consejos', [ConsejoController::class, 'index'])->name('consejos.index');
-Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->name('consejos.show');
 Route::get('/consejos/publicar', [ConsejoController::class, 'create'])->name('consejos.create');
 Route::post('/consejos/guardar', [ConsejoController::class, 'store'])->name('consejos.store');
+Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->name('consejos.show');
 
 Route::get('/registro-refugio', [RefugioRegistroController::class, 'create'])->name('registro.refugio');
 Route::post('/registro-refugio', [RefugioRegistroController::class, 'store'])->name('registro.refugio.store');

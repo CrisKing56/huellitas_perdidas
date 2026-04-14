@@ -4,21 +4,34 @@
 <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 min-h-screen">
     
     <div class="mb-8">
-        @guest
-        <a href="{{ route('login')}}">
-            <h2 class="text-xl font-medium text-gray-700 mb-4">Reportar mascota perdida</h2>
-        </a>
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Mascotas perdidas</h1>
+                <p class="text-sm text-gray-500 mt-1">Consulta reportes recientes y ayuda a encontrar a su familia.</p>
+            </div>
 
-        @endguest
+            @guest
+                <a href="{{ route('login') }}"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-sm transition w-full md:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Reportar mascota perdida
+                </a>
+            @endguest
 
-        @auth
-        <a href="{{ route('mascotas.create')}}">
-            <h2 class="text-xl font-medium text-gray-700 mb-4">Reportar mascota perdida</h2>
-        </a>
-        @endauth
+            @auth
+                <a href="{{ route('mascotas.create') }}"
+                   class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-sm transition w-full md:w-auto">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    Reportar mascota perdida
+                </a>
+            @endauth
+        </div>
         
-        
-        <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
+        <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
             <div class="relative w-full md:max-w-xl">
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -27,11 +40,11 @@
             </div>
 
             <div class="flex gap-3 w-full md:w-auto">
-                <button class="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition shadow-sm">
+                <button class="px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-lg transition shadow-sm w-full md:w-auto">
                     Ver todas
                 </button>
             @auth
-                <a href="{{ route('extravios.index')}}" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition text-center whitespace-nowrap">
+                <a href="{{ route('extravios.index')}}" class="px-6 py-2.5 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition text-center whitespace-nowrap w-full md:w-auto">
                     Mis reportes
                 </a>
             @endauth
@@ -84,10 +97,13 @@
                         {{ $mascota->colonia_barrio }}
                     </div>
 
-                    <div class="flex items-center text-gray-400 text-xs pt-3 border-t border-gray-100">
-                        <button class="flex items-center gap-1 hover:text-red-500 transition group/like">
-                            <svg class="w-5 h-5 group-hover/like:fill-red-500 group-hover/like:text-red-500 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                            <span>24</span> </button>
+                    <div class="pt-3 border-t border-gray-100">
+                        <span class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-orange-50 text-orange-600 font-semibold py-2.5 border border-orange-100 group-hover:bg-orange-500 group-hover:text-white group-hover:border-orange-500 transition">
+                            Ver detalle
+                            <svg class="w-4 h-4 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                            </svg>
+                        </span>
                     </div>
                 </div>
             </div>

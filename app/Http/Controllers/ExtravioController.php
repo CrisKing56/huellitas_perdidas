@@ -170,11 +170,48 @@ class ExtravioController extends Controller
         return view('extravios.editar', compact('publicacion'));
     }
 
-    public function show($id)
-    {
-        // Añadí 'ubicacion' para que en la vista detalle puedas pintar el mapa si quieres
-        $publicacion = PublicacionExtravio::with(['autor', 'fotoPrincipal', 'ubicacion'])->findOrFail($id);
+public function show($id)
+{
+    $publicacion = PublicacionExtravio::with(['autor', 'fotoPrincipal', 'ubicacion'])->findOrFail($id);
 
-        return view('mascota-detalle', compact('publicacion'));
+    $comentarios = DB::table('comentarios_extravio as c')
+        ->join('usuarios as u', 'u.id_usuario', '=', 'c.usuario_id')
+        ->where('c.publicacion_id', $id)
+        ->whereNull('c.comentario_padre_id')
+        ->where('c.estado', 'VISIBLE')
+        ->select(
+            'c.id_comentario',
+            'c.comentario',
+            'c.creado_en',
+            'u.nombre as usuario_nombre',
+            DB::raw('NULL as usuario_foto')
+        )
+        ->orderBy('c.creado_en', 'desc')
+        ->get();
+
+    return view('mascota-detalle', compact('publicacion', 'comentarios'));
+}
+
+    public function storeComment(Request $request, $id)
+    {
+        $publicacion = PublicacionExtravio::findOrFail($id);
+
+        $request->validate([
+            'comentario' => 'required|string|max:1000',
+        ]);
+
+        DB::table('comentarios_extravio')->insert([
+            'publicacion_id' => $publicacion->id_publicacion,
+            'usuario_id' => Auth::id(),
+            'comentario_padre_id' => null,
+            'comentario' => trim($request->comentario),
+            'estado' => 'VISIBLE',
+            'creado_en' => now(),
+            'actualizado_en' => now(),
+        ]);
+
+        return redirect()
+            ->route('extravios.show', $publicacion->id_publicacion)
+            ->with('success', 'Comentario publicado correctamente.');
     }
 }
