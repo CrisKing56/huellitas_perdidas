@@ -50,4 +50,37 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    public function register(Request $request)
+    {
+        $request->validate([
+            'nombre' => 'required|string|max:120',
+            'correo' => 'required|email|max:120|unique:usuarios,correo',
+            'telefono' => 'required|digits:10|unique:usuarios,telefono',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        $usuario = User::create([
+            'nombre' => $request->nombre,
+            'correo' => $request->correo,
+            'telefono' => $request->telefono,
+            'password_hash' => Hash::make($request->password),
+            'rol' => 'USUARIO',
+            'estado' => 'ACTIVA',
+        ]);
+
+        return response()->json([
+            'ok' => true,
+            'message' => 'Usuario registrado correctamente',
+            'usuario' => [
+                'id_usuario' => $usuario->id_usuario,
+                'nombre' => $usuario->nombre,
+                'correo' => $usuario->correo,
+                'telefono' => $usuario->telefono,
+                'rol' => $usuario->rol,
+                'estado' => $usuario->estado,
+                'tipo_acceso_movil' => 'USUARIO',
+            ]
+        ], 201);
+    }
 }

@@ -39,14 +39,6 @@
                 </select>
             </div>
 
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
-                <select name="estado" class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-primary focus:border-transparent" required>
-                    <option value="ACTIVA">ACTIVA</option>
-                    <option value="SUSPENDIDA">SUSPENDIDA</option>
-                    <option value="ELIMINADA">ELIMINADA</option>
-                </select>
-            </div>
         </div>
 
         <div>

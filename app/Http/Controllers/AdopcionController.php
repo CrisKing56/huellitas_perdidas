@@ -9,26 +9,75 @@ use Illuminate\Support\Facades\Storage;
 
 class AdopcionController extends Controller
 {
-    public function index()
-{
-    $adopciones = PublicacionAdopcion::with('fotoPrincipal')
-        ->where('estado', 'DISPONIBLE')
-        ->orderBy('creado_en', 'desc') 
-        ->paginate(12);
+    public function index(Request $request)
+    {
+        $filtros = [
+            'q' => trim((string) $request->get('q', '')),
+            'especie' => (string) $request->get('especie', ''),
+            'sexo' => (string) $request->get('sexo', ''),
+            'tamano' => (string) $request->get('tamano', ''),
+            'colonia' => trim((string) $request->get('colonia', '')),
+            'orden' => (string) $request->get('orden', 'recientes'),
+        ];
 
-    return view('mascotas-adopcion', compact('adopciones'));
-}
+        $query = PublicacionAdopcion::with('fotoPrincipal')
+            ->where('estado', 'DISPONIBLE')
+            ->when($filtros['q'] !== '', function ($q) use ($filtros) {
+                $q->where(function ($sub) use ($filtros) {
+                    $sub->where('nombre', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('descripcion', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('colonia_barrio', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('otra_raza', 'like', '%' . $filtros['q'] . '%');
+                });
+            })
+            ->when($filtros['especie'] !== '', function ($q) use ($filtros) {
+                $q->where('especie_id', $filtros['especie']);
+            })
+            ->when($filtros['sexo'] !== '', function ($q) use ($filtros) {
+                $q->whereRaw('UPPER(sexo) = ?', [mb_strtoupper($filtros['sexo'])]);
+            })
+            ->when($filtros['tamano'] !== '', function ($q) use ($filtros) {
+                $q->whereRaw('UPPER(tamano) = ?', [mb_strtoupper($filtros['tamano'])]);
+            })
+            ->when($filtros['colonia'] !== '', function ($q) use ($filtros) {
+                $q->where('colonia_barrio', 'like', '%' . $filtros['colonia'] . '%');
+            });
 
-    
+        switch ($filtros['orden']) {
+            case 'antiguos':
+                $query->orderBy('creado_en', 'asc');
+                break;
+            case 'nombre_az':
+                $query->orderBy('nombre', 'asc');
+                break;
+            case 'nombre_za':
+                $query->orderBy('nombre', 'desc');
+                break;
+            default:
+                $query->orderBy('creado_en', 'desc');
+                break;
+        }
+
+        $adopciones = $query->paginate(12)->withQueryString();
+
+        $conteos = [
+            'disponibles' => PublicacionAdopcion::where('estado', 'DISPONIBLE')->count(),
+            'perros' => PublicacionAdopcion::where('estado', 'DISPONIBLE')->where('especie_id', 1)->count(),
+            'gatos' => PublicacionAdopcion::where('estado', 'DISPONIBLE')->where('especie_id', 2)->count(),
+        ];
+
+        return view('mascotas-adopcion', compact('adopciones', 'filtros', 'conteos'));
+    }
+
     public function misAdopciones()
-{
-    $adopciones = PublicacionAdopcion::with('fotoPrincipal')
-        ->where('autor_usuario_id', Auth::id())
-        ->orderBy('creado_en', 'desc') 
-        ->paginate(10);
+    {
+        $adopciones = PublicacionAdopcion::with('fotoPrincipal')
+            ->where('autor_usuario_id', Auth::id())
+            ->orderBy('creado_en', 'desc') 
+            ->paginate(10);
 
-    return view('adopciones.mis-adopciones', compact('adopciones'));
-}
+        return view('adopciones.mis-adopciones', compact('adopciones'));
+    }
 
     public function create()
     {
@@ -48,7 +97,6 @@ class AdopcionController extends Controller
         $adopcion = new PublicacionAdopcion();
         $adopcion->autor_usuario_id = Auth::id(); 
         
-        // Mapeo exacto de campos del SQL
         $adopcion->nombre = $request->nombre;
         $adopcion->especie_id = $request->especie_id;
         $adopcion->raza_id = $request->raza_id;
@@ -59,21 +107,19 @@ class AdopcionController extends Controller
         $adopcion->color_predominante = $request->color_predominante; 
         $adopcion->descripcion = $request->descripcion;
         
-        // Campos médicos específicos de adopción
         $adopcion->vacunas_aplicadas = $request->vacunas_aplicadas;
 
-        $adopcion->esterilizado = $request->input('esterilizado');        $adopcion->condicion_salud = $request->condicion_salud;
+        $adopcion->esterilizado = $request->input('esterilizado');
+        $adopcion->condicion_salud = $request->condicion_salud;
         $adopcion->descripcion_salud = $request->descripcion_salud;
         $adopcion->requisitos = $request->requisitos;
         
-        // Ubicación
         $adopcion->colonia_barrio = $request->colonia_barrio;
         $adopcion->calle_referencias = $request->calle_referencias;
         $adopcion->estado = 'DISPONIBLE';
 
         $adopcion->save();
 
-        // Guardar Foto 
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('adopciones', 'public');
             
@@ -86,7 +132,6 @@ class AdopcionController extends Controller
 
         return redirect()->route('adopciones.index')->with('success', 'Mascota publicada para adopción correctamente.');
     }
-
 
     public function show($id)
     {
@@ -116,7 +161,6 @@ class AdopcionController extends Controller
         $adopcion->update($request->except(['foto', '_token', '_method']));
 
         if ($request->hasFile('foto')) {
-
             $path = $request->file('foto')->store('adopciones', 'public');
             $foto = new AdopcionFoto();
             $foto->publicacion_id = $adopcion->id_publicacion;
@@ -128,7 +172,6 @@ class AdopcionController extends Controller
         return redirect()->route('adopciones.mis-adopciones')->with('success', 'Publicación actualizada.');
     }
 
-    //ELIMINAR 
     public function destroy($id)
     {
         $adopcion = PublicacionAdopcion::findOrFail($id);
@@ -137,12 +180,8 @@ class AdopcionController extends Controller
             abort(403);
         }
 
-        //cambiar estado
         $adopcion->estado = 'ELIMINADA'; 
         $adopcion->save();
-
-        // Borrado físico
-        // $adopcion->delete();
 
         return redirect()->route('adopciones.mis-adopciones')->with('success', 'Publicación eliminada.');
     }
