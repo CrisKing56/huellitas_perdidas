@@ -2,23 +2,38 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-use App\Http\Controllers\ConsejoController;
+
+// =========================
+// CONTROLLERS
+// =========================
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GoogleLoginController;
+use App\Http\Controllers\UserController;
+
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
+use App\Http\Controllers\ConsejoController;
 use App\Http\Controllers\RefugioController;
-use App\Http\Controllers\GoogleLoginController;
+
 use App\Http\Controllers\VeterinariaRegistroController;
 use App\Http\Controllers\RefugioRegistroController;
+
 use App\Http\Controllers\Admin\AdminUsuarioController;
 use App\Http\Controllers\Admin\AdminVeterinariaController;
 use App\Http\Controllers\Admin\AdminRefugioController;
+
+// =========================
+// MODELOS
+// =========================
 use App\Models\PublicacionExtravio;
 use App\Models\PublicacionAdopcion;
 
-// ========================
-// RUTAS PÚBLICAS
-// ========================
+/*
+|--------------------------------------------------------------------------
+| RUTAS PÚBLICAS GENERALES
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
     $mascotasRecientes = PublicacionExtravio::with('fotoPrincipal')
         ->where('estado', '!=', 'RESUELTA')
@@ -43,23 +58,36 @@ Route::get('/reportar', function () {
     return view('reportar-mascota');
 })->name('reportar.mascota');
 
-// ------------------------
-// AUTH
-// ------------------------
+/*
+|--------------------------------------------------------------------------
+| AUTENTICACIÓN
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/registro', [AuthController::class, 'showRegister'])->name('registro.usuario');
 Route::post('/registro', [AuthController::class, 'register'])->name('registro.store');
-
-Route::get('/auth/google', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
-Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
 
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
-// ------------------------
-// REGISTRO VETERINARIA
-// ------------------------
+/*
+|--------------------------------------------------------------------------
+| LOGIN CON GOOGLE
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/auth/google', [GoogleLoginController::class, 'redirectToGoogle'])->name('google.login');
+Route::get('/auth/google/callback', [GoogleLoginController::class, 'handleGoogleCallback']);
+
+/*
+|--------------------------------------------------------------------------
+| REGISTRO DE ORGANIZACIONES
+|--------------------------------------------------------------------------
+*/
+
+// Veterinaria
 Route::get('/registro-veterinaria', function () {
     return view('veterinarias.alta-veterinaria');
 })->name('registro.veterinaria');
@@ -67,21 +95,41 @@ Route::get('/registro-veterinaria', function () {
 Route::post('/registro-veterinaria', [VeterinariaRegistroController::class, 'store'])
     ->name('registro.veterinaria.store');
 
-// ------------------------
-// MASCOTAS PERDIDAS
-// ------------------------
+// Refugio
+Route::get('/registro-refugio', [RefugioRegistroController::class, 'create'])->name('registro.refugio');
+Route::post('/registro-refugio', [RefugioRegistroController::class, 'store'])->name('registro.refugio.store');
+
+/*
+|--------------------------------------------------------------------------
+| MASCOTAS PERDIDAS - PÚBLICO
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/mascotas-perdidas', [ExtravioController::class, 'index2'])->name('mascotas.index2');
 Route::get('/mascota/{id}', [ExtravioController::class, 'show'])->name('extravios.show');
 
-// ------------------------
-// CUIDADO ANIMAL (PÚBLICO)
-// ------------------------
+/*
+|--------------------------------------------------------------------------
+| ADOPCIONES - PÚBLICO
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
+Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->name('adopciones.show');
+
+/*
+|--------------------------------------------------------------------------
+| CUIDADO ANIMAL - PÚBLICO
+|--------------------------------------------------------------------------
+*/
+
+// Veterinarias
 Route::get('/veterinarias', function () {
     $veterinarias = DB::table('organizaciones as o')
         ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
         ->leftJoin('organizacion_fotos as f', function ($join) {
             $join->on('f.organizacion_id', '=', 'o.id_organizacion')
-                 ->where('f.orden', '=', 1);
+                ->where('f.orden', '=', 1);
         })
         ->where('o.tipo', 'VETERINARIA')
         ->where('o.estado_revision', 'APROBADA')
@@ -155,6 +203,7 @@ Route::get('/veterinarias/{id}', function ($id) {
     return view('veterinarias.show', compact('veterinaria', 'horarios', 'servicios', 'costos', 'fotos'));
 })->name('veterinarias.show');
 
+// Refugios y consejos públicos iniciales
 Route::get('/refugios', function () {
     return view('refugios.index');
 })->name('refugios.index');
@@ -163,8 +212,35 @@ Route::get('/consejos', function () {
     return view('consejos.index');
 })->name('consejos.index');
 
-// ✅ CREAR / GUARDAR (solo logueados)
+/*
+|--------------------------------------------------------------------------
+| RUTAS PROTEGIDAS - USUARIO AUTENTICADO
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware(['auth'])->group(function () {
+
+    /*
+    |----------------------------------------------------------------------
+    | DASHBOARD Y PERFIL
+    |----------------------------------------------------------------------
+    */
+
+    Route::get('/dashboard', function () {
+        return view('dashboard');
+    })->name('dashboard');
+
+    Route::get('/perfil', [UserController::class, 'perfil'])->name('perfil');
+    Route::post('/perfil/actualizar', [UserController::class, 'update'])->name('perfil.update');
+    Route::post('/perfil/foto', [UserController::class, 'updatePhoto'])->name('perfil.photo');
+    Route::post('/perfil/configuracion', [UserController::class, 'updateSettings'])->name('perfil.settings');
+
+    /*
+    |----------------------------------------------------------------------
+    | ADOPCIONES - CRUD PRIVADO
+    |----------------------------------------------------------------------
+    */
+
     Route::get('/adopciones/create', [AdopcionController::class, 'create'])->name('adopciones.create');
     Route::get('/adopciones/mis-adopciones', [AdopcionController::class, 'misAdopciones'])->name('adopciones.mis-adopciones');
     Route::post('/adopciones', [AdopcionController::class, 'store'])->name('adopciones.store');
@@ -172,51 +248,59 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/adopciones/{id}/editar', [AdopcionController::class, 'edit'])->name('adopciones.edit');
     Route::put('/adopciones/{id}', [AdopcionController::class, 'update'])->name('adopciones.update');
     Route::delete('/adopciones/{id}', [AdopcionController::class, 'destroy'])->name('adopciones.destroy');
-});
 
-// ------------------------
-// ADOPCIONES
-// ------------------------
-Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
-Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->name('adopciones.show');
-
-// ========================
-// RUTAS PROTEGIDAS
-// ========================
-Route::middleware(['auth'])->group(function () {
-
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    /*
+    |----------------------------------------------------------------------
+    | EXTRAVÍOS - CRUD PRIVADO
+    |----------------------------------------------------------------------
+    */
 
     Route::get('/mis-reportes', [ExtravioController::class, 'index'])->name('extravios.index');
-    Route::get('/reportar-mascota/{id}/editar', [ExtravioController::class, 'edit'])->name('extravios.edit');
-    Route::put('/reportar-mascota/{id}', [ExtravioController::class, 'update'])->name('extravios.update');
-    Route::delete('/reportar-mascota/{id}', [ExtravioController::class, 'destroy'])->name('extravios.destroy');
 
     Route::get('/reportar-mascota', [ExtravioController::class, 'create'])->name('mascotas.create');
     Route::post('/reportar-mascota', [ExtravioController::class, 'store'])->name('mascotas.store');
 
-    // COMENTARIOS
+    Route::get('/reportar-mascota/{id}/editar', [ExtravioController::class, 'edit'])->name('extravios.edit');
+    Route::put('/reportar-mascota/{id}', [ExtravioController::class, 'update'])->name('extravios.update');
+    Route::delete('/reportar-mascota/{id}', [ExtravioController::class, 'destroy'])->name('extravios.destroy');
+
+    /*
+    |----------------------------------------------------------------------
+    | COMENTARIOS EN PUBLICACIONES DE EXTRAVÍO
+    |----------------------------------------------------------------------
+    */
+
     Route::post('/mascota/{id}/comentarios', [ExtravioController::class, 'storeComment'])
         ->name('extravios.comentarios.store');
+
     Route::put('/mascota/{id}/comentarios/{comentarioId}', [ExtravioController::class, 'updateComment'])
         ->name('extravios.comentarios.update');
+
     Route::delete('/mascota/{id}/comentarios/{comentarioId}', [ExtravioController::class, 'destroyComment'])
         ->name('extravios.comentarios.destroy');
 
-    // REPORTAR PUBLICACIÓN
+    /*
+    |----------------------------------------------------------------------
+    | REPORTAR PUBLICACIÓN DE EXTRAVÍO
+    |----------------------------------------------------------------------
+    */
+
     Route::post('/mascota/{id}/reportar', [ExtravioController::class, 'storeReport'])
         ->name('extravios.reportar');
 
-    // ✅ ADMIN (solo admins)
+    /*
+    |----------------------------------------------------------------------
+    | PANEL ADMINISTRADOR
+    |----------------------------------------------------------------------
+    */
+
     Route::middleware(['admin'])->group(function () {
 
         Route::get('/admin/dashboard', function () {
             return view('admin.dashboard');
         })->name('admin.dashboard');
 
-        // CRUD Usuarios
+        // Usuarios
         Route::get('/admin/usuarios', [AdminUsuarioController::class, 'index'])->name('admin.usuarios.index');
         Route::get('/admin/usuarios/create', [AdminUsuarioController::class, 'create'])->name('admin.usuarios.create');
         Route::post('/admin/usuarios', [AdminUsuarioController::class, 'store'])->name('admin.usuarios.store');
@@ -238,13 +322,21 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
+/*
+|--------------------------------------------------------------------------
+| RUTAS FINALES DE CONSEJOS Y REFUGIOS
+|--------------------------------------------------------------------------
+| Se dejan aquí porque así están actualmente en tu archivo.
+| Esto evita cambiar el comportamiento que ya tienes.
+|--------------------------------------------------------------------------
+*/
+
+// Consejos
 Route::get('/consejos', [ConsejoController::class, 'index'])->name('consejos.index');
 Route::get('/consejos/publicar', [ConsejoController::class, 'create'])->name('consejos.create');
 Route::post('/consejos/guardar', [ConsejoController::class, 'store'])->name('consejos.store');
 Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->name('consejos.show');
 
-Route::get('/registro-refugio', [RefugioRegistroController::class, 'create'])->name('registro.refugio');
-Route::post('/registro-refugio', [RefugioRegistroController::class, 'store'])->name('registro.refugio.store');
-
+// Refugios
 Route::get('/refugios', [RefugioController::class, 'index'])->name('refugios.index');
 Route::get('/refugios/{id}', [RefugioController::class, 'show'])->name('refugios.show');

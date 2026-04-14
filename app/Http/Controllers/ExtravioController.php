@@ -84,66 +84,101 @@ class ExtravioController extends Controller
             'q' => trim((string) $request->get('q', '')),
             'estado' => (string) $request->get('estado', 'ACTIVA'),
             'especie' => (string) $request->get('especie', ''),
+            'raza' => (string) $request->get('raza', ''),
             'sexo' => (string) $request->get('sexo', ''),
             'tamano' => (string) $request->get('tamano', ''),
             'colonia' => trim((string) $request->get('colonia', '')),
             'orden' => (string) $request->get('orden', 'recientes'),
         ];
 
-        $query = PublicacionExtravio::with('fotoPrincipal')
-            ->where('estado', '!=', 'ELIMINADA')
+        $query = PublicacionExtravio::query()
+            ->with('fotoPrincipal')
+            ->leftJoin('especies as e', 'e.id_especie', '=', 'publicaciones_extravio.especie_id')
+            ->leftJoin('razas as r', 'r.id_raza', '=', 'publicaciones_extravio.raza_id')
+            ->select(
+                'publicaciones_extravio.*',
+                'e.nombre as especie_nombre',
+                'r.nombre as raza_nombre'
+            )
+            ->where('publicaciones_extravio.estado', '!=', 'ELIMINADA')
             ->when($filtros['q'] !== '', function ($q) use ($filtros) {
                 $q->where(function ($sub) use ($filtros) {
-                    $sub->where('nombre', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('descripcion', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('colonia_barrio', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('calle_referencias', 'like', '%' . $filtros['q'] . '%');
+                    $sub->where('publicaciones_extravio.nombre', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('publicaciones_extravio.descripcion', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('publicaciones_extravio.colonia_barrio', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('publicaciones_extravio.otra_raza', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('e.nombre', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('r.nombre', 'like', '%' . $filtros['q'] . '%');
                 });
             })
             ->when($filtros['estado'] !== '', function ($q) use ($filtros) {
-                $q->where('estado', $filtros['estado']);
+                $q->where('publicaciones_extravio.estado', $filtros['estado']);
             })
             ->when($filtros['especie'] !== '', function ($q) use ($filtros) {
-                $q->where('especie_id', $filtros['especie']);
+                $q->where('publicaciones_extravio.especie_id', $filtros['especie']);
+            })
+            ->when($filtros['raza'] !== '', function ($q) use ($filtros) {
+                $q->where('publicaciones_extravio.raza_id', $filtros['raza']);
             })
             ->when($filtros['sexo'] !== '', function ($q) use ($filtros) {
-                $q->where('sexo', $filtros['sexo']);
+                $q->where('publicaciones_extravio.sexo', $filtros['sexo']);
             })
             ->when($filtros['tamano'] !== '', function ($q) use ($filtros) {
-                $q->where('tamano', $filtros['tamano']);
+                $q->where('publicaciones_extravio.tamano', $filtros['tamano']);
             })
             ->when($filtros['colonia'] !== '', function ($q) use ($filtros) {
-                $q->where('colonia_barrio', 'like', '%' . $filtros['colonia'] . '%');
+                $q->where('publicaciones_extravio.colonia_barrio', 'like', '%' . $filtros['colonia'] . '%');
             });
 
         switch ($filtros['orden']) {
             case 'antiguos':
-                $query->orderBy('fecha_extravio', 'asc')->orderBy('id_publicacion', 'asc');
+                $query->orderBy('publicaciones_extravio.fecha_extravio', 'asc')
+                    ->orderBy('publicaciones_extravio.id_publicacion', 'asc');
                 break;
+
             case 'nombre_az':
-                $query->orderBy('nombre', 'asc');
+                $query->orderBy('publicaciones_extravio.nombre', 'asc');
                 break;
+
             case 'nombre_za':
-                $query->orderBy('nombre', 'desc');
+                $query->orderBy('publicaciones_extravio.nombre', 'desc');
                 break;
+
             default:
-                $query->orderBy('fecha_extravio', 'desc')->orderBy('id_publicacion', 'desc');
+                $query->orderBy('publicaciones_extravio.fecha_extravio', 'desc')
+                    ->orderBy('publicaciones_extravio.id_publicacion', 'desc');
                 break;
         }
 
         $mascotas = $query->paginate(12)->withQueryString();
 
+        $especies = DB::table('especies')
+            ->orderBy('nombre', 'asc')
+            ->get();
+
+        $razas = collect();
+
+        if ($filtros['especie'] !== '') {
+            $razas = DB::table('razas')
+                ->where('especie_id', $filtros['especie'])
+                ->orderBy('nombre', 'asc')
+                ->get();
+        }
+
         $conteos = [
             'todas' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->count(),
             'activas' => PublicacionExtravio::where('estado', 'ACTIVA')->count(),
             'resueltas' => PublicacionExtravio::where('estado', 'RESUELTA')->count(),
-            'perros' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->where('especie_id', 1)->count(),
-            'gatos' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->where('especie_id', 2)->count(),
         ];
 
-        return view('mascotas-perdidas', compact('mascotas', 'filtros', 'conteos'));
+        return view('mascotas-perdidas', compact(
+            'mascotas',
+            'filtros',
+            'conteos',
+            'especies',
+            'razas'
+        ));
     }
-
     public function destroy($id)
     {
         $publicacion = PublicacionExtravio::findOrFail($id);
