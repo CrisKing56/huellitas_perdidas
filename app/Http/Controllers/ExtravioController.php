@@ -11,19 +11,16 @@ use Illuminate\Http\Request;
 
 class ExtravioController extends Controller
 {
-    // Muestra el formulario
     public function create()
     {
         return view('reportar-mascota');
     }
 
-    // Guarda los datos
     public function store(Request $request)
     {
-        // 1. Validación estricta
         $request->validate([
             'nombre' => 'required|string',
-            'especie_id' => 'required', 
+            'especie_id' => 'required',
             'foto' => 'required|image|max:5120',
             'colonia_barrio' => 'required',
             'latitud' => 'required|numeric',
@@ -31,21 +28,17 @@ class ExtravioController extends Controller
         ]);
 
         try {
-            // Iniciamos la transacción para asegurar que todo se guarde o nada se guarde
             DB::transaction(function () use ($request) {
-                
-                // 2. CREAR LA UBICACIÓN PRIMERO
+
                 $nuevaUbicacion = Ubicacion::create([
                     'latitud' => $request->latitud,
                     'longitud' => $request->longitud,
-                    'precision_metros' => null 
+                    'precision_metros' => null
                 ]);
 
-                // 3. CREAR LA PUBLICACIÓN DE EXTRAVÍO
-                // Usamos create() y le pasamos el ID de la ubicación recién creada
                 $publicacion = PublicacionExtravio::create([
                     'autor_usuario_id' => Auth::id(),
-                    'ubicacion_id' => $nuevaUbicacion->id_ubicacion, // <-- Enlace crucial
+                    'ubicacion_id' => $nuevaUbicacion->id_ubicacion,
                     'nombre' => $request->nombre,
                     'especie_id' => $request->especie_id,
                     'color' => $request->color,
@@ -58,49 +51,97 @@ class ExtravioController extends Controller
                     'estado' => 'ACTIVA'
                 ]);
 
-                // 4. GUARDAR LA FOTO
                 if ($request->hasFile('foto')) {
                     $rutaFoto = $request->file('foto')->store('mascotas', 'public');
 
                     DB::table('extravio_fotos')->insert([
-                        'publicacion_id' => $publicacion->id_publicacion, // Usamos el ID de la publicación que acabamos de crear
+                        'publicacion_id' => $publicacion->id_publicacion,
                         'url' => $rutaFoto,
                         'orden' => 1
                     ]);
                 }
-
-                // Nota sobre los usuarios: No necesitas insertar datos en la tabla usuarios aquí.
-                // El autor_usuario_id ya vincula esta publicación con el usuario que inició sesión.
-                // Podrás acceder a sus datos en la vista usando $publicacion->autor->nombre.
             });
 
             return redirect()->route('mascotas.index2')->with('success', '¡Reporte guardado exitosamente!');
-
         } catch (\Exception $e) {
-            // Si algo falla, Laravel detiene todo, no guarda medias tablas, y muestra este error.
             return back()->withInput()->withErrors(['error' => 'Hubo un problema al guardar el reporte: ' . $e->getMessage()]);
         }
     }
 
-    // Muestra el catálogo
     public function index()
     {
         $mascotas = PublicacionExtravio::where('autor_usuario_id', Auth::id())
             ->with('fotos')
-            ->orderBy('id_publicacion', 'desc') 
+            ->orderBy('id_publicacion', 'desc')
             ->paginate(10);
 
         return view('extravios.mis-reportes', compact('mascotas'));
     }
 
-    public function index2()
+    public function index2(Request $request)
     {
-        $mascotas = PublicacionExtravio::with('fotoPrincipal') 
-            ->where('estado', '!=', 'RESUELTA') 
-            ->orderBy('id_publicacion', 'desc') 
-            ->paginate(12); 
+        $filtros = [
+            'q' => trim((string) $request->get('q', '')),
+            'estado' => (string) $request->get('estado', 'ACTIVA'),
+            'especie' => (string) $request->get('especie', ''),
+            'sexo' => (string) $request->get('sexo', ''),
+            'tamano' => (string) $request->get('tamano', ''),
+            'colonia' => trim((string) $request->get('colonia', '')),
+            'orden' => (string) $request->get('orden', 'recientes'),
+        ];
 
-        return view('mascotas-perdidas', compact('mascotas')); 
+        $query = PublicacionExtravio::with('fotoPrincipal')
+            ->where('estado', '!=', 'ELIMINADA')
+            ->when($filtros['q'] !== '', function ($q) use ($filtros) {
+                $q->where(function ($sub) use ($filtros) {
+                    $sub->where('nombre', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('descripcion', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('colonia_barrio', 'like', '%' . $filtros['q'] . '%')
+                        ->orWhere('calle_referencias', 'like', '%' . $filtros['q'] . '%');
+                });
+            })
+            ->when($filtros['estado'] !== '', function ($q) use ($filtros) {
+                $q->where('estado', $filtros['estado']);
+            })
+            ->when($filtros['especie'] !== '', function ($q) use ($filtros) {
+                $q->where('especie_id', $filtros['especie']);
+            })
+            ->when($filtros['sexo'] !== '', function ($q) use ($filtros) {
+                $q->where('sexo', $filtros['sexo']);
+            })
+            ->when($filtros['tamano'] !== '', function ($q) use ($filtros) {
+                $q->where('tamano', $filtros['tamano']);
+            })
+            ->when($filtros['colonia'] !== '', function ($q) use ($filtros) {
+                $q->where('colonia_barrio', 'like', '%' . $filtros['colonia'] . '%');
+            });
+
+        switch ($filtros['orden']) {
+            case 'antiguos':
+                $query->orderBy('fecha_extravio', 'asc')->orderBy('id_publicacion', 'asc');
+                break;
+            case 'nombre_az':
+                $query->orderBy('nombre', 'asc');
+                break;
+            case 'nombre_za':
+                $query->orderBy('nombre', 'desc');
+                break;
+            default:
+                $query->orderBy('fecha_extravio', 'desc')->orderBy('id_publicacion', 'desc');
+                break;
+        }
+
+        $mascotas = $query->paginate(12)->withQueryString();
+
+        $conteos = [
+            'todas' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->count(),
+            'activas' => PublicacionExtravio::where('estado', 'ACTIVA')->count(),
+            'resueltas' => PublicacionExtravio::where('estado', 'RESUELTA')->count(),
+            'perros' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->where('especie_id', 1)->count(),
+            'gatos' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->where('especie_id', 2)->count(),
+        ];
+
+        return view('mascotas-perdidas', compact('mascotas', 'filtros', 'conteos'));
     }
 
     public function destroy($id)
@@ -112,7 +153,6 @@ class ExtravioController extends Controller
         }
 
         DB::table('extravio_fotos')->where('publicacion_id', $id)->delete();
-
         $publicacion->delete();
 
         return back()->with('success', 'Reporte eliminado correctamente.');
@@ -131,7 +171,6 @@ class ExtravioController extends Controller
             'especie_id' => 'required',
             'colonia_barrio' => 'required',
             'foto' => 'nullable|image|max:5120',
-            // Sería ideal validar la latitud y longitud aquí también si permites editar el mapa
         ]);
 
         $publicacion->update([
@@ -143,16 +182,16 @@ class ExtravioController extends Controller
             'fecha_extravio' => $request->fecha_extravio,
             'colonia_barrio' => $request->colonia_barrio,
             'descripcion' => $request->descripcion,
-            'calle_referencias' => $request->calle_referencias, // Corregido: antes decía $request->calle
+            'calle_referencias' => $request->calle_referencias,
         ]);
 
         if ($request->hasFile('foto')) {
             $rutaFoto = $request->file('foto')->store('mascotas', 'public');
-            
+
             DB::table('extravio_fotos')
                 ->updateOrInsert(
-                    ['publicacion_id' => $publicacion->id_publicacion], 
-                    ['url' => $rutaFoto, 'orden' => 1] 
+                    ['publicacion_id' => $publicacion->id_publicacion],
+                    ['url' => $rutaFoto, 'orden' => 1]
                 );
         }
 
@@ -170,27 +209,41 @@ class ExtravioController extends Controller
         return view('extravios.editar', compact('publicacion'));
     }
 
-public function show($id)
-{
-    $publicacion = PublicacionExtravio::with(['autor', 'fotoPrincipal', 'ubicacion'])->findOrFail($id);
+    public function show($id)
+    {
+        $publicacion = PublicacionExtravio::with(['autor', 'fotoPrincipal', 'ubicacion'])->findOrFail($id);
 
-    $comentarios = DB::table('comentarios_extravio as c')
-        ->join('usuarios as u', 'u.id_usuario', '=', 'c.usuario_id')
-        ->where('c.publicacion_id', $id)
-        ->whereNull('c.comentario_padre_id')
-        ->where('c.estado', 'VISIBLE')
-        ->select(
-            'c.id_comentario',
-            'c.comentario',
-            'c.creado_en',
-            'u.nombre as usuario_nombre',
-            DB::raw('NULL as usuario_foto')
-        )
-        ->orderBy('c.creado_en', 'desc')
-        ->get();
+        $comentariosTodos = DB::table('comentarios_extravio as c')
+            ->join('usuarios as u', 'u.id_usuario', '=', 'c.usuario_id')
+            ->where('c.publicacion_id', $id)
+            ->whereIn('c.estado', ['VISIBLE', 'ELIMINADO'])
+            ->select(
+                'c.id_comentario',
+                'c.usuario_id',
+                'c.comentario_padre_id',
+                'c.comentario',
+                'c.estado',
+                'c.creado_en',
+                'c.actualizado_en',
+                'u.nombre as usuario_nombre'
+            )
+            ->orderBy('c.creado_en', 'asc')
+            ->get();
 
-    return view('mascota-detalle', compact('publicacion', 'comentarios'));
-}
+        $comentarios = $comentariosTodos->whereNull('comentario_padre_id')->values();
+        $respuestasPorPadre = $comentariosTodos->whereNotNull('comentario_padre_id')->groupBy('comentario_padre_id');
+
+        $motivosReporte = DB::table('motivos_reporte')
+            ->orderBy('nombre', 'asc')
+            ->get();
+
+        return view('mascota-detalle', compact(
+            'publicacion',
+            'comentarios',
+            'respuestasPorPadre',
+            'motivosReporte'
+        ));
+    }
 
     public function storeComment(Request $request, $id)
     {
@@ -198,20 +251,164 @@ public function show($id)
 
         $request->validate([
             'comentario' => 'required|string|max:1000',
+            'comentario_padre_id' => 'nullable|integer'
         ]);
+
+        $comentarioPadreId = $request->input('comentario_padre_id');
+
+        if ($comentarioPadreId) {
+            $comentarioPadre = DB::table('comentarios_extravio')
+                ->where('id_comentario', $comentarioPadreId)
+                ->where('publicacion_id', $publicacion->id_publicacion)
+                ->first();
+
+            if (!$comentarioPadre) {
+                return back()->withErrors(['comentario' => 'El comentario al que intentas responder no existe.']);
+            }
+        }
 
         DB::table('comentarios_extravio')->insert([
             'publicacion_id' => $publicacion->id_publicacion,
             'usuario_id' => Auth::id(),
-            'comentario_padre_id' => null,
+            'comentario_padre_id' => $comentarioPadreId,
             'comentario' => trim($request->comentario),
             'estado' => 'VISIBLE',
             'creado_en' => now(),
             'actualizado_en' => now(),
         ]);
 
-        return redirect()
-            ->route('extravios.show', $publicacion->id_publicacion)
+        return redirect(route('extravios.show', $publicacion->id_publicacion) . '#comentarios')
             ->with('success', 'Comentario publicado correctamente.');
+    }
+
+    public function updateComment(Request $request, $id, $comentarioId)
+    {
+        $publicacion = PublicacionExtravio::findOrFail($id);
+
+        $comentario = DB::table('comentarios_extravio')
+            ->where('id_comentario', $comentarioId)
+            ->where('publicacion_id', $publicacion->id_publicacion)
+            ->first();
+
+        if (!$comentario) {
+            abort(404);
+        }
+
+        if ((int) $comentario->usuario_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        if ($comentario->estado !== 'VISIBLE') {
+            return redirect(route('extravios.show', $publicacion->id_publicacion) . '#comentarios')
+                ->withErrors(['comentario' => 'Este comentario ya no puede editarse.']);
+        }
+
+        $request->validate([
+            'comentario' => 'required|string|max:1000',
+        ]);
+
+        DB::table('comentarios_extravio')
+            ->where('id_comentario', $comentarioId)
+            ->update([
+                'comentario' => trim($request->comentario),
+                'actualizado_en' => now(),
+            ]);
+
+        return redirect(route('extravios.show', $publicacion->id_publicacion) . '#comentarios')
+            ->with('success', 'Comentario actualizado correctamente.');
+    }
+
+    public function destroyComment($id, $comentarioId)
+    {
+        $publicacion = PublicacionExtravio::findOrFail($id);
+
+        $comentario = DB::table('comentarios_extravio')
+            ->where('id_comentario', $comentarioId)
+            ->where('publicacion_id', $publicacion->id_publicacion)
+            ->first();
+
+        if (!$comentario) {
+            abort(404);
+        }
+
+        if ((int) $comentario->usuario_id !== (int) Auth::id()) {
+            abort(403);
+        }
+
+        DB::table('comentarios_extravio')
+            ->where('id_comentario', $comentarioId)
+            ->update([
+                'estado' => 'ELIMINADO',
+                'comentario' => 'Comentario eliminado',
+                'actualizado_en' => now(),
+            ]);
+
+        return redirect(route('extravios.show', $publicacion->id_publicacion) . '#comentarios')
+            ->with('success', 'Comentario eliminado correctamente.');
+    }
+
+    public function storeReport(Request $request, $id)
+    {
+        $publicacion = PublicacionExtravio::findOrFail($id);
+
+        if ((int) Auth::id() === (int) $publicacion->autor_usuario_id) {
+            return back()
+                ->withErrors(['reporte' => 'No puedes reportar tu propia publicación.'], 'reportarPublicacion')
+                ->withInput();
+        }
+
+        $validator = validator($request->all(), [
+            'motivo_id' => 'required|integer|exists:motivos_reporte,id_motivo',
+            'descripcion_adicional' => 'nullable|string|max:500',
+        ], [
+            'motivo_id.required' => 'Selecciona un motivo.',
+            'motivo_id.exists' => 'El motivo seleccionado no es válido.',
+            'descripcion_adicional.max' => 'La descripción adicional no debe exceder 500 caracteres.',
+        ]);
+
+        if ($validator->fails()) {
+            return back()
+                ->withErrors($validator, 'reportarPublicacion')
+                ->withInput();
+        }
+
+        $motivoExiste = DB::table('motivos_reporte')
+            ->where('id_motivo', $request->motivo_id)
+            ->exists();
+
+        if (!$motivoExiste) {
+            return back()
+                ->withErrors(['reporte' => 'El motivo seleccionado no es válido.'], 'reportarPublicacion')
+                ->withInput();
+        }
+
+        $yaReportado = DB::table('reportes')
+            ->where('reportante_usuario_id', Auth::id())
+            ->where('objetivo_tipo', 'PUB_EXTRAVIO')
+            ->where('objetivo_id', $publicacion->id_publicacion)
+            ->whereIn('estado', ['ENVIADO', 'EN_REVISION'])
+            ->exists();
+
+        if ($yaReportado) {
+            return back()
+                ->withErrors(['reporte' => 'Ya enviaste un reporte para esta publicación y aún está en revisión.'], 'reportarPublicacion')
+                ->withInput();
+        }
+
+        DB::table('reportes')->insert([
+            'reportante_usuario_id' => Auth::id(),
+            'objetivo_tipo' => 'PUB_EXTRAVIO',
+            'objetivo_id' => $publicacion->id_publicacion,
+            'motivo_id' => $request->motivo_id,
+            'descripcion_adicional' => $request->descripcion_adicional ? trim($request->descripcion_adicional) : null,
+            'estado' => 'ENVIADO',
+            'revisado_por' => null,
+            'revisado_en' => null,
+            'nota_resolucion' => null,
+            'creado_en' => now(),
+        ]);
+
+        return redirect(route('extravios.show', $publicacion->id_publicacion) . '#acciones-publicacion')
+            ->with('success_reporte', 'Reporte enviado correctamente.');
     }
 }

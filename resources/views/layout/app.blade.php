@@ -32,10 +32,14 @@
             display: none;
         }
 
-        .font-navbar-strong {
-            font-family: 'Arial Black', Arial, sans-serif;
-            font-weight: 900;
-            letter-spacing: 0.2px;
+        .navbar-main-link {
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .navbar-dropdown-link {
+            font-weight: 500;
+            letter-spacing: 0.01em;
         }
     </style>
     
@@ -52,19 +56,19 @@
             </div>
 
             <div class="hidden md:flex gap-8 text-sm text-gray-700 items-center">
-                <a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition font-navbar-strong">
+                <a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition navbar-main-link">
                     Mascotas perdidas
                 </a>
 
-                <a href="{{ route('adopciones.index') }}" class="hover:text-primary transition font-navbar-strong">
+                <a href="{{ route('adopciones.index') }}" class="hover:text-primary transition navbar-main-link">
                     Mascotas en Adopción
                 </a>
 
                 <div class="relative group" tabindex="0">
                     <button type="button"
-                        class="flex items-center gap-1 hover:text-primary transition focus:outline-none font-navbar-strong">
+                        class="flex items-center gap-1 hover:text-primary transition focus:outline-none navbar-main-link">
                         Cuidado Animal
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 mt-[1px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                         </svg>
                     </button>
@@ -76,15 +80,15 @@
                                 transition z-50">
                         <div class="w-48 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                             <a href="{{ route('veterinarias.index') }}"
-                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition font-navbar-strong">
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                 Veterinarias
                             </a>
                             <a href="{{ route('refugios.index') }}"
-                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition font-navbar-strong">
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                 Refugios
                             </a>
                             <a href="{{ route('consejos.index') }}"
-                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition font-navbar-strong">
+                            class="block px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                 Consejos
                             </a>
                         </div>
@@ -133,7 +137,7 @@
                     <details class="relative">
                         <summary class="list-none cursor-pointer select-none">
                             <div class="flex items-center gap-3">
-                                <span class="text-sm text-gray-700 hidden sm:block max-w-[100px] truncate">
+                                <span class="text-sm text-gray-700 hidden sm:block max-w-[100px] truncate font-medium">
                                     {{ $primerNombre }}
                                 </span>
 
@@ -158,42 +162,42 @@
                             </div>
 
                             <div class="py-2">
-                                <a href="{{ route('inicio') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                <a href="{{ route('inicio') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10.5L12 3l9 7.5M5.25 9.75V21h13.5V9.75"></path>
                                     </svg>
                                     Inicio
                                 </a>
 
-                                <a href="{{ url('/perfil') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                <a href="{{ url('/perfil') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21c-2.676 0-5.216-.584-7.5-1.632z"></path>
                                     </svg>
                                     Mi perfil
                                 </a>
 
-                                <a href="{{ route('extravios.index') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                <a href="{{ route('extravios.index') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.25 6.75h-4.5A2.25 2.25 0 004.5 9v8.25A2.25 2.25 0 006.75 19.5h10.5A2.25 2.25 0 0019.5 17.25V9a2.25 2.25 0 00-2.25-2.25h-4.5M11.25 6.75V4.5h1.5v2.25M11.25 6.75h1.5"></path>
                                     </svg>
                                     Mis reportes
                                 </a>
 
-                                <a href="{{ route('adopciones.mis-adopciones') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                <a href="{{ route('adopciones.mis-adopciones') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.5 12.75l6 6 9-13.5"></path>
                                     </svg>
                                     Mis adopciones
                                 </a>
 
-                                <a href="{{ url('/nosotros') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                <a href="{{ url('/nosotros') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21c-2.676 0-5.216-.584-7.5-1.632z"></path>
                                     </svg>
                                     Nosotros
                                 </a>
 
-                                <a href="{{ url('/contactanos') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                <a href="{{ url('/contactanos') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21.75 7.5v9A2.25 2.25 0 0119.5 18.75h-15A2.25 2.25 0 012.25 16.5v-9m19.5 0A2.25 2.25 0 0019.5 5.25h-15A2.25 2.25 0 002.25 7.5m19.5 0l-8.69 5.793a1.125 1.125 0 01-1.245 0L2.25 7.5"></path>
                                     </svg>
@@ -204,7 +208,7 @@
                             <div class="border-t border-gray-100 p-2">
                                 <form action="{{ route('logout') }}" method="POST">
                                     @csrf
-                                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 rounded-xl transition">
+                                    <button type="submit" class="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-500 hover:bg-red-50 rounded-xl transition navbar-dropdown-link">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                                         </svg>

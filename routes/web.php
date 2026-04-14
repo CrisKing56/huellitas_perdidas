@@ -197,8 +197,17 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reportar-mascota', [ExtravioController::class, 'create'])->name('mascotas.create');
     Route::post('/reportar-mascota', [ExtravioController::class, 'store'])->name('mascotas.store');
 
+    // COMENTARIOS
     Route::post('/mascota/{id}/comentarios', [ExtravioController::class, 'storeComment'])
         ->name('extravios.comentarios.store');
+    Route::put('/mascota/{id}/comentarios/{comentarioId}', [ExtravioController::class, 'updateComment'])
+        ->name('extravios.comentarios.update');
+    Route::delete('/mascota/{id}/comentarios/{comentarioId}', [ExtravioController::class, 'destroyComment'])
+        ->name('extravios.comentarios.destroy');
+
+    // REPORTAR PUBLICACIÓN
+    Route::post('/mascota/{id}/reportar', [ExtravioController::class, 'storeReport'])
+        ->name('extravios.reportar');
 
     // ✅ ADMIN (solo admins)
     Route::middleware(['admin'])->group(function () {
@@ -228,6 +237,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/admin/refugios/{id}/rechazar', [AdminRefugioController::class, 'rechazar'])->name('admin.refugios.rechazar');
     });
 });
+
 Route::get('/consejos', [ConsejoController::class, 'index'])->name('consejos.index');
 Route::get('/consejos/publicar', [ConsejoController::class, 'create'])->name('consejos.create');
 Route::post('/consejos/guardar', [ConsejoController::class, 'store'])->name('consejos.store');
