@@ -190,7 +190,7 @@
                                     Mis adopciones
                                 </a>
 
-                                <a href="{{ url('/nosotros') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
+                                <a href="{{ route('nosotros') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21c-2.676 0-5.216-.584-7.5-1.632z"></path>
                                     </svg>
