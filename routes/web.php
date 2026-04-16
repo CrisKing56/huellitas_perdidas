@@ -74,6 +74,8 @@ Route::post('/login', [AuthController::class, 'login'])->name('login.store');
 
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+
+
 /*
 |--------------------------------------------------------------------------
 | LOGIN CON GOOGLE
@@ -118,6 +120,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
+
+    Route::get('/nosotros', function () {
+    return view('nosotros');
+    })->name('nosotros');
 
     Route::get('/perfil', [UserController::class, 'perfil'])->name('perfil');
     Route::post('/perfil/actualizar', [UserController::class, 'update'])->name('perfil.update');
