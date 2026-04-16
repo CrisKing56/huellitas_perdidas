@@ -12,7 +12,9 @@ class User extends Authenticatable
 
     protected $table = 'usuarios';
     protected $primaryKey = 'id_usuario';
-    public $timestamps = false;
+
+    // Como tu tabla sí tiene created_at y updated_at, déjalo activo
+    public $timestamps = true;
 
     protected $fillable = [
         'nombre',
@@ -21,15 +23,29 @@ class User extends Authenticatable
         'telefono',
         'rol',
         'estado',
-        'google_id'
+        'google_id',
+        'auth_provider',
+        'google_avatar',
+        'email_verified_at',
+        'remember_token',
     ];
 
     protected $hidden = [
         'password_hash',
+        'remember_token',
+    ];
+
+    protected $casts = [
+        'email_verified_at' => 'datetime',
     ];
 
     public function getAuthPassword()
     {
         return $this->password_hash;
+    }
+
+    public function getAuthIdentifierName()
+    {
+        return 'correo';
     }
 }
