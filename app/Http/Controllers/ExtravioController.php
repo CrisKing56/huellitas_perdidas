@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Validator;
 use App\Models\Ubicacion;
 use App\Models\PublicacionExtravio;
-use App\Models\ExtravioFoto;
-use Illuminate\Http\Request;
 
 class ExtravioController extends Controller
 {
@@ -18,26 +19,31 @@ class ExtravioController extends Controller
 
     public function store(Request $request)
     {
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
+        }
+
         $request->validate([
             'nombre' => 'required|string',
             'especie_id' => 'required',
             'foto' => 'required|image|max:5120',
             'colonia_barrio' => 'required',
             'latitud' => 'required|numeric',
-            'longitud' => 'required|numeric'
+            'longitud' => 'required|numeric',
         ]);
 
         try {
             DB::transaction(function () use ($request) {
+                $userId = Auth::user()->id_usuario;
 
                 $nuevaUbicacion = Ubicacion::create([
                     'latitud' => $request->latitud,
                     'longitud' => $request->longitud,
-                    'precision_metros' => null
+                    'precision_metros' => null,
                 ]);
 
-                $publicacion = PublicacionExtravio::create([
-                    'autor_usuario_id' => Auth::id(),
+                $data = [
+                    'autor_usuario_id' => $userId,
                     'ubicacion_id' => $nuevaUbicacion->id_ubicacion,
                     'nombre' => $request->nombre,
                     'especie_id' => $request->especie_id,
@@ -48,8 +54,18 @@ class ExtravioController extends Controller
                     'colonia_barrio' => $request->colonia_barrio,
                     'descripcion' => $request->descripcion,
                     'calle_referencias' => $request->calle_referencias,
-                    'estado' => 'ACTIVA'
-                ]);
+                    'estado' => 'ACTIVA',
+                ];
+
+                if (Schema::hasColumn('publicaciones_extravio', 'raza_id')) {
+                    $data['raza_id'] = $request->raza_id ?: null;
+                }
+
+                if (Schema::hasColumn('publicaciones_extravio', 'otra_raza')) {
+                    $data['otra_raza'] = $request->otra_raza ?: null;
+                }
+
+                $publicacion = PublicacionExtravio::create($data);
 
                 if ($request->hasFile('foto')) {
                     $rutaFoto = $request->file('foto')->store('mascotas', 'public');
@@ -57,20 +73,28 @@ class ExtravioController extends Controller
                     DB::table('extravio_fotos')->insert([
                         'publicacion_id' => $publicacion->id_publicacion,
                         'url' => $rutaFoto,
-                        'orden' => 1
+                        'orden' => 1,
                     ]);
                 }
             });
 
             return redirect()->route('mascotas.index2')->with('success', '¡Reporte guardado exitosamente!');
         } catch (\Exception $e) {
-            return back()->withInput()->withErrors(['error' => 'Hubo un problema al guardar el reporte: ' . $e->getMessage()]);
+            return back()->withInput()->withErrors([
+                'error' => 'Hubo un problema al guardar el reporte: ' . $e->getMessage()
+            ]);
         }
     }
 
     public function index()
     {
-        $mascotas = PublicacionExtravio::where('autor_usuario_id', Auth::id())
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
+        }
+
+        $userId = Auth::user()->id_usuario;
+
+        $mascotas = PublicacionExtravio::where('autor_usuario_id', $userId)
             ->with('fotos')
             ->orderBy('id_publicacion', 'desc')
             ->paginate(10);
@@ -82,7 +106,7 @@ class ExtravioController extends Controller
     {
         $filtros = [
             'q' => trim((string) $request->get('q', '')),
-            'estado' => (string) $request->get('estado', 'ACTIVA'),
+            'estado' => (string) $request->get('estado', ''),
             'especie' => (string) $request->get('especie', ''),
             'raza' => (string) $request->get('raza', ''),
             'sexo' => (string) $request->get('sexo', ''),
@@ -91,84 +115,117 @@ class ExtravioController extends Controller
             'orden' => (string) $request->get('orden', 'recientes'),
         ];
 
-        $query = PublicacionExtravio::query()
-            ->with('fotoPrincipal')
-            ->leftJoin('especies as e', 'e.id_especie', '=', 'publicaciones_extravio.especie_id')
-            ->leftJoin('razas as r', 'r.id_raza', '=', 'publicaciones_extravio.raza_id')
-            ->select(
-                'publicaciones_extravio.*',
-                'e.nombre as especie_nombre',
-                'r.nombre as raza_nombre'
-            )
-            ->where('publicaciones_extravio.estado', '!=', 'ELIMINADA')
-            ->when($filtros['q'] !== '', function ($q) use ($filtros) {
-                $q->where(function ($sub) use ($filtros) {
-                    $sub->where('publicaciones_extravio.nombre', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('publicaciones_extravio.descripcion', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('publicaciones_extravio.colonia_barrio', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('publicaciones_extravio.otra_raza', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('e.nombre', 'like', '%' . $filtros['q'] . '%')
-                        ->orWhere('r.nombre', 'like', '%' . $filtros['q'] . '%');
-                });
-            })
-            ->when($filtros['estado'] !== '', function ($q) use ($filtros) {
-                $q->where('publicaciones_extravio.estado', $filtros['estado']);
-            })
-            ->when($filtros['especie'] !== '', function ($q) use ($filtros) {
-                $q->where('publicaciones_extravio.especie_id', $filtros['especie']);
-            })
-            ->when($filtros['raza'] !== '', function ($q) use ($filtros) {
-                $q->where('publicaciones_extravio.raza_id', $filtros['raza']);
-            })
-            ->when($filtros['sexo'] !== '', function ($q) use ($filtros) {
-                $q->where('publicaciones_extravio.sexo', $filtros['sexo']);
-            })
-            ->when($filtros['tamano'] !== '', function ($q) use ($filtros) {
-                $q->where('publicaciones_extravio.tamano', $filtros['tamano']);
-            })
-            ->when($filtros['colonia'] !== '', function ($q) use ($filtros) {
-                $q->where('publicaciones_extravio.colonia_barrio', 'like', '%' . $filtros['colonia'] . '%');
+        $query = PublicacionExtravio::with(['fotoPrincipal', 'ubicacion']);
+
+        if ($filtros['q'] !== '') {
+            $query->where(function ($sub) use ($filtros) {
+                $sub->where('nombre', 'like', '%' . $filtros['q'] . '%')
+                    ->orWhere('descripcion', 'like', '%' . $filtros['q'] . '%')
+                    ->orWhere('colonia_barrio', 'like', '%' . $filtros['q'] . '%');
             });
+        }
+
+        if ($filtros['estado'] !== '') {
+            $query->where('estado', $filtros['estado']);
+        }
+
+        if ($filtros['especie'] !== '') {
+            $query->where('especie_id', $filtros['especie']);
+        }
+
+        if (
+            $filtros['raza'] !== '' &&
+            Schema::hasColumn('publicaciones_extravio', 'raza_id')
+        ) {
+            $query->where('raza_id', $filtros['raza']);
+        }
+
+        if ($filtros['sexo'] !== '') {
+            $query->where('sexo', $filtros['sexo']);
+        }
+
+        if ($filtros['tamano'] !== '') {
+            $query->where('tamano', $filtros['tamano']);
+        }
+
+        if ($filtros['colonia'] !== '') {
+            $query->where('colonia_barrio', 'like', '%' . $filtros['colonia'] . '%');
+        }
 
         switch ($filtros['orden']) {
             case 'antiguos':
-                $query->orderBy('publicaciones_extravio.fecha_extravio', 'asc')
-                    ->orderBy('publicaciones_extravio.id_publicacion', 'asc');
+                if (Schema::hasColumn('publicaciones_extravio', 'creado_en')) {
+                    $query->orderBy('creado_en', 'asc');
+                } else {
+                    $query->orderBy('id_publicacion', 'asc');
+                }
                 break;
 
             case 'nombre_az':
-                $query->orderBy('publicaciones_extravio.nombre', 'asc');
+                $query->orderBy('nombre', 'asc');
                 break;
 
             case 'nombre_za':
-                $query->orderBy('publicaciones_extravio.nombre', 'desc');
+                $query->orderBy('nombre', 'desc');
                 break;
 
+            case 'recientes':
             default:
-                $query->orderBy('publicaciones_extravio.fecha_extravio', 'desc')
-                    ->orderBy('publicaciones_extravio.id_publicacion', 'desc');
+                if (Schema::hasColumn('publicaciones_extravio', 'creado_en')) {
+                    $query->orderBy('creado_en', 'desc');
+                } else {
+                    $query->orderBy('id_publicacion', 'desc');
+                }
                 break;
         }
 
-        $mascotas = $query->paginate(12)->withQueryString();
+        $mascotas = $query->paginate(12)->appends($request->query());
 
-        $especies = DB::table('especies')
-            ->orderBy('nombre', 'asc')
-            ->get();
-
-        $razas = collect();
-
-        if ($filtros['especie'] !== '') {
-            $razas = DB::table('razas')
-                ->where('especie_id', $filtros['especie'])
+        // Catálogo de especies
+        $especies = collect();
+        if (Schema::hasTable('especies')) {
+            $especies = DB::table('especies')
+                ->select('id_especie', 'nombre')
                 ->orderBy('nombre', 'asc')
                 ->get();
         }
 
+        // Catálogo de razas
+        $razas = collect();
+        if (Schema::hasTable('razas')) {
+            $queryRazas = DB::table('razas')
+                ->select('id_raza', 'nombre');
+
+            if (
+                $filtros['especie'] !== '' &&
+                Schema::hasColumn('razas', 'especie_id')
+            ) {
+                $queryRazas->where('especie_id', $filtros['especie']);
+            }
+
+            $razas = $queryRazas
+                ->orderBy('nombre', 'asc')
+                ->get();
+        }
+
+        // Mapas para mostrar nombres en cards
+        $mapaEspecies = $especies->pluck('nombre', 'id_especie');
+        $mapaRazas = $razas->pluck('nombre', 'id_raza');
+
+        $mascotas->getCollection()->transform(function ($mascota) use ($mapaEspecies, $mapaRazas) {
+            $mascota->especie_nombre = $mapaEspecies[$mascota->especie_id] ?? 'Mascota';
+            $mascota->raza_nombre = isset($mascota->raza_id)
+                ? ($mapaRazas[$mascota->raza_id] ?? null)
+                : null;
+
+            return $mascota;
+        });
+
+        // Conteos que tu vista actual sí usa
         $conteos = [
-            'todas' => PublicacionExtravio::where('estado', '!=', 'ELIMINADA')->count(),
+            'todas' => PublicacionExtravio::count(),
             'activas' => PublicacionExtravio::where('estado', 'ACTIVA')->count(),
-            'resueltas' => PublicacionExtravio::where('estado', 'RESUELTA')->count(),
+            'resueltas' => PublicacionExtravio::whereIn('estado', ['RESUELTA', 'ENCONTRADA'])->count(),
         ];
 
         return view('mascotas-perdidas', compact(
@@ -179,25 +236,33 @@ class ExtravioController extends Controller
             'razas'
         ));
     }
-    public function destroy($id)
-    {
-        $publicacion = PublicacionExtravio::findOrFail($id);
 
-        if (Auth::id() != $publicacion->autor_usuario_id) {
-            return back()->with('error', 'No tienes permiso para borrar esto.');
+    public function edit($id)
+    {
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
         }
 
-        DB::table('extravio_fotos')->where('publicacion_id', $id)->delete();
-        $publicacion->delete();
+        $publicacion = PublicacionExtravio::findOrFail($id);
+        $userId = Auth::user()->id_usuario;
 
-        return back()->with('success', 'Reporte eliminado correctamente.');
+        if ((int) $userId !== (int) $publicacion->autor_usuario_id) {
+            return redirect()->route('extravios.index')->with('error', 'No tienes permiso para editar esta publicación.');
+        }
+
+        return view('extravios.editar', compact('publicacion'));
     }
 
     public function update(Request $request, $id)
     {
-        $publicacion = PublicacionExtravio::findOrFail($id);
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
+        }
 
-        if (Auth::id() != $publicacion->autor_usuario_id) {
+        $publicacion = PublicacionExtravio::findOrFail($id);
+        $userId = Auth::user()->id_usuario;
+
+        if ((int) $userId !== (int) $publicacion->autor_usuario_id) {
             return redirect()->route('extravios.index')->with('error', 'No puedes editar esto.');
         }
 
@@ -208,7 +273,7 @@ class ExtravioController extends Controller
             'foto' => 'nullable|image|max:5120',
         ]);
 
-        $publicacion->update([
+        $data = [
             'nombre' => $request->nombre,
             'especie_id' => $request->especie_id,
             'color' => $request->color,
@@ -218,30 +283,47 @@ class ExtravioController extends Controller
             'colonia_barrio' => $request->colonia_barrio,
             'descripcion' => $request->descripcion,
             'calle_referencias' => $request->calle_referencias,
-        ]);
+        ];
+
+        if (Schema::hasColumn('publicaciones_extravio', 'raza_id')) {
+            $data['raza_id'] = $request->raza_id ?: null;
+        }
+
+        if (Schema::hasColumn('publicaciones_extravio', 'otra_raza')) {
+            $data['otra_raza'] = $request->otra_raza ?: null;
+        }
+
+        $publicacion->update($data);
 
         if ($request->hasFile('foto')) {
             $rutaFoto = $request->file('foto')->store('mascotas', 'public');
 
-            DB::table('extravio_fotos')
-                ->updateOrInsert(
-                    ['publicacion_id' => $publicacion->id_publicacion],
-                    ['url' => $rutaFoto, 'orden' => 1]
-                );
+            DB::table('extravio_fotos')->updateOrInsert(
+                ['publicacion_id' => $publicacion->id_publicacion],
+                ['url' => $rutaFoto, 'orden' => 1]
+            );
         }
 
         return redirect()->route('extravios.index')->with('success', '¡Mascota actualizada!');
     }
 
-    public function edit($id)
+    public function destroy($id)
     {
-        $publicacion = PublicacionExtravio::findOrFail($id);
-
-        if (Auth::id() != $publicacion->autor_usuario_id) {
-            return redirect()->route('extravios.index')->with('error', 'No tienes permiso para editar esta publicación.');
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
         }
 
-        return view('extravios.editar', compact('publicacion'));
+        $publicacion = PublicacionExtravio::findOrFail($id);
+        $userId = Auth::user()->id_usuario;
+
+        if ((int) $userId !== (int) $publicacion->autor_usuario_id) {
+            return back()->with('error', 'No tienes permiso para borrar esto.');
+        }
+
+        DB::table('extravio_fotos')->where('publicacion_id', $id)->delete();
+        $publicacion->delete();
+
+        return back()->with('success', 'Reporte eliminado correctamente.');
     }
 
     public function show($id)
@@ -284,12 +366,17 @@ class ExtravioController extends Controller
     {
         $publicacion = PublicacionExtravio::findOrFail($id);
 
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
+        }
+
         $request->validate([
             'comentario' => 'required|string|max:1000',
             'comentario_padre_id' => 'nullable|integer'
         ]);
 
         $comentarioPadreId = $request->input('comentario_padre_id');
+        $userId = Auth::user()->id_usuario;
 
         if ($comentarioPadreId) {
             $comentarioPadre = DB::table('comentarios_extravio')
@@ -298,13 +385,15 @@ class ExtravioController extends Controller
                 ->first();
 
             if (!$comentarioPadre) {
-                return back()->withErrors(['comentario' => 'El comentario al que intentas responder no existe.']);
+                return back()->withErrors([
+                    'comentario' => 'El comentario al que intentas responder no existe.'
+                ]);
             }
         }
 
         DB::table('comentarios_extravio')->insert([
             'publicacion_id' => $publicacion->id_publicacion,
-            'usuario_id' => Auth::id(),
+            'usuario_id' => $userId,
             'comentario_padre_id' => $comentarioPadreId,
             'comentario' => trim($request->comentario),
             'estado' => 'VISIBLE',
@@ -320,6 +409,12 @@ class ExtravioController extends Controller
     {
         $publicacion = PublicacionExtravio::findOrFail($id);
 
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
+        }
+
+        $userId = Auth::user()->id_usuario;
+
         $comentario = DB::table('comentarios_extravio')
             ->where('id_comentario', $comentarioId)
             ->where('publicacion_id', $publicacion->id_publicacion)
@@ -329,13 +424,15 @@ class ExtravioController extends Controller
             abort(404);
         }
 
-        if ((int) $comentario->usuario_id !== (int) Auth::id()) {
+        if ((int) $comentario->usuario_id !== (int) $userId) {
             abort(403);
         }
 
         if ($comentario->estado !== 'VISIBLE') {
             return redirect(route('extravios.show', $publicacion->id_publicacion) . '#comentarios')
-                ->withErrors(['comentario' => 'Este comentario ya no puede editarse.']);
+                ->withErrors([
+                    'comentario' => 'Este comentario ya no puede editarse.'
+                ]);
         }
 
         $request->validate([
@@ -357,6 +454,12 @@ class ExtravioController extends Controller
     {
         $publicacion = PublicacionExtravio::findOrFail($id);
 
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
+        }
+
+        $userId = Auth::user()->id_usuario;
+
         $comentario = DB::table('comentarios_extravio')
             ->where('id_comentario', $comentarioId)
             ->where('publicacion_id', $publicacion->id_publicacion)
@@ -366,7 +469,7 @@ class ExtravioController extends Controller
             abort(404);
         }
 
-        if ((int) $comentario->usuario_id !== (int) Auth::id()) {
+        if ((int) $comentario->usuario_id !== (int) $userId) {
             abort(403);
         }
 
@@ -374,7 +477,6 @@ class ExtravioController extends Controller
             ->where('id_comentario', $comentarioId)
             ->update([
                 'estado' => 'ELIMINADO',
-                'comentario' => 'Comentario eliminado',
                 'actualizado_en' => now(),
             ]);
 
@@ -386,17 +488,18 @@ class ExtravioController extends Controller
     {
         $publicacion = PublicacionExtravio::findOrFail($id);
 
-        if ((int) Auth::id() === (int) $publicacion->autor_usuario_id) {
-            return back()
-                ->withErrors(['reporte' => 'No puedes reportar tu propia publicación.'], 'reportarPublicacion')
-                ->withInput();
+        if (!Auth::check() || !isset(Auth::user()->id_usuario)) {
+            return redirect()->route('login');
         }
 
-        $validator = validator($request->all(), [
+        $userId = Auth::user()->id_usuario;
+
+        $validator = Validator::make($request->all(), [
             'motivo_id' => 'required|integer|exists:motivos_reporte,id_motivo',
             'descripcion_adicional' => 'nullable|string|max:500',
         ], [
-            'motivo_id.required' => 'Selecciona un motivo.',
+            'motivo_id.required' => 'Debes seleccionar un motivo.',
+            'motivo_id.integer' => 'El motivo seleccionado no es válido.',
             'motivo_id.exists' => 'El motivo seleccionado no es válido.',
             'descripcion_adicional.max' => 'La descripción adicional no debe exceder 500 caracteres.',
         ]);
@@ -418,7 +521,7 @@ class ExtravioController extends Controller
         }
 
         $yaReportado = DB::table('reportes')
-            ->where('reportante_usuario_id', Auth::id())
+            ->where('reportante_usuario_id', $userId)
             ->where('objetivo_tipo', 'PUB_EXTRAVIO')
             ->where('objetivo_id', $publicacion->id_publicacion)
             ->whereIn('estado', ['ENVIADO', 'EN_REVISION'])
@@ -431,7 +534,7 @@ class ExtravioController extends Controller
         }
 
         DB::table('reportes')->insert([
-            'reportante_usuario_id' => Auth::id(),
+            'reportante_usuario_id' => $userId,
             'objetivo_tipo' => 'PUB_EXTRAVIO',
             'objetivo_id' => $publicacion->id_publicacion,
             'motivo_id' => $request->motivo_id,

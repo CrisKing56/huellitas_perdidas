@@ -136,9 +136,12 @@ class GoogleLoginController extends Controller
         }
 
         // Usuario normal
+        // CAMBIO: ya no lo mandamos a /perfil porque tu perfil
+        // necesita más datos y ahorita puede fallar.
         if (empty($user->telefono)) {
-            return redirect()->route('perfil')
-                ->with('warning', 'Completa tu teléfono para terminar de configurar tu cuenta.');
+            return redirect()->route('inicio')
+                ->with('success', '¡Bienvenido!')
+                ->with('warning', 'Tu cuenta se creó con Google. Después puedes completar tu perfil.');
         }
 
         return redirect()->route('inicio')->with('success', '¡Bienvenido!');

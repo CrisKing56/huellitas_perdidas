@@ -6,20 +6,33 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('google_id')->nullable()->unique()->after('email');
-            
-            $table->string('password')->nullable()->change();
-        });
+        // Esta migración era para la tabla default "users".
+        // En este proyecto usamos "usuarios".
+        // La dejamos segura para que no falle si "users" no existe.
+
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
+        if (!Schema::hasColumn('users', 'google_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->string('google_id')->nullable();
+            });
+        }
     }
 
-    public function down()
+    public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('google_id');
-            $table->string('password')->nullable(false)->change();
-        });
+        if (!Schema::hasTable('users')) {
+            return;
+        }
+
+        if (Schema::hasColumn('users', 'google_id')) {
+            Schema::table('users', function (Blueprint $table) {
+                $table->dropColumn('google_id');
+            });
+        }
     }
 };

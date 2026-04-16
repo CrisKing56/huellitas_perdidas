@@ -37,7 +37,8 @@
                 ? "https://www.google.com/maps?q={$latitudMapa},{$longitudMapa}&z=16&output=embed"
                 : null;
 
-            $mostrarBotonReporte = auth()->guest() || ((int) auth()->id() !== (int) ($publicacion->autor_usuario_id ?? 0));
+            $authUserId = auth()->check() ? auth()->user()->id_usuario : null;
+            $mostrarBotonReporte = auth()->guest() || ((int) $authUserId !== (int) ($publicacion->autor_usuario_id ?? 0));
             $abrirReporte = old('motivo_id') || old('descripcion_adicional') || $errors->reportarPublicacion->any();
         @endphp
 
@@ -374,7 +375,7 @@
                             $iniciales .= mb_strtoupper(mb_substr($parte, 0, 1));
                         }
 
-                        $esPropio = auth()->check() && auth()->id() == $comentario->usuario_id;
+                        $esPropio = auth()->check() && auth()->user()->id_usuario == $comentario->usuario_id;
                         $respuestas = $respuestasPorPadre->get($comentario->id_comentario, collect());
                     @endphp
 
@@ -483,7 +484,7 @@
                                                     $inicialesRespuesta .= mb_strtoupper(mb_substr($parte, 0, 1));
                                                 }
 
-                                                $esPropiaRespuesta = auth()->check() && auth()->id() == $respuesta->usuario_id;
+                                                $esPropiaRespuesta = auth()->check() && auth()->user()->id_usuario == $respuesta->usuario_id;
                                             @endphp
 
                                             <div class="rounded-xl border border-gray-100 bg-white p-4">

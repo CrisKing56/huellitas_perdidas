@@ -3,24 +3,80 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
-class AddGoogleColumnsToUsuariosTable extends Migration
+return new class extends Migration
 {
-    public function up()
+    public function up(): void
     {
-        Schema::table('usuarios', function (Blueprint $table) {
-            // Añadimos las nuevas columnas para Google
-            $table->string('google_id')->nullable()->unique();  // Para almacenar el ID de Google
-            $table->string('google_avatar')->nullable();       // Para almacenar la URL de la foto de Google
-            $table->string('auth_provider')->nullable();       // Para almacenar el proveedor de autenticación (Google)
-        });
+        if (!Schema::hasTable('usuarios')) {
+            return;
+        }
+
+        $hasGoogleId = Schema::hasColumn('usuarios', 'google_id');
+        $hasAuthProvider = Schema::hasColumn('usuarios', 'auth_provider');
+        $hasGoogleAvatar = Schema::hasColumn('usuarios', 'google_avatar');
+        $hasEmailVerifiedAt = Schema::hasColumn('usuarios', 'email_verified_at');
+        $hasRememberToken = Schema::hasColumn('usuarios', 'remember_token');
+
+        if (
+            !$hasGoogleId ||
+            !$hasAuthProvider ||
+            !$hasGoogleAvatar ||
+            !$hasEmailVerifiedAt ||
+            !$hasRememberToken
+        ) {
+            Schema::table('usuarios', function (Blueprint $table) use (
+                $hasGoogleId,
+                $hasAuthProvider,
+                $hasGoogleAvatar,
+                $hasEmailVerifiedAt,
+                $hasRememberToken
+            ) {
+                if (!$hasGoogleId) {
+                    $table->string('google_id', 191)->nullable()->unique();
+                }
+
+                if (!$hasAuthProvider) {
+                    $table->enum('auth_provider', ['LOCAL', 'GOOGLE'])->default('LOCAL');
+                }
+
+                if (!$hasGoogleAvatar) {
+                    $table->string('google_avatar', 255)->nullable();
+                }
+
+                if (!$hasEmailVerifiedAt) {
+                    $table->timestamp('email_verified_at')->nullable();
+                }
+
+                if (!$hasRememberToken) {
+                    $table->string('remember_token', 100)->nullable();
+                }
+            });
+        }
+
+        // Estos cambios los hiciste manualmente en Workbench.
+        // Los dejamos también en migración para que el equipo los reciba.
+        try {
+            DB::statement("ALTER TABLE usuarios MODIFY telefono CHAR(10) NULL");
+        } catch (\Throwable $e) {
+            // Ya estaba así o no aplica
+        }
+
+        try {
+            DB::statement("ALTER TABLE usuarios MODIFY password_hash VARCHAR(255) NULL");
+        } catch (\Throwable $e) {
+            // Ya estaba así o no aplica
+        }
     }
 
-    public function down()
+    public function down(): void
     {
-        Schema::table('usuarios', function (Blueprint $table) {
-            // Eliminar las columnas si revertimos la migración
-            $table->dropColumn(['google_id', 'google_avatar', 'auth_provider']);
-        });
+        if (!Schema::hasTable('usuarios')) {
+            return;
+        }
+
+        // Lo dejamos vacío para no romper rollbacks
+        // porque varias columnas pudieron haber sido agregadas manualmente.
     }
-}
+};

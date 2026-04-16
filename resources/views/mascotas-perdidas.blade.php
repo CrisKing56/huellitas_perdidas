@@ -49,7 +49,7 @@
                 </div>
 
                 <form method="GET" action="{{ route('mascotas.index2') }}" class="space-y-6">
-                    <input type="hidden" name="orden" value="{{ $filtros['orden'] }}">
+                    <input type="hidden" name="orden" value="{{ $filtros['orden'] ?? 'recientes' }}">
 
                     <div>
                         <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
@@ -62,7 +62,7 @@
                             <input
                                 type="text"
                                 name="q"
-                                value="{{ $filtros['q'] }}"
+                                value="{{ $filtros['q'] ?? '' }}"
                                 placeholder="Nombre, especie, raza o colonia..."
                                 class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
                             >
@@ -74,26 +74,26 @@
                         <div class="space-y-3">
                             <label class="flex items-center justify-between cursor-pointer">
                                 <div class="flex items-center gap-3">
-                                    <input type="radio" name="estado" value="" {{ $filtros['estado'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <input type="radio" name="estado" value="" {{ ($filtros['estado'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                     <span class="text-gray-700">Todos</span>
                                 </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['todas'] }}</span>
+                                <span class="text-sm text-gray-400">{{ $conteos['todas'] ?? 0 }}</span>
                             </label>
 
                             <label class="flex items-center justify-between cursor-pointer">
                                 <div class="flex items-center gap-3">
-                                    <input type="radio" name="estado" value="ACTIVA" {{ $filtros['estado'] === 'ACTIVA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <input type="radio" name="estado" value="ACTIVA" {{ ($filtros['estado'] ?? '') === 'ACTIVA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                     <span class="text-gray-700">Perdidas</span>
                                 </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['activas'] }}</span>
+                                <span class="text-sm text-gray-400">{{ $conteos['activas'] ?? 0 }}</span>
                             </label>
 
                             <label class="flex items-center justify-between cursor-pointer">
                                 <div class="flex items-center gap-3">
-                                    <input type="radio" name="estado" value="RESUELTA" {{ $filtros['estado'] === 'RESUELTA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <input type="radio" name="estado" value="RESUELTA" {{ ($filtros['estado'] ?? '') === 'RESUELTA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                     <span class="text-gray-700">Encontradas</span>
                                 </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['resueltas'] }}</span>
+                                <span class="text-sm text-gray-400">{{ $conteos['resueltas'] ?? 0 }}</span>
                             </label>
                         </div>
                     </div>
@@ -107,7 +107,7 @@
                         >
                             <option value="">Todas las especies</option>
                             @foreach($especies as $especie)
-                                <option value="{{ $especie->id_especie }}" {{ $filtros['especie'] == $especie->id_especie ? 'selected' : '' }}>
+                                <option value="{{ $especie->id_especie }}" {{ ($filtros['especie'] ?? '') == $especie->id_especie ? 'selected' : '' }}>
                                     {{ $especie->nombre }}
                                 </option>
                             @endforeach
@@ -121,11 +121,11 @@
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 transition"
                         >
                             <option value="">
-                                {{ $filtros['especie'] ? 'Todas las razas' : 'Primero selecciona una especie' }}
+                                {{ ($filtros['especie'] ?? '') ? 'Todas las razas' : 'Primero selecciona una especie' }}
                             </option>
 
                             @foreach($razas as $raza)
-                                <option value="{{ $raza->id_raza }}" {{ $filtros['raza'] == $raza->id_raza ? 'selected' : '' }}>
+                                <option value="{{ $raza->id_raza }}" {{ ($filtros['raza'] ?? '') == $raza->id_raza ? 'selected' : '' }}>
                                     {{ $raza->nombre }}
                                 </option>
                             @endforeach
@@ -136,22 +136,22 @@
                         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Sexo</h3>
                         <div class="space-y-3">
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="" {{ $filtros['sexo'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="sexo" value="" {{ ($filtros['sexo'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Todos</span>
                             </label>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="MACHO" {{ $filtros['sexo'] === 'MACHO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="sexo" value="MACHO" {{ ($filtros['sexo'] ?? '') === 'MACHO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Macho</span>
                             </label>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="HEMBRA" {{ $filtros['sexo'] === 'HEMBRA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="sexo" value="HEMBRA" {{ ($filtros['sexo'] ?? '') === 'HEMBRA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Hembra</span>
                             </label>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="DESCONOCIDO" {{ $filtros['sexo'] === 'DESCONOCIDO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="sexo" value="DESCONOCIDO" {{ ($filtros['sexo'] ?? '') === 'DESCONOCIDO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Desconocido</span>
                             </label>
                         </div>
@@ -161,22 +161,22 @@
                         <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Tamaño</h3>
                         <div class="space-y-3">
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="" {{ $filtros['tamano'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="tamano" value="" {{ ($filtros['tamano'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Todos</span>
                             </label>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="CHICO" {{ $filtros['tamano'] === 'CHICO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="tamano" value="CHICO" {{ ($filtros['tamano'] ?? '') === 'CHICO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Chico</span>
                             </label>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="MEDIANO" {{ $filtros['tamano'] === 'MEDIANO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="tamano" value="MEDIANO" {{ ($filtros['tamano'] ?? '') === 'MEDIANO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Mediano</span>
                             </label>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="GRANDE" {{ $filtros['tamano'] === 'GRANDE' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                <input type="radio" name="tamano" value="GRANDE" {{ ($filtros['tamano'] ?? '') === 'GRANDE' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
                                 <span class="text-gray-700">Grande</span>
                             </label>
                         </div>
@@ -187,7 +187,7 @@
                         <input
                             type="text"
                             name="colonia"
-                            value="{{ $filtros['colonia'] }}"
+                            value="{{ $filtros['colonia'] ?? '' }}"
                             placeholder="Ej. Centro"
                             class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
                         >
@@ -214,21 +214,21 @@
                 </div>
 
                 <form method="GET" action="{{ route('mascotas.index2') }}" class="w-full md:w-auto">
-                    <input type="hidden" name="q" value="{{ $filtros['q'] }}">
-                    <input type="hidden" name="estado" value="{{ $filtros['estado'] }}">
-                    <input type="hidden" name="especie" value="{{ $filtros['especie'] }}">
-                    <input type="hidden" name="raza" value="{{ $filtros['raza'] }}">
-                    <input type="hidden" name="sexo" value="{{ $filtros['sexo'] }}">
-                    <input type="hidden" name="tamano" value="{{ $filtros['tamano'] }}">
-                    <input type="hidden" name="colonia" value="{{ $filtros['colonia'] }}">
+                    <input type="hidden" name="q" value="{{ $filtros['q'] ?? '' }}">
+                    <input type="hidden" name="estado" value="{{ $filtros['estado'] ?? '' }}">
+                    <input type="hidden" name="especie" value="{{ $filtros['especie'] ?? '' }}">
+                    <input type="hidden" name="raza" value="{{ $filtros['raza'] ?? '' }}">
+                    <input type="hidden" name="sexo" value="{{ $filtros['sexo'] ?? '' }}">
+                    <input type="hidden" name="tamano" value="{{ $filtros['tamano'] ?? '' }}">
+                    <input type="hidden" name="colonia" value="{{ $filtros['colonia'] ?? '' }}">
 
                     <select name="orden"
                             onchange="this.form.submit()"
                             class="w-full md:w-auto px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        <option value="recientes" {{ $filtros['orden'] === 'recientes' ? 'selected' : '' }}>Ordenar por: Más recientes</option>
-                        <option value="antiguos" {{ $filtros['orden'] === 'antiguos' ? 'selected' : '' }}>Ordenar por: Más antiguos</option>
-                        <option value="nombre_az" {{ $filtros['orden'] === 'nombre_az' ? 'selected' : '' }}>Ordenar por: Nombre A-Z</option>
-                        <option value="nombre_za" {{ $filtros['orden'] === 'nombre_za' ? 'selected' : '' }}>Ordenar por: Nombre Z-A</option>
+                        <option value="recientes" {{ ($filtros['orden'] ?? 'recientes') === 'recientes' ? 'selected' : '' }}>Ordenar por: Más recientes</option>
+                        <option value="antiguos" {{ ($filtros['orden'] ?? '') === 'antiguos' ? 'selected' : '' }}>Ordenar por: Más antiguos</option>
+                        <option value="nombre_az" {{ ($filtros['orden'] ?? '') === 'nombre_az' ? 'selected' : '' }}>Ordenar por: Nombre A-Z</option>
+                        <option value="nombre_za" {{ ($filtros['orden'] ?? '') === 'nombre_za' ? 'selected' : '' }}>Ordenar por: Nombre Z-A</option>
                     </select>
                 </form>
             </div>
@@ -245,7 +245,7 @@
                             $bgClass = $esEncontrada ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600';
                             $textoEstado = $esEncontrada ? 'Encontrada' : 'Perdida';
 
-                            $razaVisible = $mascota->otra_raza ?: $mascota->raza_nombre;
+                            $razaVisible = $mascota->otra_raza ?: ($mascota->raza_nombre ?? null);
                             $especieVisible = $mascota->especie_nombre ?: 'Sin especie';
                         @endphp
 
