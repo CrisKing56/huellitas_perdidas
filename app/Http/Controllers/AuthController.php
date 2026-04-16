@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Events\Verified;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 
 class AuthController extends Controller
@@ -50,11 +52,17 @@ class AuthController extends Controller
             'rol' => 'USUARIO',
             'estado' => 'ACTIVA',
             'auth_provider' => 'LOCAL',
+            'email_verified_at' => null,
         ]);
 
         Auth::login($user);
+        $request->session()->regenerate();
 
-        return redirect()->route('inicio')->with('success', '¡Bienvenido a Huellitas Perdidas!');
+        $user->sendEmailVerificationNotification();
+
+        return redirect()
+            ->route('verification.notice')
+            ->with('success', 'Tu cuenta fue creada. Te enviamos un correo para verificarla.');
     }
 
     // Mostrar vista de login
@@ -93,7 +101,14 @@ class AuthController extends Controller
             $user = Auth::user();
             $rol = strtoupper((string) ($user->rol ?? ''));
 
-            // Validación para cuentas institucionales
+            // Si es cuenta LOCAL y no ha verificado su correo, lo mandamos a verificar
+            if (($user->auth_provider ?? 'LOCAL') === 'LOCAL' && is_null($user->email_verified_at)) {
+                return redirect()
+                    ->route('verification.notice')
+                    ->with('warning', 'Debes verificar tu correo antes de continuar.');
+            }
+
+            // Bloqueo para veterinarias y refugios no aprobados
             if (in_array($rol, ['VETERINARIA', 'REFUGIO'])) {
                 $organizacion = DB::table('organizaciones')
                     ->where('usuario_dueno_id', $user->id_usuario)
@@ -108,7 +123,7 @@ class AuthController extends Controller
                     ])->withInput();
                 }
 
-                if ($organizacion->estado_revision === 'PENDIENTE') {
+                if (($organizacion->estado_revision ?? null) === 'PENDIENTE') {
                     Auth::logout();
 
                     return back()->withErrors([
@@ -116,45 +131,74 @@ class AuthController extends Controller
                     ])->withInput();
                 }
 
-                if ($organizacion->estado_revision === 'RECHAZADA') {
+                if (($organizacion->estado_revision ?? null) === 'RECHAZADA') {
                     Auth::logout();
 
                     return back()->withErrors([
                         'correo' => 'Tu solicitud fue rechazada. Contacta al administrador o vuelve a intentarlo más adelante.',
                     ])->withInput();
                 }
-
-                if ($organizacion->tipo === 'VETERINARIA' && Route::has('veterinaria.dashboard')) {
-                    return redirect()->route('veterinaria.dashboard')
-                        ->with('success', '¡Bienvenido al panel de veterinaria!');
-                }
-
-                if ($organizacion->tipo === 'REFUGIO' && Route::has('refugio.dashboard')) {
-                    return redirect()->route('refugio.dashboard')
-                        ->with('success', '¡Bienvenido al panel de refugio!');
-                }
             }
 
-            // Administrador
-            if (in_array($rol, ['ADMIN', 'ADMIN_GENERAL'])) {
+            // Redirección por rol
+            if ($rol === 'ADMIN') {
                 if (Route::has('admin.dashboard')) {
-                    return redirect()->route('admin.dashboard')
-                        ->with('success', '¡Bienvenido Administrador!');
+                    return redirect()->route('admin.dashboard')->with('success', '¡Bienvenido Administrador!');
                 }
 
-                if (Route::has('admin.usuarios.index')) {
-                    return redirect()->route('admin.usuarios.index')
-                        ->with('success', '¡Bienvenido Administrador!');
-                }
+                return redirect()->route('admin.usuarios.index')->with('success', '¡Bienvenido Administrador!');
             }
 
-            // Usuario normal
             return redirect()->route('inicio')->with('success', '¡Bienvenido!');
         }
 
         return back()->withErrors([
             'correo' => 'El correo o la contraseña son incorrectos.',
         ])->withInput();
+    }
+
+    // Vista para avisar que debe verificar correo
+    public function showVerifyNotice(Request $request)
+    {
+        if (!$request->user()) {
+            return redirect()->route('login');
+        }
+
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('inicio');
+        }
+
+        return view('auth.verificar-correo');
+    }
+
+    // Confirmar correo desde el enlace
+    public function verifyEmail(EmailVerificationRequest $request)
+    {
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('inicio')->with('success', 'Tu correo ya estaba verificado.');
+        }
+
+        $request->fulfill();
+
+        event(new Verified($request->user()));
+
+        return redirect()->route('inicio')->with('success', 'Tu correo fue verificado correctamente.');
+    }
+
+    // Reenviar enlace
+    public function resendVerification(Request $request)
+    {
+        if (!$request->user()) {
+            return redirect()->route('login');
+        }
+
+        if ($request->user()->hasVerifiedEmail()) {
+            return redirect()->route('inicio');
+        }
+
+        $request->user()->sendEmailVerificationNotification();
+
+        return back()->with('status', 'verification-link-sent');
     }
 
     // Cerrar sesión

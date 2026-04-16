@@ -2,18 +2,20 @@
 
 namespace App\Models;
 
+use App\Notifications\VerificarCorreo;
+use Illuminate\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmailContract
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, MustVerifyEmail;
 
     protected $table = 'usuarios';
     protected $primaryKey = 'id_usuario';
 
-    // Como tu tabla sí tiene created_at y updated_at, déjalo activo
     public $timestamps = true;
 
     protected $fillable = [
@@ -47,5 +49,20 @@ class User extends Authenticatable
     public function getAuthIdentifierName()
     {
         return 'correo';
+    }
+
+    public function getEmailForVerification()
+    {
+        return $this->correo;
+    }
+
+    public function routeNotificationForMail($notification = null)
+    {
+        return $this->correo;
+    }
+
+    public function sendEmailVerificationNotification()
+    {
+        $this->notify(new VerificarCorreo());
     }
 }
