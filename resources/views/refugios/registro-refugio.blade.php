@@ -12,21 +12,9 @@
         </a>
 
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Registro de veterinaria</h1>
-            <p class="text-gray-500">Completa el formulario para registrar tu veterinaria en la plataforma.</p>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Registro de refugio</h1>
+            <p class="text-gray-500">Únete a nuestra red para dar más visibilidad a los peluditos que buscan hogar.</p>
         </div>
-
-        @if (session('success'))
-            <div class="mb-6 rounded-lg bg-green-100 border border-green-300 text-green-700 px-4 py-3">
-                {{ session('success') }}
-            </div>
-        @endif
-
-        @if (session('error'))
-            <div class="mb-6 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
-                {{ session('error') }}
-            </div>
-        @endif
 
         @if ($errors->any())
             <div class="mb-6 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
@@ -39,10 +27,22 @@
             </div>
         @endif
 
-        <form action="{{ route('registro.veterinaria.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+        @if(session('success'))
+            <div class="mb-6 rounded-lg bg-green-100 border border-green-300 text-green-700 px-4 py-3">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if(session('error'))
+            <div class="mb-6 rounded-lg bg-red-100 border border-red-300 text-red-700 px-4 py-3">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <form action="{{ route('registro.refugio.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
             @csrf
 
-            {{-- INFORMACIÓN GENERAL --}}
+            {{-- DATOS DE CUENTA Y CONTACTO --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="bg-orange-100 p-2 rounded-full text-orange-500">
@@ -50,49 +50,23 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Información general</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Datos de la cuenta y contacto</h2>
                 </div>
 
-                <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-1">
-                            Nombre de la veterinaria <span class="text-red-500">*</span>
+                            Nombre del refugio <span class="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
-                            name="nombre_veterinaria"
-                            value="{{ old('nombre_veterinaria') }}"
-                            placeholder="Ej: Clínica Veterinaria San Francisco"
+                            name="nombre_refugio"
+                            value="{{ old('nombre_refugio') }}"
+                            placeholder="Ej. Refugio San Francisco"
                             class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                         >
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">
-                            Descripción <span class="text-red-500">*</span>
-                        </label>
-                        <textarea
-                            name="descripcion"
-                            rows="4"
-                            placeholder="Describe los servicios y especialidades de tu veterinaria..."
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >{{ old('descripcion') }}</textarea>
-                    </div>
-                </div>
-            </div>
-
-            {{-- CONTACTO --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-orange-100 p-2 rounded-full text-orange-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800">Datos de contacto</h2>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                         <label class="block text-sm font-medium text-gray-600 mb-1">
                             Correo electrónico <span class="text-red-500">*</span>
@@ -101,42 +75,7 @@
                             type="email"
                             name="correo"
                             value="{{ old('correo') }}"
-                            placeholder="Ej: contacto@veterinaria.com"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">
-                            Teléfono <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="tel"
-                            name="telefono"
-                            value="{{ old('telefono') }}"
-                            placeholder="Ej: 9191234567"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">WhatsApp</label>
-                        <input
-                            type="tel"
-                            name="whatsapp"
-                            value="{{ old('whatsapp') }}"
-                            placeholder="Ej: 9191234567"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Sitio web</label>
-                        <input
-                            type="url"
-                            name="sitio_web"
-                            value="{{ old('sitio_web') }}"
-                            placeholder="Ej: https://www.miveterinaria.com"
+                            placeholder="contacto@refugio.com"
                             class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                         >
                     </div>
@@ -164,10 +103,48 @@
                             class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                         >
                     </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                            Teléfono (10 dígitos) <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="telefono"
+                            value="{{ old('telefono') }}"
+                            maxlength="10"
+                            placeholder="Ej. 9191234567"
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">WhatsApp</label>
+                        <input
+                            type="text"
+                            name="whatsapp"
+                            value="{{ old('whatsapp') }}"
+                            maxlength="10"
+                            placeholder="Ej. 9191234567"
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                            Descripción del refugio <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            name="descripcion"
+                            rows="3"
+                            placeholder="Cuéntanos sobre la misión, historia y labor del refugio..."
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >{{ old('descripcion') }}</textarea>
+                    </div>
                 </div>
             </div>
 
-            {{-- DIRECCIÓN Y UBICACIÓN --}}
+            {{-- UBICACIÓN --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="bg-orange-100 p-2 rounded-full text-orange-500">
@@ -176,7 +153,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Dirección y ubicación</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Ubicación</h2>
                 </div>
 
                 <div class="space-y-6">
@@ -189,7 +166,7 @@
                             type="text"
                             name="calle_numero"
                             value="{{ old('calle_numero') }}"
-                            placeholder="Ej: Av. Juárez 123"
+                            placeholder="Ej. Avenida Central #123"
                             class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                         >
                     </div>
@@ -197,14 +174,14 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-600 mb-1">
-                                Colonia <span class="text-red-500">*</span>
+                                Colonia/Barrio <span class="text-red-500">*</span>
                             </label>
                             <input
                                 id="colonia"
                                 type="text"
                                 name="colonia"
                                 value="{{ old('colonia') }}"
-                                placeholder="Ej: Centro"
+                                placeholder="Ej. Centro"
                                 class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                             >
                         </div>
@@ -218,7 +195,7 @@
                                 type="text"
                                 name="codigo_postal"
                                 value="{{ old('codigo_postal') }}"
-                                placeholder="Ej: 29950"
+                                placeholder="Ej. 29950"
                                 class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                             >
                         </div>
@@ -232,7 +209,7 @@
                                 type="text"
                                 name="ciudad"
                                 value="{{ old('ciudad', 'Ocosingo') }}"
-                                placeholder="Ej: Ocosingo"
+                                placeholder="Ej. Ocosingo"
                                 class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                             >
                         </div>
@@ -246,7 +223,7 @@
                                 type="text"
                                 name="estado_direccion"
                                 value="{{ old('estado_direccion', 'Chiapas') }}"
-                                placeholder="Ej: Chiapas"
+                                placeholder="Ej. Chiapas"
                                 class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
                             >
                         </div>
@@ -282,7 +259,7 @@
 
                         <div class="lg:col-span-2">
                             @if(config('services.google_maps.api_key'))
-                                <div id="mapa-veterinaria" class="w-full h-[420px] rounded-2xl border border-gray-200 overflow-hidden shadow-sm"></div>
+                                <div id="mapa-refugio" class="w-full h-[420px] rounded-2xl border border-gray-200 overflow-hidden shadow-sm"></div>
                             @else
                                 <div class="w-full h-[420px] rounded-2xl border-2 border-dashed border-gray-300 bg-gray-100 flex flex-col items-center justify-center text-center px-6">
                                     <div class="bg-orange-100 p-3 rounded-full mb-3">
@@ -298,88 +275,12 @@
                         </div>
                     </div>
 
-                    {{-- Ocultos --}}
-                    <input type="hidden" id="latitud" name="latitud" value="{{ old('latitud', '16.9070') }}">
-                    <input type="hidden" id="longitud" name="longitud" value="{{ old('longitud', '-92.0930') }}">
+                    <input type="hidden" id="latitud" name="latitud" value="{{ old('latitud', '16.90600000') }}">
+                    <input type="hidden" id="longitud" name="longitud" value="{{ old('longitud', '-92.09330000') }}">
                 </div>
             </div>
 
-            {{-- HORARIOS --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-orange-100 p-2 rounded-full text-orange-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800">Horarios de atención</h2>
-                </div>
-
-                <div class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        <span class="font-medium text-gray-700">Lunes a Viernes</span>
-                        <input type="time" name="horario_lv_apertura" value="{{ old('horario_lv_apertura') }}"
-                            class="w-full rounded-lg border border-gray-300 py-2.5 px-4 bg-gray-100 text-gray-800">
-                        <input type="time" name="horario_lv_cierre" value="{{ old('horario_lv_cierre') }}"
-                            class="w-full rounded-lg border border-gray-300 py-2.5 px-4 bg-gray-100 text-gray-800">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        <span class="font-medium text-gray-700">Sábado</span>
-                        <input type="time" name="horario_sab_apertura" value="{{ old('horario_sab_apertura') }}"
-                            class="w-full rounded-lg border border-gray-300 py-2.5 px-4 bg-gray-100 text-gray-800">
-                        <input type="time" name="horario_sab_cierre" value="{{ old('horario_sab_cierre') }}"
-                            class="w-full rounded-lg border border-gray-300 py-2.5 px-4 bg-gray-100 text-gray-800">
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-                        <span class="font-medium text-gray-700">Domingo</span>
-                        <input type="time" name="horario_dom_apertura" value="{{ old('horario_dom_apertura') }}"
-                            class="w-full rounded-lg border border-gray-300 py-2.5 px-4 bg-gray-100 text-gray-800">
-                        <input type="time" name="horario_dom_cierre" value="{{ old('horario_dom_cierre') }}"
-                            class="w-full rounded-lg border border-gray-300 py-2.5 px-4 bg-gray-100 text-gray-800">
-                    </div>
-                    <p class="text-xs text-gray-400 mt-2"><strong>Nota:</strong> Si cierras algún día, deja los campos de horario vacíos.</p>
-                </div>
-            </div>
-
-            {{-- SERVICIOS --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-orange-100 p-2 rounded-full text-orange-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800">Servicios ofrecidos</h2>
-                </div>
-
-                <div class="grid grid-cols-2 md:grid-cols-2 gap-y-4 gap-x-8 mb-6">
-                    @foreach(['Consulta general', 'Vacunación', 'Cirugía', 'Esterilización', 'Urgencias 24/7', 'Hospitalización', 'Peluquería', 'Radiografías', 'Laboratorio', 'Dentista', 'Rehabilitación', 'Pensión'] as $servicio)
-                        <label class="inline-flex items-center">
-                            <input
-                                type="checkbox"
-                                name="servicios[]"
-                                value="{{ $servicio }}"
-                                {{ in_array($servicio, old('servicios', [])) ? 'checked' : '' }}
-                                class="rounded border-gray-300 text-orange-500 shadow-sm focus:border-orange-500 focus:ring focus:ring-orange-200 focus:ring-opacity-50"
-                            >
-                            <span class="ml-3 text-gray-700 text-sm font-medium">{{ $servicio }}</span>
-                        </label>
-                    @endforeach
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-600 mb-1">Otros servicios</label>
-                    <input
-                        type="text"
-                        name="otros_servicios"
-                        value="{{ old('otros_servicios') }}"
-                        placeholder="Especifica otros servicios que ofreces (separados por comas)"
-                        class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                    >
-                </div>
-            </div>
-
-            {{-- RESPONSABLES --}}
+            {{-- DETALLES DEL REFUGIO --}}
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
                 <div class="flex items-center gap-3 mb-6">
                     <div class="bg-orange-100 p-2 rounded-full text-orange-500">
@@ -387,80 +288,84 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Responsables y personal</h2>
-                </div>
-
-                <div class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">
-                            Nombre del médico veterinario responsable <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="medico_responsable"
-                            value="{{ old('medico_responsable') }}"
-                            placeholder="Ej: Dr. Juan Pérez González"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">
-                            Cédula profesional <span class="text-red-500">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="cedula_profesional"
-                            value="{{ old('cedula_profesional') }}"
-                            placeholder="Ej: 1234567"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Número de médicos veterinarios</label>
-                        <input
-                            type="number"
-                            name="num_veterinarios"
-                            value="{{ old('num_veterinarios') }}"
-                            placeholder="Ej: 2"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
-                        >
-                    </div>
-                </div>
-            </div>
-
-            {{-- COSTOS --}}
-            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-                <div class="flex items-center gap-3 mb-6">
-                    <div class="bg-orange-100 p-2 rounded-full text-orange-500">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800">Costos estimados (opcional)</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Detalles del refugio</h2>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Consulta general</label>
-                        <input type="text" name="costo_consulta" value="{{ old('costo_consulta') }}" placeholder="Ej: 200"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                            Capacidad máx. de perros <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            name="capacidad_perros"
+                            value="{{ old('capacidad_perros') }}"
+                            min="0"
+                            placeholder="Ej. 50"
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >
                     </div>
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Vacunación</label>
-                        <input type="text" name="costo_vacuna" value="{{ old('costo_vacuna') }}" placeholder="Ej: 150"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                            Capacidad máx. de gatos <span class="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="number"
+                            name="capacidad_gatos"
+                            value="{{ old('capacidad_gatos') }}"
+                            min="0"
+                            placeholder="Ej. 30"
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Esterilización</label>
-                        <input type="text" name="costo_esterilizacion" value="{{ old('costo_esterilizacion') }}" placeholder="Ej: 800"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100">
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Descripción de instalaciones</label>
+                        <textarea
+                            name="instalaciones_descripcion"
+                            rows="3"
+                            placeholder="Ej. Contamos con áreas separadas para perros y gatos, zona de cuarentena, patio amplio..."
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >{{ old('instalaciones_descripcion') }}</textarea>
                     </div>
+
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                            Requisitos generales de adopción <span class="text-red-500">*</span>
+                        </label>
+                        <textarea
+                            name="requisitos_adopcion"
+                            rows="3"
+                            placeholder="Ej. Identificación oficial, comprobante de domicilio reciente, visita previa a la casa, firma de contrato..."
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >{{ old('requisitos_adopcion') }}</textarea>
+                    </div>
+
                     <div>
-                        <label class="block text-sm font-medium text-gray-600 mb-1">Cirugía general</label>
-                        <input type="text" name="costo_cirugia" value="{{ old('costo_cirugia') }}" placeholder="Ej: 1200"
-                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">
+                            ¿Aceptan donaciones en especie? <span class="text-red-500">*</span>
+                        </label>
+                        <select
+                            id="acepta_donaciones"
+                            name="acepta_donaciones"
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >
+                            <option value="1" {{ old('acepta_donaciones', '1') == '1' ? 'selected' : '' }}>Sí, aceptamos donaciones</option>
+                            <option value="0" {{ old('acepta_donaciones') == '0' ? 'selected' : '' }}>No por el momento</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-600 mb-1">¿Qué tipo de donaciones?</label>
+                        <input
+                            id="tipo_donaciones"
+                            type="text"
+                            name="tipo_donaciones"
+                            value="{{ old('tipo_donaciones') }}"
+                            placeholder="Ej. Croquetas, cobijas, arena..."
+                            class="w-full rounded-lg border border-gray-300 focus:border-orange-500 focus:ring-orange-500 py-3 px-4 text-gray-800 bg-gray-100"
+                        >
                     </div>
                 </div>
             </div>
@@ -473,7 +378,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800">Fotografías</h2>
+                    <h2 class="text-xl font-bold text-gray-800">Fotografías del refugio</h2>
                 </div>
 
                 <div class="border-2 border-dashed border-gray-300 rounded-2xl p-8 bg-gray-100">
@@ -484,7 +389,7 @@
                             </svg>
                         </div>
 
-                        <h3 class="text-gray-900 font-bold mb-1">Sube fotografías de tu veterinaria</h3>
+                        <h3 class="text-gray-900 font-bold mb-1">Sube fotografías del refugio</h3>
                         <p class="text-sm text-gray-500 mb-5">
                             Puedes agregar desde 1 hasta 10 imágenes. Formatos JPG o PNG. Máximo 5MB por archivo.
                         </p>
@@ -510,7 +415,7 @@
                     </div>
                 </div>
 
-                <div id="preview-fotos" class="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
+                <div id="vista-previa-contenedor" class="mt-6 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4"></div>
             </div>
 
             <div class="flex justify-end gap-4 pt-4">
@@ -518,7 +423,7 @@
                     Cancelar
                 </a>
 
-                <button type="submit" class="px-8 py-3 rounded-xl bg-orange-500 text-white font-bold hover:bg-orange-600 shadow-md transition">
+                <button type="submit" class="bg-orange-500 text-white px-8 py-3 rounded-lg font-bold shadow-sm hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
                     Enviar solicitud
                 </button>
             </div>
@@ -527,11 +432,12 @@
 </div>
 
 <script>
-    const veterinariaLatInicial = parseFloat(@json(old('latitud', '16.9070')));
-    const veterinariaLngInicial = parseFloat(@json(old('longitud', '-92.0930')));
+    const refugioLatInicial = parseFloat(@json(old('latitud', '16.90600000')));
+    const refugioLngInicial = parseFloat(@json(old('longitud', '-92.09330000')));
 
     const latInput = document.getElementById('latitud');
     const lngInput = document.getElementById('longitud');
+
     const calleInput = document.getElementById('calle_numero');
     const coloniaInput = document.getElementById('colonia');
     const cpInput = document.getElementById('codigo_postal');
@@ -542,10 +448,27 @@
     const usarMiUbicacionBtn = document.getElementById('usar-mi-ubicacion');
     const mapaEstado = document.getElementById('mapa-estado');
 
-    let vetMap = null;
-    let vetMarker = null;
-    let vetAutocomplete = null;
-    let vetGeocoder = null;
+    const aceptaDonacionesSelect = document.getElementById('acepta_donaciones');
+    const tipoDonacionesInput = document.getElementById('tipo_donaciones');
+
+    let refugioMap = null;
+    let refugioMarker = null;
+    let refugioAutocomplete = null;
+    let refugioGeocoder = null;
+
+    function toggleTipoDonaciones() {
+        if (!aceptaDonacionesSelect || !tipoDonacionesInput) return;
+
+        const acepta = aceptaDonacionesSelect.value === '1';
+
+        tipoDonacionesInput.disabled = !acepta;
+        tipoDonacionesInput.classList.toggle('bg-gray-200', !acepta);
+        tipoDonacionesInput.classList.toggle('cursor-not-allowed', !acepta);
+
+        if (!acepta) {
+            tipoDonacionesInput.value = '';
+        }
+    }
 
     function setStatusMessage(message, isError = false) {
         if (!mapaEstado) return;
@@ -608,9 +531,9 @@
     }
 
     function reverseGeocode(latLng) {
-        if (!vetGeocoder) return;
+        if (!refugioGeocoder) return;
 
-        vetGeocoder.geocode({ location: latLng }, function(results, status) {
+        refugioGeocoder.geocode({ location: latLng }, function(results, status) {
             if (status === 'OK' && results && results.length) {
                 fillAddressFields(results[0].address_components || []);
                 setStatusMessage('Ubicación aplicada y datos de dirección autocompletados.');
@@ -621,11 +544,11 @@
     }
 
     function moveMarkerAndMap(position, zoom = 16, geocodeAfter = true) {
-        if (!vetMap || !vetMarker) return;
+        if (!refugioMap || !refugioMarker) return;
 
-        vetMarker.setPosition(position);
-        vetMap.setCenter(position);
-        vetMap.setZoom(zoom);
+        refugioMarker.setPosition(position);
+        refugioMap.setCenter(position);
+        refugioMap.setZoom(zoom);
 
         updateCoords(position.lat(), position.lng());
 
@@ -634,16 +557,16 @@
         }
     }
 
-    window.initVeterinariaMap = function () {
-        const mapaEl = document.getElementById('mapa-veterinaria');
+    window.initRefugioMap = function () {
+        const mapaEl = document.getElementById('mapa-refugio');
         if (!mapaEl || typeof google === 'undefined' || !google.maps) return;
 
         const initialPosition = {
-            lat: isNaN(veterinariaLatInicial) ? 16.9070 : veterinariaLatInicial,
-            lng: isNaN(veterinariaLngInicial) ? -92.0930 : veterinariaLngInicial
+            lat: isNaN(refugioLatInicial) ? 16.9060 : refugioLatInicial,
+            lng: isNaN(refugioLngInicial) ? -92.0933 : refugioLngInicial
         };
 
-        vetMap = new google.maps.Map(mapaEl, {
+        refugioMap = new google.maps.Map(mapaEl, {
             center: initialPosition,
             zoom: 15,
             mapTypeControl: false,
@@ -651,35 +574,35 @@
             fullscreenControl: true
         });
 
-        vetMarker = new google.maps.Marker({
-            map: vetMap,
+        refugioMarker = new google.maps.Marker({
+            map: refugioMap,
             position: initialPosition,
             draggable: true,
             animation: google.maps.Animation.DROP
         });
 
-        vetGeocoder = new google.maps.Geocoder();
+        refugioGeocoder = new google.maps.Geocoder();
 
         updateCoords(initialPosition.lat, initialPosition.lng);
         setStatusMessage('Puedes arrastrar el marcador, buscar una dirección o hacer clic en el mapa.');
 
-        vetMap.addListener('click', function (event) {
+        refugioMap.addListener('click', function(event) {
             moveMarkerAndMap(event.latLng);
         });
 
-        vetMarker.addListener('dragend', function (event) {
+        refugioMarker.addListener('dragend', function(event) {
             updateCoords(event.latLng.lat(), event.latLng.lng());
             reverseGeocode(event.latLng);
         });
 
         if (mapSearchInput && google.maps.places) {
-            vetAutocomplete = new google.maps.places.Autocomplete(mapSearchInput, {
+            refugioAutocomplete = new google.maps.places.Autocomplete(mapSearchInput, {
                 fields: ['geometry', 'formatted_address', 'name', 'address_components'],
                 componentRestrictions: { country: 'mx' }
             });
 
-            vetAutocomplete.addListener('place_changed', function () {
-                const place = vetAutocomplete.getPlace();
+            refugioAutocomplete.addListener('place_changed', function() {
+                const place = refugioAutocomplete.getPlace();
 
                 if (!place.geometry || !place.geometry.location) {
                     setStatusMessage('No se pudo obtener la ubicación seleccionada.', true);
@@ -698,7 +621,7 @@
         }
 
         if (usarMiUbicacionBtn) {
-            usarMiUbicacionBtn.addEventListener('click', function () {
+            usarMiUbicacionBtn.addEventListener('click', function() {
                 if (!navigator.geolocation) {
                     setStatusMessage('Tu navegador no permite obtener la ubicación actual.', true);
                     return;
@@ -707,7 +630,7 @@
                 setStatusMessage('Obteniendo tu ubicación...');
 
                 navigator.geolocation.getCurrentPosition(
-                    function (position) {
+                    function(position) {
                         const current = new google.maps.LatLng(
                             position.coords.latitude,
                             position.coords.longitude
@@ -715,7 +638,7 @@
 
                         moveMarkerAndMap(current, 17);
                     },
-                    function () {
+                    function() {
                         setStatusMessage('No se pudo obtener tu ubicación actual.', true);
                     },
                     {
@@ -733,9 +656,15 @@
     };
 
     document.addEventListener('DOMContentLoaded', function () {
+        toggleTipoDonaciones();
+
+        if (aceptaDonacionesSelect) {
+            aceptaDonacionesSelect.addEventListener('change', toggleTipoDonaciones);
+        }
+
         const pickerInput = document.getElementById('fotos_picker');
         const realInput = document.getElementById('fotos');
-        const preview = document.getElementById('preview-fotos');
+        const preview = document.getElementById('vista-previa-contenedor');
         const contador = document.getElementById('contador-fotos');
         const limpiarBtn = document.getElementById('limpiar-fotos');
 
@@ -834,7 +763,7 @@
 
 @if(config('services.google_maps.api_key'))
     <script
-        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.api_key') }}&libraries=places&callback=initVeterinariaMap"
+        src="https://maps.googleapis.com/maps/api/js?key={{ config('services.google_maps.api_key') }}&libraries=places&callback=initRefugioMap"
         async
         defer
     ></script>
