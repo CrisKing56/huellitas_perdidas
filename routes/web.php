@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\DB;
 // CONTROLLERS
 // =========================
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LoginController;
+use App\Http\Controllers\RegistroOrganizacionFlujoController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\UserController;
 
@@ -23,6 +25,7 @@ use App\Http\Controllers\RefugioRegistroController;
 use App\Http\Controllers\Admin\AdminUsuarioController;
 use App\Http\Controllers\Admin\AdminVeterinariaController;
 use App\Http\Controllers\Admin\AdminRefugioController;
+use App\Http\Controllers\Admin\AdminReporteController;
 
 // =========================
 // MODELOS
@@ -71,9 +74,30 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     Route::get('/registro', [AuthController::class, 'showRegister'])->name('registro.usuario');
     Route::post('/registro', [AuthController::class, 'register'])->name('registro.store');
 
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
-    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('login.store');
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+    /*
+    |--------------------------------------------------------------------------
+    | FLUJO DE REGISTRO INSTITUCIONAL
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/registro-organizacion/enviado', [RegistroOrganizacionFlujoController::class, 'enviado'])
+        ->name('registro.organizacion.enviado');
+
+    Route::get('/registro-organizacion/verificado', [RegistroOrganizacionFlujoController::class, 'verificado'])
+        ->name('registro.organizacion.verificado');
+
+    Route::get('/registro-organizacion/pendiente', [RegistroOrganizacionFlujoController::class, 'pendiente'])
+        ->name('registro.organizacion.pendiente');
+
+    Route::get('/registro-organizacion/rechazada', [RegistroOrganizacionFlujoController::class, 'rechazada'])
+        ->name('registro.organizacion.rechazada');
+
+    Route::post('/registro-organizacion/reenviar-verificacion', [RegistroOrganizacionFlujoController::class, 'reenviar'])
+        ->name('registro.organizacion.reenviar');
 
     /*
     |--------------------------------------------------------------------------
@@ -81,13 +105,13 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     |--------------------------------------------------------------------------
     */
 
+    Route::get('/correo/verificar/{id}/{hash}', [RegistroOrganizacionFlujoController::class, 'verify'])
+        ->middleware('signed')
+        ->name('verification.verify');
+
     Route::middleware('auth')->group(function () {
         Route::get('/correo/verificar', [AuthController::class, 'showVerifyNotice'])
             ->name('verification.notice');
-
-        Route::get('/correo/verificar/{id}/{hash}', [AuthController::class, 'verifyEmail'])
-            ->middleware('signed')
-            ->name('verification.verify');
 
         Route::post('/correo/reenviar-verificacion', [AuthController::class, 'resendVerification'])
             ->middleware('throttle:6,1')
@@ -109,7 +133,6 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     |--------------------------------------------------------------------------
     */
 
-    // Veterinaria
     Route::get('/registro-veterinaria', function () {
         return view('veterinarias.alta-veterinaria');
     })->name('registro.veterinaria');
@@ -117,7 +140,6 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     Route::post('/registro-veterinaria', [VeterinariaRegistroController::class, 'store'])
         ->name('registro.veterinaria.store');
 
-    // Refugio
     Route::get('/registro-refugio', [RefugioRegistroController::class, 'create'])->name('registro.refugio');
     Route::post('/registro-refugio', [RefugioRegistroController::class, 'store'])->name('registro.refugio.store');
 
@@ -175,7 +197,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     Route::middleware(['auth'])->group(function () {
 
         Route::get('/dashboard', function () {
-            return view('dashboard');
+            return redirect()->route('inicio');
         })->name('dashboard');
 
         Route::get('/nosotros', function () {
@@ -226,6 +248,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
 
         Route::get('/reportar-mascota/{id}/editar', [ExtravioController::class, 'edit'])->name('extravios.edit');
         Route::put('/reportar-mascota/{id}', [ExtravioController::class, 'update'])->name('extravios.update');
+        Route::patch('/reportar-mascota/{id}/resolver', [ExtravioController::class, 'marcarResuelta'])->name('extravios.resolve');
         Route::delete('/reportar-mascota/{id}', [ExtravioController::class, 'destroy'])->name('extravios.destroy');
 
         /*
@@ -242,6 +265,21 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
 
         Route::delete('/mascota/{id}/comentarios/{comentarioId}', [ExtravioController::class, 'destroyComment'])
             ->name('extravios.comentarios.destroy');
+
+        /*
+        |--------------------------------------------------------------------------
+        | AVISTAMIENTOS EN PUBLICACIONES DE EXTRAVÍO
+        |--------------------------------------------------------------------------
+        */
+
+        Route::post('/mascota/{id}/avistamientos', [ExtravioController::class, 'storeSighting'])
+            ->name('extravios.avistamientos.store');
+
+        Route::post('/avistamientos/{id}/visto', [ExtravioController::class, 'markSightingSeen'])
+            ->name('extravios.avistamientos.visto');
+
+        Route::post('/avistamientos/{id}/descartar', [ExtravioController::class, 'discardSighting'])
+            ->name('extravios.avistamientos.descartar');
 
         /*
         |--------------------------------------------------------------------------
@@ -286,12 +324,22 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
             Route::get('/admin/veterinarias/{id}', [AdminVeterinariaController::class, 'show'])->name('admin.veterinarias.show');
             Route::post('/admin/veterinarias/{id}/aprobar', [AdminVeterinariaController::class, 'aprobar'])->name('admin.veterinarias.aprobar');
             Route::post('/admin/veterinarias/{id}/rechazar', [AdminVeterinariaController::class, 'rechazar'])->name('admin.veterinarias.rechazar');
+            Route::post('/admin/veterinarias/{id}/suspender', [AdminVeterinariaController::class, 'suspender'])->name('admin.veterinarias.suspender');
+            Route::post('/admin/veterinarias/{id}/reactivar', [AdminVeterinariaController::class, 'reactivar'])->name('admin.veterinarias.reactivar');
 
             // Refugios
             Route::get('/admin/refugios', [AdminRefugioController::class, 'index'])->name('admin.refugios.index');
             Route::get('/admin/refugios/{id}', [AdminRefugioController::class, 'show'])->name('admin.refugios.show');
             Route::post('/admin/refugios/{id}/aprobar', [AdminRefugioController::class, 'aprobar'])->name('admin.refugios.aprobar');
             Route::post('/admin/refugios/{id}/rechazar', [AdminRefugioController::class, 'rechazar'])->name('admin.refugios.rechazar');
+            Route::post('/admin/refugios/{id}/suspender', [AdminRefugioController::class, 'suspender'])->name('admin.refugios.suspender');
+            Route::post('/admin/refugios/{id}/activar', [AdminRefugioController::class, 'activar'])->name('admin.refugios.activar');
+
+            // Reportes
+            Route::get('/admin/reportes', [AdminReporteController::class, 'index'])->name('admin.reportes.index');
+            Route::get('/admin/reportes/{id}', [AdminReporteController::class, 'show'])->name('admin.reportes.show');
+            Route::post('/admin/reportes/{id}/en-revision', [AdminReporteController::class, 'marcarEnRevision'])->name('admin.reportes.enRevision');
+            Route::post('/admin/reportes/{id}/resolver', [AdminReporteController::class, 'resolver'])->name('admin.reportes.resolver');
         });
     });
 });

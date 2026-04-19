@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class AdminRefugioController extends Controller
 {
@@ -19,8 +21,10 @@ class AdminRefugioController extends Controller
                 'o.descripcion',
                 'o.telefono',
                 'o.estado_revision',
+                'o.motivo_rechazo',
                 'u.correo',
                 'u.nombre as nombre_usuario',
+                'u.estado as estado_usuario',
                 'd.calle_numero',
                 'd.colonia',
                 'd.ciudad',
@@ -47,10 +51,12 @@ class AdminRefugioController extends Controller
             ->where('o.id_organizacion', $id)
             ->select(
                 'o.*',
+                'u.id_usuario',
                 'u.nombre as nombre_usuario',
                 'u.correo',
                 'u.telefono as telefono_usuario',
                 'u.whatsapp',
+                'u.estado as estado_usuario',
                 'd.calle_numero',
                 'd.colonia',
                 'd.codigo_postal',
@@ -83,27 +89,250 @@ class AdminRefugioController extends Controller
 
     public function aprobar($id)
     {
+        $refugio = DB::table('organizaciones as o')
+            ->join('usuarios as u', 'u.id_usuario', '=', 'o.usuario_dueno_id')
+            ->where('o.id_organizacion', $id)
+            ->where('o.tipo', 'REFUGIO')
+            ->select(
+                'o.id_organizacion',
+                'o.nombre',
+                'o.tipo',
+                'o.estado_revision',
+                'u.id_usuario',
+                'u.correo',
+                'u.nombre as nombre_usuario'
+            )
+            ->first();
+
+        abort_if(!$refugio, 404);
+
+        if ($refugio->estado_revision === 'APROBADA') {
+            return redirect()->route('admin.refugios.show', $id)
+                ->with('success', 'El refugio ya se encuentra aprobado.');
+        }
+
         DB::table('organizaciones')
             ->where('id_organizacion', $id)
             ->where('tipo', 'REFUGIO')
             ->update([
                 'estado_revision' => 'APROBADA',
-                // 'updated_at' => now(),
+                'motivo_rechazo'  => null,
+                'updated_at'      => now(),
             ]);
 
-        return redirect()->route('admin.refugios.index')->with('success', 'Refugio aprobado correctamente.');
+        DB::table('usuarios')
+            ->where('id_usuario', $refugio->id_usuario)
+            ->update([
+                'estado'     => 'ACTIVA',
+                'updated_at' => now(),
+            ]);
+
+        $this->enviarCorreoAprobacion($refugio);
+
+        return redirect()->route('admin.refugios.show', $id)
+            ->with('success', 'Refugio aprobado correctamente.');
     }
 
-    public function rechazar($id)
+    public function rechazar(Request $request, $id)
     {
+        $request->validate([
+            'motivo_rechazo' => 'required|string|max:1000',
+        ], [
+            'motivo_rechazo.required' => 'Debes escribir el motivo del rechazo.',
+            'motivo_rechazo.max'      => 'El motivo del rechazo no debe exceder 1000 caracteres.',
+        ]);
+
+        $refugio = DB::table('organizaciones as o')
+            ->join('usuarios as u', 'u.id_usuario', '=', 'o.usuario_dueno_id')
+            ->where('o.id_organizacion', $id)
+            ->where('o.tipo', 'REFUGIO')
+            ->select(
+                'o.id_organizacion',
+                'o.nombre',
+                'o.tipo',
+                'u.id_usuario',
+                'u.correo',
+                'u.nombre as nombre_usuario'
+            )
+            ->first();
+
+        abort_if(!$refugio, 404);
+
         DB::table('organizaciones')
             ->where('id_organizacion', $id)
             ->where('tipo', 'REFUGIO')
             ->update([
                 'estado_revision' => 'RECHAZADA',
-                // 'updated_at' => now(),
+                'motivo_rechazo'  => trim($request->motivo_rechazo),
+                'updated_at'      => now(),
             ]);
 
-        return redirect()->route('admin.refugios.index')->with('success', 'Refugio rechazado correctamente.');
+        DB::table('usuarios')
+            ->where('id_usuario', $refugio->id_usuario)
+            ->update([
+                'estado'     => 'SUSPENDIDA',
+                'updated_at' => now(),
+            ]);
+
+        $refugio->motivo_rechazo = trim($request->motivo_rechazo);
+        $this->enviarCorreoRechazo($refugio);
+
+        return redirect()->route('admin.refugios.show', $id)
+            ->with('success', 'Refugio rechazado correctamente.');
+    }
+
+    public function suspender($id)
+    {
+        $refugio = DB::table('organizaciones as o')
+            ->join('usuarios as u', 'u.id_usuario', '=', 'o.usuario_dueno_id')
+            ->where('o.id_organizacion', $id)
+            ->where('o.tipo', 'REFUGIO')
+            ->select(
+                'o.id_organizacion',
+                'o.nombre',
+                'o.tipo',
+                'o.estado_revision',
+                'u.id_usuario',
+                'u.correo',
+                'u.nombre as nombre_usuario',
+                'u.estado as estado_usuario'
+            )
+            ->first();
+
+        abort_if(!$refugio, 404);
+
+        DB::table('usuarios')
+            ->where('id_usuario', $refugio->id_usuario)
+            ->update([
+                'estado'     => 'SUSPENDIDA',
+                'updated_at' => now(),
+            ]);
+
+        $this->enviarCorreoSuspension($refugio);
+
+        return redirect()->route('admin.refugios.show', $id)
+            ->with('success', 'Cuenta del refugio suspendida correctamente.');
+    }
+
+    public function activar($id)
+    {
+        $refugio = DB::table('organizaciones as o')
+            ->join('usuarios as u', 'u.id_usuario', '=', 'o.usuario_dueno_id')
+            ->where('o.id_organizacion', $id)
+            ->where('o.tipo', 'REFUGIO')
+            ->select(
+                'o.id_organizacion',
+                'o.nombre',
+                'o.tipo',
+                'o.estado_revision',
+                'u.id_usuario',
+                'u.correo',
+                'u.nombre as nombre_usuario',
+                'u.estado as estado_usuario'
+            )
+            ->first();
+
+        abort_if(!$refugio, 404);
+
+        DB::table('usuarios')
+            ->where('id_usuario', $refugio->id_usuario)
+            ->update([
+                'estado'     => 'ACTIVA',
+                'updated_at' => now(),
+            ]);
+
+        $this->enviarCorreoActivacion($refugio);
+
+        return redirect()->route('admin.refugios.show', $id)
+            ->with('success', 'Cuenta del refugio activada correctamente.');
+    }
+
+    private function enviarCorreoAprobacion($refugio): void
+    {
+        try {
+            if (empty($refugio->correo)) {
+                return;
+            }
+
+            $html = view('emails.organizacion-aprobada', [
+                'nombre' => $refugio->nombre_usuario,
+                'organizacion' => $refugio->nombre,
+                'tipo' => 'refugio',
+            ])->render();
+
+            Mail::html($html, function ($message) use ($refugio) {
+                $message->to($refugio->correo, $refugio->nombre_usuario)
+                    ->subject('Tu solicitud de refugio fue aprobada');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function enviarCorreoRechazo($refugio): void
+    {
+        try {
+            if (empty($refugio->correo)) {
+                return;
+            }
+
+            $html = view('emails.organizacion-rechazada', [
+                'nombre' => $refugio->nombre_usuario,
+                'organizacion' => $refugio->nombre,
+                'tipo' => 'refugio',
+                'motivo' => $refugio->motivo_rechazo ?? null,
+            ])->render();
+
+            Mail::html($html, function ($message) use ($refugio) {
+                $message->to($refugio->correo, $refugio->nombre_usuario)
+                    ->subject('Tu solicitud de refugio fue rechazada');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function enviarCorreoSuspension($refugio): void
+    {
+        try {
+            if (empty($refugio->correo)) {
+                return;
+            }
+
+            $html = view('emails.organizacion-suspendida', [
+                'nombre' => $refugio->nombre_usuario,
+                'organizacion' => $refugio->nombre,
+                'tipo' => 'refugio',
+            ])->render();
+
+            Mail::html($html, function ($message) use ($refugio) {
+                $message->to($refugio->correo, $refugio->nombre_usuario)
+                    ->subject('Tu cuenta de refugio fue suspendida');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
+    }
+
+    private function enviarCorreoActivacion($refugio): void
+    {
+        try {
+            if (empty($refugio->correo)) {
+                return;
+            }
+
+            $html = view('emails.organizacion-reactivada', [
+                'nombre' => $refugio->nombre_usuario,
+                'organizacion' => $refugio->nombre,
+                'tipo' => 'refugio',
+            ])->render();
+
+            Mail::html($html, function ($message) use ($refugio) {
+                $message->to($refugio->correo, $refugio->nombre_usuario)
+                    ->subject('Tu cuenta de refugio fue reactivada');
+            });
+        } catch (\Throwable $e) {
+            report($e);
+        }
     }
 }

@@ -38,169 +38,173 @@
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         <aside class="lg:col-span-3">
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 lg:sticky lg:top-6">
-                <div class="flex items-center justify-between mb-5">
+            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
+                <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="text-xl font-bold text-gray-900">Filtros</h2>
                     <a href="{{ route('mascotas.index2') }}" class="text-sm text-gray-400 hover:text-orange-500 transition">
                         Eliminar filtros
                     </a>
                 </div>
 
-                <form method="GET" action="{{ route('mascotas.index2') }}" class="space-y-6">
+                <form method="GET" action="{{ route('mascotas.index2') }}" class="flex flex-col min-h-0">
                     <input type="hidden" name="orden" value="{{ $filtros['orden'] ?? 'recientes' }}">
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </span>
+                    <div class="p-5 space-y-6 overflow-y-auto min-h-0 lg:max-h-[calc(100vh-15rem)]">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </span>
+                                <input
+                                    type="text"
+                                    name="q"
+                                    value="{{ $filtros['q'] ?? '' }}"
+                                    placeholder="Nombre, especie, raza o colonia..."
+                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Estado</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="estado" value="" {{ ($filtros['estado'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                        <span class="text-gray-700">Todos</span>
+                                    </div>
+                                    <span class="text-sm text-gray-400">{{ $conteos['todas'] ?? 0 }}</span>
+                                </label>
+
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="estado" value="ACTIVA" {{ ($filtros['estado'] ?? '') === 'ACTIVA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                        <span class="text-gray-700">Perdidas</span>
+                                    </div>
+                                    <span class="text-sm text-gray-400">{{ $conteos['activas'] ?? 0 }}</span>
+                                </label>
+
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="estado" value="RESUELTA" {{ ($filtros['estado'] ?? '') === 'RESUELTA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                        <span class="text-gray-700">Encontradas</span>
+                                    </div>
+                                    <span class="text-sm text-gray-400">{{ $conteos['resueltas'] ?? 0 }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Especie</label>
+                            <select
+                                name="especie"
+                                onchange="this.form.submit()"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 transition"
+                            >
+                                <option value="">Todas las especies</option>
+                                @foreach($especies as $especie)
+                                    <option value="{{ $especie->id_especie }}" {{ ($filtros['especie'] ?? '') == $especie->id_especie ? 'selected' : '' }}>
+                                        {{ $especie->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Raza</label>
+                            <select
+                                name="raza"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 transition"
+                            >
+                                <option value="">
+                                    {{ ($filtros['especie'] ?? '') ? 'Todas las razas' : 'Primero selecciona una especie' }}
+                                </option>
+
+                                @foreach($razas as $raza)
+                                    <option value="{{ $raza->id_raza }}" {{ ($filtros['raza'] ?? '') == $raza->id_raza ? 'selected' : '' }}>
+                                        {{ $raza->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Sexo</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="" {{ ($filtros['sexo'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Todos</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="MACHO" {{ ($filtros['sexo'] ?? '') === 'MACHO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Macho</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="HEMBRA" {{ ($filtros['sexo'] ?? '') === 'HEMBRA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Hembra</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="DESCONOCIDO" {{ ($filtros['sexo'] ?? '') === 'DESCONOCIDO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Desconocido</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Tamaño</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="" {{ ($filtros['tamano'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Todos</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="CHICO" {{ ($filtros['tamano'] ?? '') === 'CHICO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Chico</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="MEDIANO" {{ ($filtros['tamano'] ?? '') === 'MEDIANO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Mediano</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="GRANDE" {{ ($filtros['tamano'] ?? '') === 'GRANDE' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
+                                    <span class="text-gray-700">Grande</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Colonia</label>
                             <input
                                 type="text"
-                                name="q"
-                                value="{{ $filtros['q'] ?? '' }}"
-                                placeholder="Nombre, especie, raza o colonia..."
-                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
+                                name="colonia"
+                                value="{{ $filtros['colonia'] ?? '' }}"
+                                placeholder="Ej. Centro"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
                             >
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Estado</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div class="flex items-center gap-3">
-                                    <input type="radio" name="estado" value="" {{ ($filtros['estado'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                    <span class="text-gray-700">Todos</span>
-                                </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['todas'] ?? 0 }}</span>
-                            </label>
+                    <div class="p-5 border-t border-gray-100 bg-white shrink-0">
+                        <div class="flex flex-col gap-3">
+                            <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition shadow-sm">
+                                Aplicar filtros
+                            </button>
 
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div class="flex items-center gap-3">
-                                    <input type="radio" name="estado" value="ACTIVA" {{ ($filtros['estado'] ?? '') === 'ACTIVA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                    <span class="text-gray-700">Perdidas</span>
-                                </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['activas'] ?? 0 }}</span>
-                            </label>
-
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div class="flex items-center gap-3">
-                                    <input type="radio" name="estado" value="RESUELTA" {{ ($filtros['estado'] ?? '') === 'RESUELTA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                    <span class="text-gray-700">Encontradas</span>
-                                </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['resueltas'] ?? 0 }}</span>
-                            </label>
+                            <a href="{{ route('mascotas.index2') }}" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition">
+                                Ver todas
+                            </a>
                         </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Especie</label>
-                        <select
-                            name="especie"
-                            onchange="this.form.submit()"
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 transition"
-                        >
-                            <option value="">Todas las especies</option>
-                            @foreach($especies as $especie)
-                                <option value="{{ $especie->id_especie }}" {{ ($filtros['especie'] ?? '') == $especie->id_especie ? 'selected' : '' }}>
-                                    {{ $especie->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Raza</label>
-                        <select
-                            name="raza"
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 transition"
-                        >
-                            <option value="">
-                                {{ ($filtros['especie'] ?? '') ? 'Todas las razas' : 'Primero selecciona una especie' }}
-                            </option>
-
-                            @foreach($razas as $raza)
-                                <option value="{{ $raza->id_raza }}" {{ ($filtros['raza'] ?? '') == $raza->id_raza ? 'selected' : '' }}>
-                                    {{ $raza->nombre }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Sexo</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="" {{ ($filtros['sexo'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Todos</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="MACHO" {{ ($filtros['sexo'] ?? '') === 'MACHO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Macho</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="HEMBRA" {{ ($filtros['sexo'] ?? '') === 'HEMBRA' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Hembra</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="DESCONOCIDO" {{ ($filtros['sexo'] ?? '') === 'DESCONOCIDO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Desconocido</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Tamaño</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="" {{ ($filtros['tamano'] ?? '') === '' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Todos</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="CHICO" {{ ($filtros['tamano'] ?? '') === 'CHICO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Chico</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="MEDIANO" {{ ($filtros['tamano'] ?? '') === 'MEDIANO' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Mediano</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="GRANDE" {{ ($filtros['tamano'] ?? '') === 'GRANDE' ? 'checked' : '' }} class="rounded border-gray-300 text-orange-500 focus:ring-orange-500">
-                                <span class="text-gray-700">Grande</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Colonia</label>
-                        <input
-                            type="text"
-                            name="colonia"
-                            value="{{ $filtros['colonia'] ?? '' }}"
-                            placeholder="Ej. Centro"
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
-                        >
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5 flex flex-col gap-3">
-                        <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition shadow-sm">
-                            Aplicar filtros
-                        </button>
-
-                        <a href="{{ route('mascotas.index2') }}" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition">
-                            Ver todas
-                        </a>
                     </div>
                 </form>
             </div>
@@ -251,7 +255,7 @@
 
                         <a href="{{ route('extravios.show', $mascota->id_publicacion) }}">
                             <div class="bg-white rounded-2xl shadow-sm hover:shadow-md transition duration-300 border border-gray-100 overflow-hidden group flex flex-col h-full relative">
-                                
+
                                 <div class="h-64 relative overflow-hidden bg-gray-100">
                                     @if($mascota->fotoPrincipal)
                                         <img src="{{ asset('storage/' . $mascota->fotoPrincipal->url) }}" class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
@@ -299,7 +303,7 @@
                                             {{ \Illuminate\Support\Str::limit($mascota->descripcion, 60) }}
                                         @endif
                                     </p>
-                                    
+
                                     <div class="mt-auto flex items-center text-gray-500 text-xs font-medium mb-4">
                                         <svg class="w-4 h-4 mr-1.5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>

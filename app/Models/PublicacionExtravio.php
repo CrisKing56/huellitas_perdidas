@@ -9,40 +9,34 @@ class PublicacionExtravio extends Model
 {
     use HasFactory;
 
-    // 1. Apuntamos a tu tabla exacta
     protected $table = 'publicaciones_extravio';
     protected $primaryKey = 'id_publicacion';
 
     public $timestamps = false;
 
-    // 2. Permitimos que estos campos se guarden
     protected $fillable = [
-        'autor_usuario_id', // Importante
-        'nombre', 
-        'especie_id', 
-        'raza_id', 
+        'autor_usuario_id',
+        'nombre',
+        'especie_id',
+        'raza_id',
         'otra_raza',
-        'color', 
-        'tamano', 
-        'sexo', 
-        'fecha_extravio', 
+        'color',
+        'tamano',
+        'sexo',
+        'fecha_extravio',
         'colonia_barrio',
-        'calle_referencias', 
-        'descripcion', 
+        'calle_referencias',
+        'descripcion',
         'estado',
         'foto',
         'ubicacion_id'
     ];
 
-        public function ubicacion()
+    public function ubicacion()
     {
-        // Busca en la tabla ubicaciones el id que coincida con mi 'ubicacion_id'
-        return $this->belongsTo(Ubicacion::class, 'ubicacion_id', 'id_ubicacion'); 
+        return $this->belongsTo(Ubicacion::class, 'ubicacion_id', 'id_ubicacion');
     }
 
-    
-
-    // 3. Relación: Una publicación tiene muchas fotos
     public function fotos()
     {
         return $this->hasMany(ExtravioFoto::class, 'publicacion_id', 'id_publicacion');
@@ -56,5 +50,11 @@ class PublicacionExtravio extends Model
     public function autor()
     {
         return $this->belongsTo(User::class, 'autor_usuario_id');
+    }
+
+    public function avistamientos()
+    {
+        return $this->hasMany(AvistamientoExtravio::class, 'publicacion_id', 'id_publicacion')
+            ->orderByDesc('creado_en');
     }
 }

@@ -15,8 +15,8 @@ class RefugioController extends Controller
     {
         $refugios = Organizacion::with(['direccion', 'fotos', 'refugioDetalle'])
             ->where('tipo', 'REFUGIO')
-            ->where('estado_revision', 'APROBADA') // Solo mostramos los aprobados
-            ->orderBy('creado_en', 'desc')
+            ->where('estado_revision', 'APROBADA')
+            ->orderBy('created_at', 'desc')
             ->paginate(9);
 
         return view('refugios.index', compact('refugios'));
@@ -35,9 +35,14 @@ class RefugioController extends Controller
     // Panel privado del refugio
     public function dashboard()
     {
+        $usuario = Auth::user();
+
+        abort_if(!$usuario, 403, 'No tienes un refugio asociado.');
+
         $organizacion = Organizacion::with(['direccion', 'fotos', 'refugioDetalle'])
             ->where('tipo', 'REFUGIO')
-            ->where('usuario_dueno_id', Auth::id())
+            ->where('estado_revision', 'APROBADA')
+            ->where('usuario_dueno_id', $usuario->id_usuario)
             ->first();
 
         abort_if(!$organizacion, 403, 'No tienes un refugio asociado.');

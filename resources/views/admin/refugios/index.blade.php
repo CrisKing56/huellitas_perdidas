@@ -5,9 +5,9 @@
 
 @section('content')
 <div class="space-y-8">
-    <div>
-        <h1 class="text-4xl font-bold text-gray-800 mb-2">Gestión de refugios</h1>
-        <p class="text-gray-500 text-lg">Administra refugios activos y solicitudes pendientes.</p>
+    <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-3xl p-8 text-white shadow-sm">
+        <h1 class="text-4xl font-bold mb-2">Gestión de refugios</h1>
+        <p class="text-slate-200 text-lg">Revisa solicitudes, aprueba registros y administra cuentas activas o suspendidas.</p>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -30,6 +30,7 @@
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100">
             <h2 class="text-xl font-bold text-gray-800">Listado de refugios</h2>
+            <p class="text-sm text-gray-500 mt-1">Para rechazar una solicitud, entra al detalle y escribe el motivo.</p>
         </div>
 
         @if($refugios->isEmpty())
@@ -44,7 +45,8 @@
                             <th class="px-6 py-4 font-semibold">Refugio</th>
                             <th class="px-6 py-4 font-semibold">Contacto</th>
                             <th class="px-6 py-4 font-semibold">Ubicación</th>
-                            <th class="px-6 py-4 font-semibold">Estado</th>
+                            <th class="px-6 py-4 font-semibold">Revisión</th>
+                            <th class="px-6 py-4 font-semibold">Cuenta</th>
                             <th class="px-6 py-4 font-semibold text-center">Acciones</th>
                         </tr>
                     </thead>
@@ -88,6 +90,24 @@
                                 </td>
 
                                 <td class="px-6 py-5 align-top">
+                                    @if($ref->estado_revision === 'APROBADA')
+                                        @if($ref->estado_usuario === 'SUSPENDIDA')
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-700">
+                                                SUSPENDIDA
+                                            </span>
+                                        @else
+                                            <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
+                                                ACTIVA
+                                            </span>
+                                        @endif
+                                    @else
+                                        <span class="inline-flex px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-600">
+                                            N/A
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-5 align-top">
                                     <div class="flex flex-col md:flex-row gap-2 justify-center">
                                         <a href="{{ route('admin.refugios.show', $ref->id_organizacion) }}"
                                            class="px-4 py-2 rounded-lg bg-blue-500 hover:bg-blue-600 text-white font-semibold transition text-center">
@@ -100,16 +120,6 @@
                                                 <button type="submit"
                                                     class="px-4 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition">
                                                     Aprobar
-                                                </button>
-                                            </form>
-                                        @endif
-
-                                        @if($ref->estado_revision !== 'RECHAZADA')
-                                            <form action="{{ route('admin.refugios.rechazar', $ref->id_organizacion) }}" method="POST">
-                                                @csrf
-                                                <button type="submit"
-                                                    class="px-4 py-2 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold transition">
-                                                    Rechazar
                                                 </button>
                                             </form>
                                         @endif

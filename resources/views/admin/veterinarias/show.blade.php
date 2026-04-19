@@ -17,55 +17,138 @@
 @endphp
 
 <div class="space-y-8">
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-            <h1 class="text-4xl font-bold text-gray-800 mb-2">{{ $veterinaria->nombre }}</h1>
-            <p class="text-gray-500 text-lg">Información completa de la veterinaria registrada.</p>
-        </div>
+    <div class="bg-gradient-to-r from-slate-800 to-slate-700 rounded-3xl p-8 text-white shadow-sm">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div>
+                <p class="text-slate-200 text-sm uppercase tracking-[0.2em] mb-3">Detalle administrativo</p>
+                <h1 class="text-4xl font-bold mb-2">{{ $veterinaria->nombre }}</h1>
+                <p class="text-slate-200 text-lg">Consulta la información completa y administra el estado de esta cuenta.</p>
 
-        <div class="flex flex-wrap gap-3">
-            <a href="{{ route('admin.veterinarias.index') }}"
-               class="px-5 py-3 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold transition">
-                Volver
-            </a>
+                <div class="flex flex-wrap gap-3 mt-5">
+                    @if($veterinaria->estado_revision === 'APROBADA')
+                        <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-700">
+                            Solicitud aprobada
+                        </span>
+                    @elseif($veterinaria->estado_revision === 'PENDIENTE')
+                        <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">
+                            Solicitud pendiente
+                        </span>
+                    @else
+                        <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-700">
+                            Solicitud rechazada
+                        </span>
+                    @endif
 
-            @if($veterinaria->estado_revision !== 'APROBADA')
-                <form action="{{ route('admin.veterinarias.aprobar', $veterinaria->id_organizacion) }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                        class="px-5 py-3 rounded-lg bg-green-500 hover:bg-green-600 text-white font-semibold transition">
-                        Aprobar
-                    </button>
-                </form>
-            @endif
+                    @if($veterinaria->estado_usuario === 'SUSPENDIDA')
+                        <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-700">
+                            Cuenta suspendida
+                        </span>
+                    @else
+                        <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-blue-100 text-blue-700">
+                            Cuenta activa
+                        </span>
+                    @endif
+                </div>
+            </div>
 
-            @if($veterinaria->estado_revision !== 'RECHAZADA')
-                <form action="{{ route('admin.veterinarias.rechazar', $veterinaria->id_organizacion) }}" method="POST">
-                    @csrf
-                    <button type="submit"
-                        class="px-5 py-3 rounded-lg bg-red-500 hover:bg-red-600 text-white font-semibold transition">
-                        Rechazar
-                    </button>
-                </form>
-            @endif
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('admin.veterinarias.index') }}"
+                   class="px-5 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold transition border border-white/15">
+                    Volver
+                </a>
+
+                @if($veterinaria->estado_revision !== 'APROBADA')
+                    <form action="{{ route('admin.veterinarias.aprobar', $veterinaria->id_organizacion) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="px-5 py-3 rounded-xl bg-green-500 hover:bg-green-600 text-white font-semibold transition">
+                            Aprobar solicitud
+                        </button>
+                    </form>
+                @endif
+
+                @if($veterinaria->estado_revision === 'APROBADA' && $veterinaria->estado_usuario === 'ACTIVA')
+                    <form action="{{ route('admin.veterinarias.suspender', $veterinaria->id_organizacion) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="px-5 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition">
+                            Suspender cuenta
+                        </button>
+                    </form>
+                @endif
+
+                @if($veterinaria->estado_revision === 'APROBADA' && $veterinaria->estado_usuario === 'SUSPENDIDA')
+                    <form action="{{ route('admin.veterinarias.reactivar', $veterinaria->id_organizacion) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="px-5 py-3 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-semibold transition">
+                            Reactivar cuenta
+                        </button>
+                    </form>
+                @endif
+            </div>
         </div>
     </div>
 
-    <div>
-        @if($veterinaria->estado_revision === 'APROBADA')
-            <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-700">
-                APROBADA
-            </span>
-        @elseif($veterinaria->estado_revision === 'PENDIENTE')
-            <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-700">
-                PENDIENTE
-            </span>
-        @else
-            <span class="inline-flex px-4 py-2 rounded-full text-sm font-semibold bg-red-100 text-red-700">
-                RECHAZADA
-            </span>
-        @endif
+    @if($errors->any())
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+            <p class="font-semibold mb-2">Revisa estos campos:</p>
+            <ul class="list-disc list-inside space-y-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-sm text-gray-500 mb-2">Estado de revisión</p>
+            <p class="text-2xl font-bold text-gray-800">{{ $veterinaria->estado_revision }}</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-sm text-gray-500 mb-2">Estado de cuenta</p>
+            <p class="text-2xl font-bold text-gray-800">{{ $veterinaria->estado_usuario }}</p>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <p class="text-sm text-gray-500 mb-2">Correo asociado</p>
+            <p class="text-lg font-semibold text-gray-800 break-all">{{ $veterinaria->correo }}</p>
+        </div>
     </div>
+
+    @if($veterinaria->motivo_rechazo)
+        <div class="bg-red-50 border border-red-100 rounded-2xl p-6">
+            <h2 class="text-xl font-bold text-red-700 mb-3">Motivo del rechazo</h2>
+            <p class="text-red-800 whitespace-pre-line">{{ $veterinaria->motivo_rechazo }}</p>
+        </div>
+    @endif
+
+    @if($veterinaria->estado_revision === 'PENDIENTE')
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">Rechazar solicitud</h2>
+            <p class="text-gray-500 mb-5">Usa esta opción solo cuando la solicitud no cumple con los requisitos o la información enviada es insuficiente.</p>
+
+            <form action="{{ route('admin.veterinarias.rechazar', $veterinaria->id_organizacion) }}" method="POST" class="space-y-4">
+                @csrf
+                <div>
+                    <label class="block text-sm font-medium text-gray-600 mb-2">Motivo del rechazo</label>
+                    <textarea
+                        name="motivo_rechazo"
+                        rows="5"
+                        placeholder="Escribe claramente por qué se rechaza esta solicitud..."
+                        class="w-full rounded-2xl border border-gray-300 focus:border-red-500 focus:ring-red-500 py-3 px-4 text-gray-800 bg-gray-50"
+                    >{{ old('motivo_rechazo') }}</textarea>
+                </div>
+
+                <button type="submit"
+                    class="px-5 py-3 rounded-xl bg-red-500 hover:bg-red-600 text-white font-semibold transition">
+                    Rechazar solicitud
+                </button>
+            </form>
+        </div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -74,7 +157,6 @@
                 <p><span class="font-semibold">Nombre:</span> {{ $veterinaria->nombre }}</p>
                 <p><span class="font-semibold">Descripción:</span> {{ $veterinaria->descripcion }}</p>
                 <p><span class="font-semibold">Teléfono de la veterinaria:</span> {{ $veterinaria->telefono }}</p>
-                <p><span class="font-semibold">Estado de revisión:</span> {{ $veterinaria->estado_revision }}</p>
             </div>
         </div>
 
@@ -111,7 +193,7 @@
 
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 lg:col-span-2">
             <h2 class="text-xl font-bold text-gray-800 mb-4">Ubicación</h2>
-            <div class="space-y-3 text-gray-700">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
                 <p><span class="font-semibold">Latitud:</span> {{ $veterinaria->latitud ?? 'No registrada' }}</p>
                 <p><span class="font-semibold">Longitud:</span> {{ $veterinaria->longitud ?? 'No registrada' }}</p>
             </div>
@@ -123,9 +205,9 @@
             @if($horarios->isEmpty())
                 <p class="text-gray-600">No hay horarios registrados.</p>
             @else
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     @foreach($horarios as $horario)
-                        <div class="border border-gray-200 rounded-xl p-4 bg-gray-50">
+                        <div class="border border-gray-200 rounded-2xl p-4 bg-gray-50">
                             <p class="font-semibold text-gray-800">{{ $dias[$horario->dia_semana] ?? 'Día' }}</p>
 
                             @if($horario->cerrado)
@@ -194,9 +276,9 @@
             @if($fotos->isEmpty())
                 <p class="text-gray-600">No hay fotografías registradas.</p>
             @else
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
                     @foreach($fotos as $foto)
-                        <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 shadow-sm">
+                        <div class="border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 shadow-sm">
                             <img src="{{ asset('storage/' . $foto->url) }}"
                                  alt="Foto de veterinaria"
                                  class="w-full h-48 object-cover">

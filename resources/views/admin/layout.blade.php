@@ -130,14 +130,15 @@
                 <span>Refugios</span>
             </a>
 
-            <button type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
+            <a href="{{ route('admin.reportes.index') }}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+               {{ request()->routeIs('admin.reportes.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 17v-6h13M9 5v6h13M5 5h.01M5 12h.01M5 19h.01"/>
                 </svg>
                 <span>Reportes</span>
-            </button>
+            </a>
 
             <button type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
@@ -243,7 +244,7 @@
             <footer class="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-500">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                     <p>Panel Administrador · Huellitas Perdidas © {{ date('Y') }}</p>
-                    <p class="text-xs text-gray-400">Gestión de usuarios, refugios y veterinarias</p>
+                    <p class="text-xs text-gray-400">Gestión de usuarios, refugios, veterinarias y reportes</p>
                 </div>
             </footer>
         </div>

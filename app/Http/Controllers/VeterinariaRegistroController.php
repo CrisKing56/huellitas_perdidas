@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Auth\Events\Registered;
 
 class VeterinariaRegistroController extends Controller
 {
@@ -17,6 +19,7 @@ class VeterinariaRegistroController extends Controller
             'password'             => 'required|string|min:8|confirmed',
             'telefono'             => 'required|digits:10',
             'whatsapp'             => 'nullable|digits:10',
+            'sitio_web'            => 'nullable|url|max:255',
 
             'calle_numero'         => 'required|string|max:150',
             'colonia'              => 'required|string|max:100',
@@ -61,6 +64,8 @@ class VeterinariaRegistroController extends Controller
                 'telefono'      => $request->telefono,
                 'whatsapp'      => $request->whatsapp,
                 'estado'        => 'ACTIVA',
+                'created_at'    => now(),
+                'updated_at'    => now(),
             ]);
 
             $direccionId = DB::table('direcciones')->insertGetId([
@@ -85,6 +90,8 @@ class VeterinariaRegistroController extends Controller
                 'direccion_id'     => $direccionId,
                 'ubicacion_id'     => $ubicacionId,
                 'estado_revision'  => 'PENDIENTE',
+                'created_at'       => now(),
+                'updated_at'       => now(),
             ]);
 
             DB::table('veterinaria_detalle')->insert([
@@ -102,8 +109,15 @@ class VeterinariaRegistroController extends Controller
 
             DB::commit();
 
-            return redirect()->route('registro.veterinaria')
-                ->with('success', 'Solicitud enviada correctamente.');
+            $user = User::find($usuarioId);
+            if ($user && is_null($user->email_verified_at)) {
+                event(new Registered($user));
+            }
+
+            return redirect()->route('registro.organizacion.enviado')
+                ->with('correo_verificacion', $request->correo)
+                ->with('tipo_registro', 'veterinaria');
+
         } catch (\Throwable $e) {
             DB::rollBack();
 
@@ -214,8 +228,6 @@ class VeterinariaRegistroController extends Controller
                     'organizacion_id' => $organizacionId,
                     'servicio_id'     => $servicio->id_servicio,
                     'precio'          => $precio,
-                    'moneda'          => 'MXN',
-                    'nota'            => null,
                 ]);
             }
         }
