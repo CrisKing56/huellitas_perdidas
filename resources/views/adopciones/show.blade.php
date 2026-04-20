@@ -539,6 +539,26 @@
                                 La ubicación todavía no fue guardada en esta publicación.
                             </p>
                         @endif
+                            <span class="leading-relaxed">{{ $adopcion->requisitos }}</span>
+                        </li>
+                    </ul>
+                </div>
+
+            </div>
+
+            <div class="space-y-6">
+                
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
+                    <h3 class="text-lg font-bold text-gray-900 mb-6">Información de Contacto</h3>
+                    
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="bg-orange-50 p-2 rounded-full text-orange-500 mt-1">
+                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                        </div>
+                        <div>
+                            <p class="text-xs text-gray-400 font-bold uppercase mb-0.5">Responsable</p>
+                            <p class="font-bold text-gray-900 text-base leading-tight">{{ $adopcion->autor->nombre ?? 'Usuario' }}</p>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -1,5 +1,17 @@
 @extends('layout.app')
 
+@section('meta_tags')
+    <meta property="og:title" content="¡Ayúdame a encontrar a {{ $publicacion->nombre }}!" />
+    <meta property="og:description" content="Se extravió el {{ $publicacion->fecha_extravio }} por la zona de {{ $publicacion->ultimo_avistamiento }}. Características: {{ $publicacion->sexo }}, tamaño {{ $publicacion->tamano }}." />
+    <meta property="og:url" content="{{ url()->current() }}" />
+    <meta property="og:type" content="article" />
+    
+    @if($publicacion->fotos->count() > 0)
+        <meta property="og:image" content="{{ asset('storage/' . $publicacion->fotos->first()->url) }}" />
+    @endif
+@endsection
+
+
 @section('content')
 
 <link
@@ -630,6 +642,26 @@
                             <p class="text-gray-500 font-medium">No hay coordenadas exactas para esta mascota.</p>
                         </div>
                     @endif
+                    
+                    <hr class="my-6 border-gray-100">
+
+                    <p class="text-xs text-gray-500 mb-3 font-medium">Acciones</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="window.print()" class="flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-600 text-sm font-medium transition border border-gray-200">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                            Imprimir
+                        </button>
+                        @php
+                            // Obtenemos la URL exacta de esta página y la codificamos para que sea segura
+                            $urlActual = urlencode(url()->current());
+                            $urlFacebook = "https://www.facebook.com/sharer/sharer.php?u=" . $urlActual;
+                        @endphp
+
+                        <a href="{{ $urlFacebook }}" target="_blank" class="w-full inline-flex justify-center items-center px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg font-semibold text-orange-600 hover:bg-orange-100 transition-colors">
+                            <svg class="w-5 h-5 mr-2 text-orange-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                            Compartir en Facebook
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
