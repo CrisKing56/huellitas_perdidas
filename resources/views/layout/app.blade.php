@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    @hasSection('meta_tags')
+        @yield('meta_tags')
+    @else
+        <meta property="og:title" content="Huellitas Perdidas - Adopta y Ayuda" />
+        <meta property="og:description" content="Plataforma dedicada a reunir mascotas con sus familias y promover la adopción responsable." />
+        <meta property="og:image" content="{{ asset('img/portada-default.jpg') }}" />
+        <meta property="og:type" content="website" />
+    @endif
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="{{ asset('img/logo1.png') }}" type="image/png">

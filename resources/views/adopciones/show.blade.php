@@ -161,7 +161,7 @@
                         </div>
                         <div>
                             <p class="text-xs text-gray-400 font-bold uppercase mb-0.5">Responsable</p>
-                            <p class="font-bold text-gray-900 text-base leading-tight">{{ $adopcion->autor->name ?? 'Usuario' }}</p>
+                            <p class="font-bold text-gray-900 text-base leading-tight">{{ $adopcion->autor->nombre ?? 'Usuario' }}</p>
                         </div>
                     </div>
 

@@ -24,6 +24,7 @@ class User extends Authenticatable
         'rol',
         'estado',
         'google_id',
+        'facebook_id',
         'auth_provider',
         'google_avatar',
         'email_verified_at',
@@ -44,8 +45,11 @@ class User extends Authenticatable
         return $this->password_hash;
     }
 
-    public function getAuthIdentifierName()
+    // Le decimos a Laravel CÓMO se llama la columna de contraseña
+    public function getAuthPasswordName()
     {
-        return 'correo';
+        return 'password_hash';
     }
+
+    // ❌ BORRAMOS getAuthIdentifierName() por completo
 }
