@@ -40,8 +40,8 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
         <aside class="lg:col-span-3">
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
-                <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm flex flex-col overflow-hidden max-h-[78vh] lg:max-h-[calc(100vh-3rem)] lg:sticky lg:top-6">
+                <div class="p-5 border-b border-gray-100 flex items-center justify-between shrink-0">
                     <h2 class="text-xl font-bold text-gray-900">Filtros</h2>
                     <a href="{{ route('mascotas.index2') }}" class="text-sm text-gray-400 hover:text-orange-500 transition">
                         Eliminar filtros
@@ -51,7 +51,7 @@
                 <form method="GET" action="{{ route('mascotas.index2') }}" class="flex flex-col min-h-0">
                     <input type="hidden" name="orden" value="{{ $filtros['orden'] ?? 'recientes' }}">
 
-                    <div class="p-5 space-y-6 overflow-y-auto min-h-0 lg:max-h-[calc(100vh-15rem)]">
+                    <div class="p-5 space-y-6 overflow-y-auto overscroll-contain min-h-0 max-h-[calc(78vh-8.5rem)] lg:max-h-[calc(100vh-15rem)]">
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
                             <div class="relative">

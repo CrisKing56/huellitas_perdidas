@@ -1,148 +1,313 @@
 @extends('layout.app')
 
 @section('content')
-<div class="min-h-screen bg-white py-10">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+<div class="bg-white min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
 
-        <div class="flex justify-between items-start mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Mis publicaciones</h1>
-                <p class="text-gray-500 mt-1">Consulta y administra tus publicaciones realizadas.</p>
-                <a href="{{ route('adopciones.create')}}">
-                    <h2 class="text-xl font-medium text-gray-700 mb-4">Publicar mascota en adopción </h2>
-                </a>
-            </div>
-            
-        </div>
+        <div class="mb-8">
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div class="max-w-3xl">
+                        <span class="inline-flex items-center rounded-full bg-green-50 text-green-600 px-3 py-1 text-xs font-bold tracking-wide uppercase border border-green-100">
+                            Panel personal
+                        </span>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div class="bg-orange-400 rounded-xl p-6 flex items-center shadow-sm">
-                <div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                </div>
-                <div>
-                    <p class="text-white text-sm font-medium opacity-90">Total</p>
-                    <p class="text-white text-3xl font-bold">{{ $adopciones->total() }}</p>
-                </div>
-            </div>
+                        <h1 class="mt-4 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                            Mis publicaciones
+                        </h1>
 
-            <div class="bg-orange-400 rounded-xl p-6 flex items-center shadow-sm">
-                <div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div>
-                    <p class="text-white text-sm font-medium opacity-90">Activas</p>
-                    <p class="text-white text-3xl font-bold">{{ $adopciones->where('estado', 'DISPONIBLE')->count() }}</p>
-                </div>
-            </div>
+                        <p class="text-gray-500 mt-3 text-base md:text-lg leading-relaxed">
+                            Consulta, actualiza y administra tus publicaciones de mascotas en adopción desde un solo lugar.
+                        </p>
+                    </div>
 
-            <div class="bg-orange-400 rounded-xl p-6 flex items-center shadow-sm">
-                <div class="bg-white/20 w-12 h-12 rounded-full flex items-center justify-center mr-4">
-                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <div>
-                    <p class="text-white text-sm font-medium opacity-90">Adoptadas</p>
-                    <p class="text-white text-3xl font-bold">{{ $adopciones->where('estado', 'ADOPTADA')->count() }}</p>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <a href="{{ route('adopciones.create') }}"
+                           class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-2xl shadow-sm transition">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                            </svg>
+                            Publicar mascota en adopción
+                        </a>
+
+                        <a href="{{ route('adopciones.solicitudes.recibidas') }}"
+                           class="inline-flex items-center justify-center px-5 py-3 bg-gray-100 text-gray-700 font-medium rounded-2xl hover:bg-gray-200 transition">
+                            Solicitudes recibidas
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="border-b border-gray-200 mb-8">
-            <nav class="-mb-px flex space-x-8">
-                <a href="{{ route('extravios.index') }}" class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+        @if (session('success'))
+            <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Total de publicaciones</p>
+                        <p class="text-3xl font-extrabold text-gray-900">{{ $adopciones->total() }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-amber-100 text-amber-500 flex items-center justify-center shrink-0">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Disponibles</p>
+                        <p class="text-3xl font-extrabold text-gray-900">{{ $adopciones->where('estado', 'DISPONIBLE')->count() }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-2xl bg-purple-100 text-purple-500 flex items-center justify-center shrink-0">
+                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+
+                    <div>
+                        <p class="text-sm text-gray-500 font-medium">Adoptadas</p>
+                        <p class="text-3xl font-extrabold text-gray-900">{{ $adopciones->where('estado', 'ADOPTADA')->count() }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-8 border-b border-gray-200">
+            <nav class="-mb-px flex flex-wrap gap-8">
+                <a href="{{ route('extravios.index') }}"
+                   class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm transition">
                     Mascotas extraviadas
-                    <span class="bg-gray-100 text-gray-600 py-0.5 px-2.5 rounded-full text-xs">Ir</span>
                 </a>
 
-                <a href="#" class="border-orange-500 text-orange-600 whitespace-nowrap pb-4 px-1 border-b-2 font-medium text-sm flex items-center gap-2">
+                <a href="#"
+                   class="border-green-500 text-green-600 whitespace-nowrap pb-4 px-1 border-b-2 font-semibold text-sm">
                     Mascotas en adopción
-                    <span class="bg-orange-100 text-orange-600 py-0.5 px-2.5 rounded-full text-xs">{{ $adopciones->total() }}</span>
+                    <span class="bg-green-100 text-green-600 ml-2 py-0.5 px-2.5 rounded-full text-xs font-medium">
+                        {{ $adopciones->total() }}
+                    </span>
                 </a>
             </nav>
         </div>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
             @forelse ($adopciones as $adopcion)
-                <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-6 hover:shadow-md transition-shadow">
-                    
-                    <div class="w-full sm:w-28 h-28 flex-shrink-0">
-                        @if($adopcion->fotoPrincipal)
-                            <img src="{{ asset('storage/' . $adopcion->fotoPrincipal->url) }}" class="w-full h-full object-cover rounded-lg">
-                        @else
-                            <div class="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
-                                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                @php
+                    $fechaPublicacion = $adopcion->created_at ?? null;
+
+                    $colores = [
+                        'DISPONIBLE' => 'bg-green-100 text-green-700 border-green-200',
+                        'EN_PROCESO' => 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                        'ADOPTADA' => 'bg-purple-100 text-purple-700 border-purple-200',
+                        'PAUSADA' => 'bg-gray-100 text-gray-700 border-gray-200',
+                    ];
+
+                    $claseColor = $colores[$adopcion->estado] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+
+                    $especieTexto = $adopcion->especie->nombre ?? match ((int) $adopcion->especie_id) {
+                        1 => 'Perro',
+                        2 => 'Gato',
+                        default => 'Mascota',
+                    };
+
+                    $razaTexto = $adopcion->raza->nombre ?? (!empty($adopcion->otra_raza) ? $adopcion->otra_raza : null);
+                @endphp
+
+                <article class="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition">
+                    <div class="p-5 sm:p-6">
+                        <div class="flex flex-col lg:flex-row gap-6">
+
+                            <div class="w-full lg:w-44 shrink-0">
+                                <div class="w-full h-52 lg:h-44 rounded-2xl overflow-hidden border border-gray-100 bg-gray-100">
+                                    @if($adopcion->fotoPrincipal)
+                                        <img src="{{ asset('storage/' . $adopcion->fotoPrincipal->url) }}"
+                                             class="w-full h-full object-cover"
+                                             alt="{{ $adopcion->nombre }}">
+                                    @else
+                                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                            <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                            </svg>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                        @endif
-                    </div>
 
-                    <div class="flex-1 min-w-0 w-full">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="text-lg font-bold text-gray-900 truncate">{{ $adopcion->nombre }}</h3>
-                                <p class="text-sm text-gray-500">
-                                    {{ ucfirst(strtolower($adopcion->especie_id == 1 ? 'Perro' : 'Gato')) }} en {{ $adopcion->colonia_barrio }}
-                                </p>
-                                <p class="text-xs text-gray-400 mt-1">
-                                    Publicado: {{ \Carbon\Carbon::parse($adopcion->creado_en)->format('d M, Y') }}
-                                </p>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-3 mb-3">
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wide border {{ $claseColor }}">
+                                                {{ str_replace('_', ' ', $adopcion->estado) }}
+                                            </span>
+
+                                            <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wide border bg-green-50 text-green-600 border-green-100">
+                                                {{ $especieTexto }}
+                                            </span>
+
+                                            @if($fechaPublicacion)
+                                                <span class="text-sm text-gray-400">
+                                                    Publicado {{ \Carbon\Carbon::parse($fechaPublicacion)->locale('es')->diffForHumans() }}
+                                                </span>
+                                            @endif
+                                        </div>
+
+                                        <h2 class="text-2xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                                            {{ $adopcion->nombre }}
+                                        </h2>
+
+                                        <div class="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                                            <span>{{ $especieTexto }}</span>
+
+                                            @if($razaTexto)
+                                                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                <span class="font-medium text-gray-700">{{ $razaTexto }}</span>
+                                            @endif
+
+                                            @if($adopcion->edad_anios !== null)
+                                                <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                                                <span>{{ $adopcion->edad_anios }} año(s)</span>
+                                            @endif
+                                        </div>
+
+                                        @if(!empty($adopcion->descripcion))
+                                            <p class="mt-4 text-sm text-gray-600 leading-relaxed max-w-3xl">
+                                                {{ \Illuminate\Support\Str::limit($adopcion->descripcion, 180) }}
+                                            </p>
+                                        @endif
+                                    </div>
+
+                                    <div class="shrink-0">
+                                        <a href="{{ route('adopciones.show', $adopcion->id_publicacion) }}"
+                                           class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-green-50 text-green-600 border border-green-100 font-semibold text-sm hover:bg-green-100 transition">
+                                            Ver publicación
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 flex flex-wrap gap-3">
+                                    <a href="{{ route('adopciones.show', $adopcion->id_publicacion) }}"
+                                       class="inline-flex items-center gap-2 text-green-600 bg-green-50 hover:bg-green-100 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                        </svg>
+                                        Ver
+                                    </a>
+
+                                    <a href="{{ route('adopciones.solicitudes.recibidas', ['publicacion' => $adopcion->id_publicacion]) }}"
+                                       class="inline-flex items-center gap-2 text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6M7 6h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                                        </svg>
+                                        Ver solicitudes
+                                    </a>
+
+                                    @if($adopcion->estado === 'EN_PROCESO')
+                                        <form action="{{ route('adopciones.marcarAdoptada', $adopcion->id_publicacion) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-2 text-purple-700 bg-purple-50 hover:bg-purple-100 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                                </svg>
+                                                Marcar adoptada
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    @if($adopcion->estado === 'ADOPTADA')
+                                        <form action="{{ route('adopciones.volverEnProceso', $adopcion->id_publicacion) }}" method="POST">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                    class="inline-flex items-center gap-2 text-gray-700 bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                                                Volver a en proceso
+                                            </button>
+                                        </form>
+                                    @endif
+
+                                    <a href="{{ route('adopciones.edit', $adopcion->id_publicacion) }}"
+                                       class="inline-flex items-center gap-2 text-gray-700 bg-gray-100 hover:bg-gray-200 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                        </svg>
+                                        Editar
+                                    </a>
+
+                                    <form action="{{ route('adopciones.destroy', $adopcion->id_publicacion) }}"
+                                          method="POST"
+                                          onsubmit="return confirm('¿Seguro que deseas eliminar esta publicación?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-2 text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2.5 rounded-xl text-sm font-semibold transition">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                            </svg>
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
-                            
-                            @php
-                                $estados = [
-                                    'DISPONIBLE' => 'bg-green-100 text-green-700',
-                                    'ADOPTADA' => 'bg-purple-100 text-purple-700',
-                                    'PAUSADA' => 'bg-gray-100 text-gray-600',
-                                ];
-                                $claseBadge = $estados[$adopcion->estado] ?? 'bg-gray-100 text-gray-600';
-                            @endphp
-                            <span class="{{ $claseBadge }} px-2.5 py-0.5 rounded text-xs font-bold uppercase">
-                                {{ $adopcion->estado }}
-                            </span>
-                        </div>
 
-                        <div class="flex flex-wrap items-center gap-3 mt-4">
-                            <a href="{{ route('adopciones.show', $adopcion->id_publicacion) }}" class="inline-flex items-center px-3 py-1.5 bg-orange-50 text-orange-600 rounded text-sm font-medium hover:bg-orange-100 transition">
-                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                                Ver
-                            </a>
-
-                            <a href="{{ route('adopciones.edit', $adopcion->id_publicacion) }}" class="inline-flex items-center px-3 py-1.5 border border-gray-200 text-gray-600 rounded text-sm font-medium hover:bg-gray-50 transition">
-                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                Editar
-                            </a>
-                            
-                            {{-- 
-                            <button class="inline-flex items-center px-3 py-1.5 border border-green-200 text-green-600 rounded text-sm font-medium hover:bg-green-50 transition">
-                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                Adoptada
-                            </button> 
-                            --}}
-
-                            <form action="{{ route('adopciones.destroy', $adopcion->id_publicacion) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar esta publicación?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="inline-flex items-center px-3 py-1.5 border border-red-200 text-red-500 rounded text-sm font-medium hover:bg-red-50 transition">
-                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    Eliminar
-                                </button>
-                            </form>
                         </div>
                     </div>
-                </div>
+                </article>
             @empty
-                <div class="text-center py-12">
-                    <div class="bg-gray-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                <div class="text-center py-14 bg-white rounded-3xl shadow-sm border border-dashed border-gray-200">
+                    <div class="mx-auto w-16 h-16 rounded-full bg-green-50 text-green-600 flex items-center justify-center mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
                     </div>
-                    <h3 class="text-lg font-medium text-gray-900">Sin publicaciones</h3>
-                    <p class="text-gray-500 mt-1">Aún no has puesto ninguna mascota en adopción.</p>
+
+                    <h3 class="text-lg font-bold text-gray-900">No tienes publicaciones todavía</h3>
+                    <p class="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                        Empieza publicando una mascota en adopción para ayudarle a encontrar un hogar responsable.
+                    </p>
+
+                    <div class="mt-6">
+                        <a href="{{ route('adopciones.create') }}"
+                           class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-2xl transition shadow-sm">
+                            Publicar mascota en adopción
+                        </a>
+                    </div>
                 </div>
             @endforelse
         </div>
 
-        <div class="mt-8">
-            {{ $adopciones->links() }}
-        </div>
+        @if($adopciones->hasPages())
+            <div class="mt-8">
+                {{ $adopciones->links() }}
+            </div>
+        @endif
 
     </div>
 </div>

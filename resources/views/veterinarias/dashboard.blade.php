@@ -64,19 +64,19 @@
                             </p>
                         </a>
 
+                        <a href="{{ route('consejos.mis-consejos') }}"
+                           class="group rounded-2xl border border-gray-100 bg-gray-50 p-5 hover:bg-orange-50 hover:border-orange-200 transition">
+                            <h3 class="font-bold text-gray-900 group-hover:text-orange-600">Gestionar consejos</h3>
+                            <p class="text-sm text-gray-500 mt-2">
+                                Consulta estados, edita y elimina tus consejos institucionales.
+                            </p>
+                        </a>
+
                         <a href="{{ route('mascotas.create') }}"
                            class="group rounded-2xl border border-gray-100 bg-gray-50 p-5 hover:bg-orange-50 hover:border-orange-200 transition">
                             <h3 class="font-bold text-gray-900 group-hover:text-orange-600">Reportar extravío</h3>
                             <p class="text-sm text-gray-500 mt-2">
                                 Registra una mascota extraviada vinculada a tu institución.
-                            </p>
-                        </a>
-
-                        <a href="{{ route('veterinarias.index') }}"
-                           class="group rounded-2xl border border-gray-100 bg-gray-50 p-5 hover:bg-orange-50 hover:border-orange-200 transition">
-                            <h3 class="font-bold text-gray-900 group-hover:text-orange-600">Directorio de veterinarias</h3>
-                            <p class="text-sm text-gray-500 mt-2">
-                                Consulta otras clínicas y su presencia en la plataforma.
                             </p>
                         </a>
                     </div>
@@ -119,6 +119,10 @@
 
                         <a href="{{ route('consejos.index') }}" class="block rounded-xl px-4 py-3 bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition font-medium">
                             Ver consejos
+                        </a>
+
+                        <a href="{{ route('consejos.mis-consejos') }}" class="block rounded-xl px-4 py-3 bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition font-medium">
+                            Mis consejos
                         </a>
 
                         <a href="{{ route('mascotas.index2') }}" class="block rounded-xl px-4 py-3 bg-gray-50 hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition font-medium">

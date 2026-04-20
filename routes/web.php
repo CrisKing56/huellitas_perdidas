@@ -14,7 +14,9 @@ use App\Http\Controllers\UserController;
 
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
+use App\Http\Controllers\SolicitudAdopcionController;
 use App\Http\Controllers\ConsejoController;
+use App\Http\Controllers\ReporteConsejoController;
 
 use App\Http\Controllers\VeterinariaController;
 use App\Http\Controllers\RefugioController;
@@ -26,12 +28,19 @@ use App\Http\Controllers\Admin\AdminUsuarioController;
 use App\Http\Controllers\Admin\AdminVeterinariaController;
 use App\Http\Controllers\Admin\AdminRefugioController;
 use App\Http\Controllers\Admin\AdminReporteController;
+use App\Http\Controllers\Admin\AdminConsejoController;
+use App\Http\Controllers\Admin\AdminReporteConsejoController;
+use App\Http\Controllers\Admin\AdminExtravioController;
+use App\Http\Controllers\Admin\AdminAdopcionController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+
 
 // =========================
 // MODELOS
 // =========================
 use App\Models\PublicacionExtravio;
 use App\Models\PublicacionAdopcion;
+
 
 Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(function () {
 
@@ -159,7 +168,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     */
 
     Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
-    Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->name('adopciones.show');
+    Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->whereNumber('id')->name('adopciones.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -168,7 +177,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     */
 
     Route::get('/consejos', [ConsejoController::class, 'index'])->name('consejos.index');
-    Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->name('consejos.show');
+    Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->whereNumber('id')->name('consejos.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -237,6 +246,38 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
 
         /*
         |--------------------------------------------------------------------------
+        | SOLICITUDES DE ADOPCIÓN
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/adopciones/{id}/solicitar', [SolicitudAdopcionController::class, 'create'])
+            ->whereNumber('id')
+            ->name('adopciones.solicitudes.create');
+
+        Route::post('/adopciones/{id}/solicitar', [SolicitudAdopcionController::class, 'store'])
+            ->whereNumber('id')
+            ->name('adopciones.solicitudes.store');
+
+        Route::get('/adopciones/solicitudes/enviadas', [SolicitudAdopcionController::class, 'enviadas'])
+            ->name('adopciones.solicitudes.enviadas');
+
+        Route::get('/adopciones/solicitudes/recibidas', [SolicitudAdopcionController::class, 'recibidas'])
+            ->name('adopciones.solicitudes.recibidas');
+
+        Route::patch('/adopciones/solicitudes/{id}/estado', [SolicitudAdopcionController::class, 'updateEstado'])
+            ->whereNumber('id')
+            ->name('adopciones.solicitudes.updateEstado');
+
+        Route::patch('/adopciones/{id}/marcar-adoptada', [AdopcionController::class, 'marcarAdoptada'])
+            ->whereNumber('id')
+            ->name('adopciones.marcarAdoptada');
+
+        Route::patch('/adopciones/{id}/volver-en-proceso', [AdopcionController::class, 'volverEnProceso'])
+            ->whereNumber('id')
+            ->name('adopciones.volverEnProceso');
+
+        /*
+        |--------------------------------------------------------------------------
         | EXTRAVÍOS - CRUD PRIVADO
         |--------------------------------------------------------------------------
         */
@@ -292,13 +333,30 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
 
         /*
         |--------------------------------------------------------------------------
-        | CONSEJOS - CREAR/GUARDAR
+        | CONSEJOS - CRUD INSTITUCIONAL
         |--------------------------------------------------------------------------
         */
 
         Route::get('/consejos/publicar', [ConsejoController::class, 'create'])->name('consejos.create');
         Route::post('/consejos/guardar', [ConsejoController::class, 'store'])->name('consejos.store');
 
+        Route::get('/consejos/mis-consejos', [ConsejoController::class, 'misConsejos'])
+            ->name('consejos.mis-consejos');
+
+        Route::get('/consejos/{id}/editar', [ConsejoController::class, 'edit'])
+            ->whereNumber('id')
+            ->name('consejos.edit');
+
+        Route::put('/consejos/{id}', [ConsejoController::class, 'update'])
+            ->whereNumber('id')
+            ->name('consejos.update');
+
+        Route::delete('/consejos/{id}', [ConsejoController::class, 'destroy'])
+            ->whereNumber('id')
+            ->name('consejos.destroy');
+        Route::post('/consejos/{id}/reportar', [ReporteConsejoController::class, 'store'])
+            ->whereNumber('id')
+            ->name('consejos.reportar');
         /*
         |--------------------------------------------------------------------------
         | PANEL ADMINISTRADOR
@@ -307,9 +365,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
 
         Route::middleware(['admin'])->group(function () {
 
-            Route::get('/admin/dashboard', function () {
-                return view('admin.dashboard');
-            })->name('admin.dashboard');
+            Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
             // Usuarios
             Route::get('/admin/usuarios', [AdminUsuarioController::class, 'index'])->name('admin.usuarios.index');
@@ -340,6 +396,28 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
             Route::get('/admin/reportes/{id}', [AdminReporteController::class, 'show'])->name('admin.reportes.show');
             Route::post('/admin/reportes/{id}/en-revision', [AdminReporteController::class, 'marcarEnRevision'])->name('admin.reportes.enRevision');
             Route::post('/admin/reportes/{id}/resolver', [AdminReporteController::class, 'resolver'])->name('admin.reportes.resolver');
+
+            // Consejos
+            Route::get('/admin/consejos', [AdminConsejoController::class, 'index'])->name('admin.consejos.index');
+            Route::get('/admin/consejos/{id}', [AdminConsejoController::class, 'show'])->whereNumber('id')->name('admin.consejos.show');
+            Route::post('/admin/consejos/{id}/aprobar', [AdminConsejoController::class, 'aprobar'])->whereNumber('id')->name('admin.consejos.aprobar');
+            Route::post('/admin/consejos/{id}/rechazar', [AdminConsejoController::class, 'rechazar'])->whereNumber('id')->name('admin.consejos.rechazar');
+            Route::get('/admin/reportes-consejos', [AdminReporteConsejoController::class, 'index'])->name('admin.reportes-consejos.index');
+            Route::get('/admin/reportes-consejos/{id}', [AdminReporteConsejoController::class, 'show'])->whereNumber('id')->name('admin.reportes-consejos.show');
+            Route::post('/admin/reportes-consejos/{id}/en-revision', [AdminReporteConsejoController::class, 'marcarEnRevision'])->whereNumber('id')->name('admin.reportes-consejos.en-revision');
+            Route::post('/admin/reportes-consejos/{id}/resolver', [AdminReporteConsejoController::class, 'resolver'])->whereNumber('id')->name('admin.reportes-consejos.resolver');
+
+            // Publicaciones de extravío
+            Route::get('/admin/extravios', [AdminExtravioController::class, 'index'])->name('admin.extravios.index');
+            Route::get('/admin/extravios/{id}', [AdminExtravioController::class, 'show'])->whereNumber('id')->name('admin.extravios.show');
+            Route::post('/admin/extravios/{id}/ocultar', [AdminExtravioController::class, 'ocultar'])->whereNumber('id')->name('admin.extravios.ocultar');
+            Route::post('/admin/extravios/{id}/reactivar', [AdminExtravioController::class, 'reactivar'])->whereNumber('id')->name('admin.extravios.reactivar');
+
+            // Publicaciones de adopción
+            Route::get('/admin/adopciones', [AdminAdopcionController::class, 'index'])->name('admin.adopciones.index');
+            Route::get('/admin/adopciones/{id}', [AdminAdopcionController::class, 'show'])->whereNumber('id')->name('admin.adopciones.show');
+            Route::post('/admin/adopciones/{id}/pausar', [AdminAdopcionController::class, 'pausar'])->whereNumber('id')->name('admin.adopciones.pausar');
+            Route::post('/admin/adopciones/{id}/reactivar', [AdminAdopcionController::class, 'reactivar'])->whereNumber('id')->name('admin.adopciones.reactivar');
         });
     });
 });

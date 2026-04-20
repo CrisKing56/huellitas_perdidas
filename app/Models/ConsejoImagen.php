@@ -10,13 +10,18 @@ class ConsejoImagen extends Model
     use HasFactory;
 
     protected $table = 'consejo_imagen';
-    protected $primaryKey = 'id_foto';
-    
-    public $timestamps = false; 
+    protected $primaryKey = 'id_imagen';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'consejo_id',
         'url',
-        'orden'
+        'orden',
     ];
+
+    public function consejo()
+    {
+        return $this->belongsTo(Consejo::class, 'consejo_id', 'id_consejo');
+    }
 }

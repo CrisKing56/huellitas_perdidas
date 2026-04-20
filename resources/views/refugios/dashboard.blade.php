@@ -72,11 +72,11 @@
                             </p>
                         </a>
 
-                        <a href="{{ route('adopciones.mis-adopciones') }}"
+                        <a href="{{ route('consejos.mis-consejos') }}"
                            class="group rounded-2xl border border-gray-100 bg-gray-50 p-5 hover:bg-green-50 hover:border-green-200 transition">
-                            <h3 class="font-bold text-gray-900 group-hover:text-green-700">Gestionar adopciones</h3>
+                            <h3 class="font-bold text-gray-900 group-hover:text-green-700">Gestionar consejos</h3>
                             <p class="text-sm text-gray-500 mt-2">
-                                Consulta tus publicaciones y revisa su estado actual.
+                                Consulta estados, edita y elimina los consejos publicados por tu refugio.
                             </p>
                         </a>
                     </div>
@@ -123,6 +123,10 @@
 
                         <a href="{{ route('consejos.index') }}" class="block rounded-xl px-4 py-3 bg-gray-50 hover:bg-green-50 text-gray-700 hover:text-green-700 transition font-medium">
                             Ver consejos
+                        </a>
+
+                        <a href="{{ route('consejos.mis-consejos') }}" class="block rounded-xl px-4 py-3 bg-gray-50 hover:bg-green-50 text-gray-700 hover:text-green-700 transition font-medium">
+                            Mis consejos
                         </a>
                     </div>
                 </div>

@@ -127,7 +127,7 @@
 
                     @if(!$esAutorConsejo)
                         <div>
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">Denunciar consejo</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4">Reportar consejo</h3>
 
                             <form action="{{ route('consejos.reportar', $consejo->id_consejo) }}" method="POST" class="rounded-2xl bg-red-50 border border-red-100 p-5 space-y-4">
                                 @csrf
@@ -150,13 +150,13 @@
                                     <textarea name="descripcion"
                                               rows="4"
                                               maxlength="500"
-                                              placeholder="Describe brevemente por qué estás denunciando este consejo..."
+                                              placeholder="Describe brevemente por qué reportas este consejo..."
                                               class="w-full rounded-xl border-red-200 bg-white px-4 py-3 text-sm text-gray-700 focus:border-red-500 focus:ring-red-500">{{ old('descripcion') }}</textarea>
                                 </div>
 
                                 <button type="submit"
                                         class="w-full rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white hover:bg-red-600 transition">
-                                    Enviar denuncia
+                                    Enviar reporte
                                 </button>
                             </form>
                         </div>
@@ -166,7 +166,7 @@
                 @guest
                     <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
                         <p class="text-sm text-gray-600">
-                            Inicia sesión para poder denunciar este consejo si consideras que infringe las normas.
+                            Inicia sesión para poder reportar este consejo si consideras que infringe las normas.
                         </p>
                     </div>
                 @endguest

@@ -49,7 +49,7 @@
             <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
                 <img src="{{ asset('img/logo1.png') }}" alt="Logo" class="h-9 w-9 object-contain">
                 <div>
-                    <span class="block text-white font-bold text-lg leading-none">Huellitas</span>
+                    <span class="block text-white font-bold text-lg leading-none">Huellitas Perdidas</span>
                     <span class="text-xs text-gray-400">Panel administrativo</span>
                 </div>
             </a>
@@ -83,23 +83,25 @@
                 <span>Usuarios</span>
             </a>
 
-            <button type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
+            <a href="{{ route('admin.extravios.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+            {{ request()->routeIs('admin.extravios.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M9 17v-2a4 4 0 014-4h6M3 7h18M5 7l1.5 11h11L19 7"/>
+                        d="M9 17v-2a4 4 0 014-4h6M3 7h18M5 7l1.5 11h11L19 7"/>
                 </svg>
                 <span>Publicaciones (Extraviados)</span>
-            </button>
+            </a>
 
-            <button type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
+            <a href="{{ route('admin.adopciones.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+            {{ request()->routeIs('admin.adopciones.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 12h4l3 8 4-16 3 8h2"/>
+                        d="M4 12h4l3 8 4-16 3 8h2"/>
                 </svg>
                 <span>Publicaciones (Adopciones)</span>
-            </button>
+            </a>
 
             <button type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
@@ -140,15 +142,26 @@
                 <span>Reportes</span>
             </a>
 
-            <button type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
+            <a href="{{ route('admin.consejos.index') }}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+               {{ request()->routeIs('admin.consejos.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M12 20h9M12 4h9M4 9h16M4 15h16"/>
                 </svg>
                 <span>Consejos</span>
-            </button>
+            </a>
 
+            <a href="{{ route('admin.reportes-consejos.index') }}"
+            class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+            {{ request()->routeIs('admin.reportes-consejos.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 8h10M7 12h6m-9 8h16a2 2 0 002-2V6a2 2 0 00-2-2H8l-4 4v10a2 2 0 002 2z"/>
+                </svg>
+                <span>Reportes de consejos</span>
+            </a>
+            
             <button type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -183,7 +196,7 @@
                     <div class="min-w-0">
                         <div class="flex items-center gap-2">
                             <img src="{{ asset('img/logo1.png') }}" alt="Logo" class="h-7 w-7 object-contain">
-                            <span class="font-semibold text-gray-900 truncate">Huellitas perdidas</span>
+                            <span class="font-semibold text-gray-900 truncate">Huellitas Perdidas</span>
                             <span class="hidden sm:inline text-gray-300">|</span>
                             <span class="hidden sm:inline text-sm text-gray-500 truncate">
                                 @yield('top_title', 'Panel Administrador')
@@ -244,7 +257,7 @@
             <footer class="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-500">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                     <p>Panel Administrador · Huellitas Perdidas © {{ date('Y') }}</p>
-                    <p class="text-xs text-gray-400">Gestión de usuarios, refugios, veterinarias y reportes</p>
+                    <p class="text-xs text-gray-400">Gestión de usuarios, refugios, veterinarias, consejos y reportes</p>
                 </div>
             </footer>
         </div>

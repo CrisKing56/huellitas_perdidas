@@ -48,9 +48,33 @@
             letter-spacing: 0.01em;
         }
 
-        .mobile-panel-scroll {
-            max-height: calc(100vh - 100px);
+        .mobile-menu-overlay {
+            position: fixed;
+            inset: 0;
+            top: 80px;
+            background: rgba(15, 23, 42, 0.22);
+            backdrop-filter: blur(2px);
+            -webkit-backdrop-filter: blur(2px);
+            z-index: 60;
+            padding: 12px;
+        }
+
+        .mobile-menu-panel {
+            width: 100%;
+            max-width: 420px;
+            margin: 0 auto;
+            max-height: calc(100vh - 104px);
             overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .mobile-menu-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .mobile-menu-panel::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 9999px;
         }
     </style>
 </head>
@@ -245,6 +269,20 @@
                                             Mis adopciones
                                         </a>
 
+                                        <a href="{{ route('adopciones.solicitudes.enviadas') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h10M7 16h6"></path>
+                                            </svg>
+                                            Mis solicitudes
+                                        </a>
+
+                                        <a href="{{ route('adopciones.solicitudes.recibidas') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16h6M7 6h10a2 2 0 012 2v8a2 2 0 01-2 2H7a2 2 0 01-2-2V8a2 2 0 012-2z"></path>
+                                            </svg>
+                                            Solicitudes recibidas
+                                        </a>
+
                                         <a href="{{ url('/nosotros') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.75 6.75a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.118a7.5 7.5 0 0115 0A17.933 17.933 0 0112 21c-2.676 0-5.216-.584-7.5-1.632z"></path>
@@ -284,7 +322,7 @@
                             </a>
                         @endguest
 
-                        <details class="relative">
+                        <details class="relative" id="mobileMenu">
                             <summary class="list-none cursor-pointer select-none">
                                 <div class="h-11 w-11 rounded-xl border border-gray-200 bg-white flex items-center justify-center text-gray-700 shadow-sm">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -293,94 +331,112 @@
                                 </div>
                             </summary>
 
-                            <div class="absolute right-0 mt-3 w-[90vw] max-w-sm bg-white border border-gray-200 rounded-2xl shadow-soft overflow-hidden z-50 mobile-panel-scroll">
-                                <div class="px-4 py-4 border-b border-gray-100 bg-gray-50">
-                                    <div class="flex items-center gap-3">
-                                        @auth
-                                            <div class="h-11 w-11 rounded-full overflow-hidden border border-orange-200 bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm">
-                                                @if($fotoUrl)
-                                                    <img src="{{ $fotoUrl }}" alt="Foto de perfil" class="h-full w-full object-cover">
+                            <div class="mobile-menu-overlay">
+                                <div class="mobile-menu-panel bg-white border border-gray-200 rounded-2xl shadow-soft overflow-hidden">
+                                    <div class="px-4 py-4 border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
+                                        <div class="flex items-start justify-between gap-3">
+                                            <div class="flex items-center gap-3 min-w-0">
+                                                @auth
+                                                    <div class="h-11 w-11 rounded-full overflow-hidden border border-orange-200 bg-orange-100 flex items-center justify-center text-orange-600 font-bold text-sm shrink-0">
+                                                        @if($fotoUrl)
+                                                            <img src="{{ $fotoUrl }}" alt="Foto de perfil" class="h-full w-full object-cover">
+                                                        @else
+                                                            {{ $iniciales ?: 'U' }}
+                                                        @endif
+                                                    </div>
+                                                    <div class="min-w-0">
+                                                        <p class="text-sm font-semibold text-gray-800 truncate">{{ $usuario->nombre }}</p>
+                                                        <p class="text-xs text-gray-500 truncate">{{ $usuario->correo }}</p>
+                                                    </div>
                                                 @else
-                                                    {{ $iniciales ?: 'U' }}
-                                                @endif
+                                                    <div>
+                                                        <p class="text-sm font-semibold text-gray-800">Menú principal</p>
+                                                        <p class="text-xs text-gray-500">Navega por Huellitas Perdidas</p>
+                                                    </div>
+                                                @endauth
                                             </div>
-                                            <div class="min-w-0">
-                                                <p class="text-sm font-semibold text-gray-800 truncate">{{ $usuario->nombre }}</p>
-                                                <p class="text-xs text-gray-500 truncate">{{ $usuario->correo }}</p>
+
+                                            <button type="button"
+                                                    onclick="document.getElementById('mobileMenu').removeAttribute('open')"
+                                                    class="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100 transition shrink-0">
+                                                Cerrar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="p-3 space-y-2">
+                                        <a href="{{ route('inicio') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                            Inicio
+                                        </a>
+
+                                        <a href="{{ route('mascotas.index2') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                            Mascotas perdidas
+                                        </a>
+
+                                        <a href="{{ route('adopciones.index') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                            Mascotas en Adopción
+                                        </a>
+
+                                        <details class="group rounded-xl border border-gray-100 bg-gray-50">
+                                            <summary class="flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 cursor-pointer">
+                                                <span>Cuidado Animal</span>
+                                                <svg class="w-4 h-4 text-gray-400 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                                </svg>
+                                            </summary>
+
+                                            <div class="px-2 pb-2 space-y-1">
+                                                <a href="{{ route('veterinarias.index') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-primary transition">
+                                                    Veterinarias
+                                                </a>
+                                                <a href="{{ route('refugios.index') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-primary transition">
+                                                    Refugios
+                                                </a>
+                                                <a href="{{ route('consejos.index') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-primary transition">
+                                                    Consejos
+                                                </a>
                                             </div>
-                                        @else
-                                            <div>
-                                                <p class="text-sm font-semibold text-gray-800">Menú principal</p>
-                                                <p class="text-xs text-gray-500">Navega por Huellitas Perdidas</p>
-                                            </div>
+                                        </details>
+
+                                        <a href="{{ url('/nosotros') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                            Nosotros
+                                        </a>
+
+                                        <a href="{{ url('/contactanos') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                            Contáctanos
+                                        </a>
+
+                                        @auth
+                                            <div class="border-t border-gray-100 my-2"></div>
+
+                                            <a href="{{ route('perfil') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                                Mi perfil
+                                            </a>
+
+                                            <a href="{{ route('extravios.index') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                                Mis reportes
+                                            </a>
+
+                                            <a href="{{ route('adopciones.mis-adopciones') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                                Mis adopciones
+                                            </a>
+
+                                            <a href="{{ route('adopciones.solicitudes.enviadas') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                                Mis solicitudes
+                                            </a>
+
+                                            <a href="{{ route('adopciones.solicitudes.recibidas') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                                Solicitudes recibidas
+                                            </a>
+
+                                            <form action="{{ route('logout') }}" method="POST" class="pt-2">
+                                                @csrf
+                                                <button type="submit" class="w-full rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-100 transition">
+                                                    Cerrar sesión
+                                                </button>
+                                            </form>
                                         @endauth
                                     </div>
-                                </div>
-
-                                <div class="p-3 space-y-2">
-                                    <a href="{{ route('inicio') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                        Inicio
-                                    </a>
-
-                                    <a href="{{ route('mascotas.index2') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                        Mascotas perdidas
-                                    </a>
-
-                                    <a href="{{ route('adopciones.index') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                        Mascotas en Adopción
-                                    </a>
-
-                                    <details class="group rounded-xl border border-gray-100 bg-gray-50">
-                                        <summary class="flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 cursor-pointer">
-                                            <span>Cuidado Animal</span>
-                                            <svg class="w-4 h-4 text-gray-400 transition group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                            </svg>
-                                        </summary>
-
-                                        <div class="px-2 pb-2 space-y-1">
-                                            <a href="{{ route('veterinarias.index') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-primary transition">
-                                                Veterinarias
-                                            </a>
-                                            <a href="{{ route('refugios.index') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-primary transition">
-                                                Refugios
-                                            </a>
-                                            <a href="{{ route('consejos.index') }}" class="block rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-white hover:text-primary transition">
-                                                Consejos
-                                            </a>
-                                        </div>
-                                    </details>
-
-                                    <a href="{{ url('/nosotros') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                        Nosotros
-                                    </a>
-
-                                    <a href="{{ url('/contactanos') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                        Contáctanos
-                                    </a>
-
-                                    @auth
-                                        <div class="border-t border-gray-100 my-2"></div>
-
-                                        <a href="{{ route('perfil') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                            Mi perfil
-                                        </a>
-
-                                        <a href="{{ route('extravios.index') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                            Mis reportes
-                                        </a>
-
-                                        <a href="{{ route('adopciones.mis-adopciones') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
-                                            Mis adopciones
-                                        </a>
-
-                                        <form action="{{ route('logout') }}" method="POST" class="pt-2">
-                                            @csrf
-                                            <button type="submit" class="w-full rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-100 transition">
-                                                Cerrar sesión
-                                            </button>
-                                        </form>
-                                    @endauth
                                 </div>
                             </div>
                         </details>
@@ -444,6 +500,7 @@
                                 <li><a href="{{ route('perfil') }}" class="hover:text-primary transition">Mi perfil</a></li>
                                 <li><a href="{{ route('extravios.index') }}" class="hover:text-primary transition">Mis reportes</a></li>
                                 <li><a href="{{ route('adopciones.mis-adopciones') }}" class="hover:text-primary transition">Mis adopciones</a></li>
+                                <li><a href="{{ route('adopciones.solicitudes.enviadas') }}" class="hover:text-primary transition">Mis solicitudes</a></li>
                             @endauth
 
                             <li class="text-gray-400">info@huellitasperdidas.com</li>
@@ -464,5 +521,23 @@
             </div>
         </footer>
     @endif
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            if (!mobileMenu) {
+                return;
+            }
+
+            mobileMenu.addEventListener('toggle', function () {
+                if (mobileMenu.open) {
+                    document.body.classList.add('overflow-hidden');
+                } else {
+                    document.body.classList.remove('overflow-hidden');
+                }
+            });
+        });
+    </script>
 </body>
 </html>

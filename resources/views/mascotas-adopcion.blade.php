@@ -35,6 +35,11 @@
                    class="inline-flex items-center justify-center px-5 py-3 bg-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-300 transition w-full md:w-auto">
                     Mis adopciones
                 </a>
+
+                <a href="{{ route('adopciones.solicitudes.enviadas') }}"
+                   class="inline-flex items-center justify-center px-5 py-3 bg-blue-50 text-blue-700 font-medium rounded-xl hover:bg-blue-100 transition w-full md:w-auto">
+                    Mis solicitudes
+                </a>
             @endauth
         </div>
     </div>
@@ -43,140 +48,144 @@
         
         {{-- SIDEBAR DE FILTROS --}}
         <aside class="lg:col-span-3">
-            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 lg:sticky lg:top-6">
-                <div class="flex items-center justify-between mb-5">
+            <div class="bg-white border border-gray-100 rounded-2xl shadow-sm lg:sticky lg:top-6 lg:max-h-[calc(100vh-3rem)] flex flex-col overflow-hidden">
+                <div class="p-5 border-b border-gray-100 flex items-center justify-between">
                     <h2 class="text-xl font-bold text-gray-900">Filtros</h2>
                     <a href="{{ route('adopciones.index') }}" class="text-sm text-gray-400 hover:text-green-600 transition">
                         Eliminar filtros
                     </a>
                 </div>
 
-                <form method="GET" action="{{ route('adopciones.index') }}" class="space-y-6">
+                <form method="GET" action="{{ route('adopciones.index') }}" class="flex flex-col min-h-0">
                     <input type="hidden" name="orden" value="{{ $filtros['orden'] }}">
 
-                    <div>
-                        <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
-                        <div class="relative">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                                </svg>
-                            </span>
+                    <div class="p-5 space-y-6 overflow-y-auto min-h-0 lg:max-h-[calc(100vh-15rem)]">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 pointer-events-none">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
+                                </span>
+                                <input
+                                    type="text"
+                                    name="q"
+                                    value="{{ $filtros['q'] }}"
+                                    placeholder="Nombre, descripción, raza o colonia..."
+                                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Disponibles</h3>
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-700">Mascotas publicadas</span>
+                                <span class="text-sm text-gray-400">{{ $conteos['disponibles'] }}</span>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Especie</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="especie" value="" {{ $filtros['especie'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                        <span class="text-gray-700">Todas</span>
+                                    </div>
+                                </label>
+
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="especie" value="1" {{ $filtros['especie'] === '1' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                        <span class="text-gray-700">Perros</span>
+                                    </div>
+                                    <span class="text-sm text-gray-400">{{ $conteos['perros'] }}</span>
+                                </label>
+
+                                <label class="flex items-center justify-between cursor-pointer">
+                                    <div class="flex items-center gap-3">
+                                        <input type="radio" name="especie" value="2" {{ $filtros['especie'] === '2' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                        <span class="text-gray-700">Gatos</span>
+                                    </div>
+                                    <span class="text-sm text-gray-400">{{ $conteos['gatos'] }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Sexo</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="" {{ $filtros['sexo'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Todos</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="MACHO" {{ $filtros['sexo'] === 'MACHO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Macho</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="HEMBRA" {{ $filtros['sexo'] === 'HEMBRA' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Hembra</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="sexo" value="DESCONOCIDO" {{ $filtros['sexo'] === 'DESCONOCIDO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Desconocido</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Tamaño</h3>
+                            <div class="space-y-3">
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="" {{ $filtros['tamano'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Todos</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="CHICO" {{ $filtros['tamano'] === 'CHICO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Chico</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="MEDIANO" {{ $filtros['tamano'] === 'MEDIANO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Mediano</span>
+                                </label>
+
+                                <label class="flex items-center gap-3 cursor-pointer">
+                                    <input type="radio" name="tamano" value="GRANDE" {{ $filtros['tamano'] === 'GRANDE' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                                    <span class="text-gray-700">Grande</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-5">
+                            <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Colonia</label>
                             <input
                                 type="text"
-                                name="q"
-                                value="{{ $filtros['q'] }}"
-                                placeholder="Nombre, descripción, raza o colonia..."
-                                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
+                                name="colonia"
+                                value="{{ $filtros['colonia'] }}"
+                                placeholder="Ej. Centro"
+                                class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
                             >
                         </div>
                     </div>
 
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Disponibles</h3>
-                        <div class="flex items-center justify-between">
-                            <span class="text-gray-700">Mascotas publicadas</span>
-                            <span class="text-sm text-gray-400">{{ $conteos['disponibles'] }}</span>
+                    <div class="p-5 border-t border-gray-100 bg-white shrink-0">
+                        <div class="flex flex-col gap-3">
+                            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition shadow-sm">
+                                Aplicar filtros
+                            </button>
+
+                            <a href="{{ route('adopciones.index') }}" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition">
+                                Ver todas
+                            </a>
                         </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Especie</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div class="flex items-center gap-3">
-                                    <input type="radio" name="especie" value="" {{ $filtros['especie'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                    <span class="text-gray-700">Todas</span>
-                                </div>
-                            </label>
-
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div class="flex items-center gap-3">
-                                    <input type="radio" name="especie" value="1" {{ $filtros['especie'] === '1' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                    <span class="text-gray-700">Perros</span>
-                                </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['perros'] }}</span>
-                            </label>
-
-                            <label class="flex items-center justify-between cursor-pointer">
-                                <div class="flex items-center gap-3">
-                                    <input type="radio" name="especie" value="2" {{ $filtros['especie'] === '2' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                    <span class="text-gray-700">Gatos</span>
-                                </div>
-                                <span class="text-sm text-gray-400">{{ $conteos['gatos'] }}</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Sexo</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="" {{ $filtros['sexo'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Todos</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="MACHO" {{ $filtros['sexo'] === 'MACHO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Macho</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="HEMBRA" {{ $filtros['sexo'] === 'HEMBRA' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Hembra</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="sexo" value="DESCONOCIDO" {{ $filtros['sexo'] === 'DESCONOCIDO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Desconocido</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <h3 class="text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Tamaño</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="" {{ $filtros['tamano'] === '' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Todos</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="CHICO" {{ $filtros['tamano'] === 'CHICO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Chico</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="MEDIANO" {{ $filtros['tamano'] === 'MEDIANO' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Mediano</span>
-                            </label>
-
-                            <label class="flex items-center gap-3 cursor-pointer">
-                                <input type="radio" name="tamano" value="GRANDE" {{ $filtros['tamano'] === 'GRANDE' ? 'checked' : '' }} class="rounded border-gray-300 text-green-600 focus:ring-green-500">
-                                <span class="text-gray-700">Grande</span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5">
-                        <label class="block text-sm font-bold text-gray-800 uppercase tracking-wide mb-3">Colonia</label>
-                        <input
-                            type="text"
-                            name="colonia"
-                            value="{{ $filtros['colonia'] }}"
-                            placeholder="Ej. Centro"
-                            class="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-gray-50 text-gray-700 placeholder-gray-400 transition"
-                        >
-                    </div>
-
-                    <div class="border-t border-gray-100 pt-5 flex flex-col gap-3">
-                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-xl transition shadow-sm">
-                            Aplicar filtros
-                        </button>
-
-                        <a href="{{ route('adopciones.index') }}" class="w-full text-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 rounded-xl transition">
-                            Ver todas
-                        </a>
                     </div>
                 </form>
             </div>

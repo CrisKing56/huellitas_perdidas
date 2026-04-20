@@ -1,193 +1,835 @@
 @extends('layout.app')
 
-@section('title', 'Editar Adopción')
+@section('title', 'Editar publicación de adopción')
 
 @section('content')
-<div class="min-h-screen bg-gray-50 py-12">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        <div class="flex flex-col md:flex-row md:items-center justify-between mb-8">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">Editar publicación</h1>
-                <p class="text-gray-500 mt-1">Actualiza los datos de la mascota en adopción</p>
-            </div>
-            <div class="mt-4 md:mt-0">
-                <a href="{{ route('adopciones.mis-adopciones') }}" class="inline-flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg font-semibold text-xs text-gray-700 uppercase tracking-widest shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    ← Volver a mis adopciones
-                </a>
+@php
+    $razasPorEspecie = $razas->groupBy('especie_id')->map(function ($items) {
+        return $items->map(function ($raza) {
+            return [
+                'id_raza' => $raza->id_raza,
+                'nombre' => $raza->nombre,
+            ];
+        })->values();
+    });
+
+    $googleMapsApiKey = config('services.google_maps.api_key') ?: env('GOOGLE_MAPS_API_KEY');
+
+    $razaInicial = old('raza_id', $adopcion->raza_id);
+    $otraRazaInicial = old('otra_raza', $adopcion->otra_raza ?? '');
+    $esterilizadoInicial = old('esterilizado', isset($adopcion->esterilizado) ? (string) (int) $adopcion->esterilizado : '');
+@endphp
+
+<div class="bg-white min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
+
+        <div class="mb-8">
+            <a href="{{ route('adopciones.mis-adopciones') }}"
+               class="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium transition mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Volver a mis adopciones
+            </a>
+
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                <div class="max-w-3xl">
+                    <span class="inline-flex items-center rounded-full bg-green-50 text-green-600 px-3 py-1 text-xs font-bold tracking-wide uppercase border border-green-100">
+                        Editar publicación
+                    </span>
+                    <h1 class="mt-4 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                        Actualiza la información de la mascota
+                    </h1>
+                    <p class="text-gray-500 mt-3 text-base md:text-lg leading-relaxed">
+                        Modifica los datos necesarios para mantener la publicación actualizada y más clara para futuros adoptantes.
+                    </p>
+                </div>
             </div>
         </div>
 
-        <form action="{{ route('adopciones.update', $adopcion->id_publicacion) }}" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl mb-6">
+                <strong class="font-bold">Revisa estos campos:</strong>
+                <ul class="list-disc list-inside mt-2 space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form action="{{ route('adopciones.update', $adopcion->id_publicacion) }}" method="POST" enctype="multipart/form-data" class="space-y-8">
             @csrf
             @method('PUT')
 
-            <div class="p-8 space-y-10">
-                
-                <div>
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <span class="bg-green-100 text-green-600 p-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        </span>
-                        Información básica
-                    </h2>
+            <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nombre <span class="text-red-500">*</span></label>
-                            <input type="text" name="nombre" value="{{ old('nombre', $adopcion->nombre) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
-                        </div>
+                <div class="xl:col-span-8 space-y-8">
 
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Especie <span class="text-red-500">*</span></label>
-                            <select name="especie_id" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3 bg-white">
-                                <option value="1" {{ old('especie_id', $adopcion->especie_id) == 1 ? 'selected' : '' }}>Perro</option>
-                                <option value="2" {{ old('especie_id', $adopcion->especie_id) == 2 ? 'selected' : '' }}>Gato</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Raza</label>
-                            <input type="text" name="otra_raza" value="{{ old('otra_raza', $adopcion->otra_raza) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Edad (Años) <span class="text-red-500">*</span></label>
-                            <input type="number" name="edad_anios" value="{{ old('edad_anios', $adopcion->edad_anios) }}" min="0" max="30" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Sexo <span class="text-red-500">*</span></label>
-                            <select name="sexo" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3 bg-white">
-                                <option value="MACHO" {{ old('sexo', $adopcion->sexo) == 'MACHO' ? 'selected' : '' }}>Macho</option>
-                                <option value="HEMBRA" {{ old('sexo', $adopcion->sexo) == 'HEMBRA' ? 'selected' : '' }}>Hembra</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Tamaño <span class="text-red-500">*</span></label>
-                            <select name="tamano" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3 bg-white">
-                                <option value="CHICO" {{ old('tamano', $adopcion->tamano) == 'CHICO' ? 'selected' : '' }}>Chico / Pequeño</option>
-                                <option value="MEDIANO" {{ old('tamano', $adopcion->tamano) == 'MEDIANO' ? 'selected' : '' }}>Mediano</option>
-                                <option value="GRANDE" {{ old('tamano', $adopcion->tamano) == 'GRANDE' ? 'selected' : '' }}>Grande</option>
-                            </select>
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Color predominante <span class="text-red-500">*</span></label>
-                            <input type="text" name="color_predominante" value="{{ old('color_predominante', $adopcion->color_predominante) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Historia / Descripción <span class="text-red-500">*</span></label>
-                            <textarea name="descripcion" rows="4" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-3 px-4 bg-white">{{ old('descripcion', $adopcion->descripcion) }}</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-6 border-t border-gray-100">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <span class="bg-green-100 text-green-600 p-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
-                        </span>
-                        Estado de salud
-                    </h2>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Vacunas aplicadas</label>
-                            <input type="text" name="vacunas_aplicadas" value="{{ old('vacunas_aplicadas', $adopcion->vacunas_aplicadas) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">¿Está esterilizado?</label>
-                            <select name="esterilizado" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3 bg-white">
-                                <option value="1" {{ old('esterilizado', $adopcion->esterilizado) == 1 ? 'selected' : '' }}>Sí</option>
-                                <option value="0" {{ old('esterilizado', $adopcion->esterilizado) == 0 ? 'selected' : '' }}>No</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Condición de salud (Breve)</label>
-                        <input type="text" name="condicion_salud" value="{{ old('condicion_salud', $adopcion->condicion_salud) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Descripción detallada de salud</label>
-                        <textarea name="descripcion_salud" rows="3" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-3 px-4 bg-white">{{ old('descripcion_salud', $adopcion->descripcion_salud) }}</textarea>
-                    </div>
-                </div>
-
-                <div class="pt-6 border-t border-gray-100">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <span class="bg-green-100 text-green-600 p-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                        </span>
-                        Requisitos para adoptantes
-                    </h2>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Requisitos <span class="text-red-500">*</span></label>
-                        <textarea name="requisitos" rows="4" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-3 px-4 bg-white">{{ old('requisitos', $adopcion->requisitos) }}</textarea>
-                    </div>
-                </div>
-
-                <div class="pt-6 border-t border-gray-100">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <span class="bg-green-100 text-green-600 p-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                        </span>
-                        Fotografía
-                    </h2>
-                    
-                    <div class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-                        @if($adopcion->fotoPrincipal)
-                            <div class="mb-4">
-                                <p class="text-sm text-gray-500 mb-2">Imagen actual:</p>
-                                <img src="{{ asset('storage/' . $adopcion->fotoPrincipal->url) }}" class="h-32 w-auto mx-auto rounded-lg shadow-md object-cover">
+                    {{-- INFORMACIÓN DE LA MASCOTA --}}
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01"></path>
+                                </svg>
                             </div>
-                        @endif
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Información de la mascota</h2>
+                                <p class="text-sm text-gray-500 mt-1">Edita los datos principales de la publicación.</p>
+                            </div>
+                        </div>
 
-                        <div class="flex flex-col items-center">
-                            <label class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow cursor-pointer transition transform hover:scale-105">
-                                Cambiar fotografía
-                                <input type="file" name="foto" class="hidden">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Nombre de la mascota <span class="text-red-500">*</span>
+                                </label>
+                                <input type="text"
+                                       name="nombre"
+                                       value="{{ old('nombre', $adopcion->nombre) }}"
+                                       placeholder="Ej: Luna"
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Especie <span class="text-red-500">*</span>
+                                </label>
+                                <select name="especie_id"
+                                        id="especie_id"
+                                        class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                                    <option value="">Seleccionar...</option>
+                                    @foreach($especies as $especie)
+                                        <option value="{{ $especie->id_especie }}" {{ (string) old('especie_id', $adopcion->especie_id) === (string) $especie->id_especie ? 'selected' : '' }}>
+                                            {{ $especie->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Raza
+                                </label>
+                                <input type="hidden" name="raza_id" id="raza_id_real" value="{{ $razaInicial }}">
+
+                                <select id="raza_selector"
+                                        class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                                    <option value="">Seleccionar...</option>
+                                </select>
+
+                                <p class="text-xs text-gray-400 mt-2">Si no aparece en la lista, selecciona “Otra raza”.</p>
+                            </div>
+
+                            <div id="bloque_otra_raza" class="hidden">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Otra raza
+                                </label>
+                                <input type="text"
+                                       name="otra_raza"
+                                       id="otra_raza"
+                                       value="{{ $otraRazaInicial }}"
+                                       placeholder="Ej: Criollo, mestizo, mezcla..."
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Edad (años)
+                                </label>
+                                <input type="number"
+                                       name="edad_anios"
+                                       value="{{ old('edad_anios', $adopcion->edad_anios) }}"
+                                       min="0"
+                                       max="30"
+                                       placeholder="Ej: 2"
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Sexo <span class="text-red-500">*</span>
+                                </label>
+                                <select name="sexo"
+                                        class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="MACHO" {{ old('sexo', $adopcion->sexo) == 'MACHO' ? 'selected' : '' }}>Macho</option>
+                                    <option value="HEMBRA" {{ old('sexo', $adopcion->sexo) == 'HEMBRA' ? 'selected' : '' }}>Hembra</option>
+                                    <option value="DESCONOCIDO" {{ old('sexo', $adopcion->sexo) == 'DESCONOCIDO' ? 'selected' : '' }}>Desconocido</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Tamaño <span class="text-red-500">*</span>
+                                </label>
+                                <select name="tamano"
+                                        class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="CHICO" {{ old('tamano', $adopcion->tamano) == 'CHICO' ? 'selected' : '' }}>Chico</option>
+                                    <option value="MEDIANO" {{ old('tamano', $adopcion->tamano) == 'MEDIANO' ? 'selected' : '' }}>Mediano</option>
+                                    <option value="GRANDE" {{ old('tamano', $adopcion->tamano) == 'GRANDE' ? 'selected' : '' }}>Grande</option>
+                                    <option value="DESCONOCIDO" {{ old('tamano', $adopcion->tamano) == 'DESCONOCIDO' ? 'selected' : '' }}>Desconocido</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Color predominante
+                                </label>
+                                <input type="text"
+                                       name="color_predominante"
+                                       value="{{ old('color_predominante', $adopcion->color_predominante) }}"
+                                       placeholder="Ej: Blanco con café"
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+                        </div>
+
+                        <div class="mt-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Descripción <span class="text-red-500">*</span>
                             </label>
-                            <p class="text-xs text-gray-500 mt-2">Deja vacío para mantener la actual.</p>
+                            <textarea name="descripcion"
+                                      rows="6"
+                                      class="w-full rounded-2xl border border-gray-300 bg-white py-4 px-4 focus:border-green-500 focus:ring-green-500 placeholder-gray-400"
+                                      placeholder="Describe la personalidad, comportamiento o cualquier detalle importante...">{{ old('descripcion', $adopcion->descripcion) }}</textarea>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <div class="pt-6 border-t border-gray-100">
-                    <h2 class="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
-                        <span class="bg-green-100 text-green-600 p-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        </span>
-                        Ubicación
-                    </h2>
+                    {{-- SALUD Y REQUISITOS --}}
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Salud y adopción responsable</h2>
+                                <p class="text-sm text-gray-500 mt-1">Edita la información complementaria de la mascota.</p>
+                            </div>
+                        </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Vacunas aplicadas</label>
+                                <input type="text"
+                                       name="vacunas_aplicadas"
+                                       value="{{ old('vacunas_aplicadas', $adopcion->vacunas_aplicadas) }}"
+                                       placeholder="Ej: Rabia, parvovirus"
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">¿Está esterilizado?</label>
+                                <select name="esterilizado"
+                                        class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                                    <option value="">Seleccionar...</option>
+                                    <option value="0" {{ $esterilizadoInicial === '0' ? 'selected' : '' }}>No</option>
+                                    <option value="1" {{ $esterilizadoInicial === '1' ? 'selected' : '' }}>Sí</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Condición de salud</label>
+                            <input type="text"
+                                   name="condicion_salud"
+                                   value="{{ old('condicion_salud', $adopcion->condicion_salud) }}"
+                                   placeholder="Ej: Buena, en tratamiento, requiere seguimiento"
+                                   class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Descripción detallada de salud</label>
+                            <textarea name="descripcion_salud"
+                                      rows="4"
+                                      placeholder="Ej: Fue rescatado, ya fue revisado por veterinario, toma vitaminas..."
+                                      class="w-full rounded-2xl border border-gray-300 bg-white py-4 px-4 focus:border-green-500 focus:ring-green-500">{{ old('descripcion_salud', $adopcion->descripcion_salud) }}</textarea>
+                        </div>
+
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Colonia / Barrio <span class="text-red-500">*</span></label>
-                            <input type="text" name="colonia_barrio" value="{{ old('colonia_barrio', $adopcion->colonia_barrio) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Requisitos para el adoptante</label>
+                            <textarea name="requisitos"
+                                      rows="4"
+                                      placeholder="Ej: Ser mayor de edad, compromiso de cuidados, seguimiento por WhatsApp..."
+                                      class="w-full rounded-2xl border border-gray-300 bg-white py-4 px-4 focus:border-green-500 focus:ring-green-500">{{ old('requisitos', $adopcion->requisitos) }}</textarea>
                         </div>
+                    </section>
+
+                    {{-- UBICACIÓN --}}
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Ubicación de referencia</h2>
+                                <p class="text-sm text-gray-500 mt-1">
+                                    Puedes buscar una ubicación o mover el pin para autocompletar la referencia.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                            <div class="lg:col-span-1 space-y-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Buscar ubicación</label>
+                                    <input id="map-search"
+                                           type="text"
+                                           placeholder="Busca una calle, colonia o referencia"
+                                           class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                                </div>
+
+                                <button type="button"
+                                        id="usar-mi-ubicacion"
+                                        class="w-full inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-2xl shadow-sm transition">
+                                    Usar mi ubicación actual
+                                </button>
+
+                                <div class="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-gray-700">
+                                    <p class="font-semibold text-gray-800 mb-1">Sugerencia</p>
+                                    <p>Puedes mover el pin o buscar una referencia para visualizar mejor la zona.</p>
+                                </div>
+
+                                <p id="mapa-estado" class="text-xs text-gray-500"></p>
+                            </div>
+
+                            <div class="lg:col-span-2">
+                                @if($googleMapsApiKey)
+                                    <div id="mapa-formulario" class="w-full h-[380px] rounded-3xl border border-gray-200 overflow-hidden shadow-sm"></div>
+                                @else
+                                    <div class="w-full h-[380px] rounded-3xl border-2 border-dashed border-gray-300 bg-gray-50 flex flex-col items-center justify-center text-center px-6">
+                                        <div class="bg-green-100 p-3 rounded-full mb-3">
+                                            <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="font-semibold text-gray-800">Falta configurar Google Maps</p>
+                                        <p class="text-sm text-gray-500 mt-1">Agrega tu API Key para activar el mapa.</p>
+                                    </div>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Colonia o barrio
+                                </label>
+                                <input type="text"
+                                       name="colonia_barrio"
+                                       id="colonia_barrio"
+                                       value="{{ old('colonia_barrio', $adopcion->colonia_barrio) }}"
+                                       placeholder="Ej: Centro, Barrio Norte"
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    Calle y referencias
+                                </label>
+                                <input type="text"
+                                       name="calle_referencias"
+                                       id="calle_referencias"
+                                       value="{{ old('calle_referencias', $adopcion->calle_referencias) }}"
+                                       placeholder="Ej: Frente al parque"
+                                       class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
+                            </div>
+                        </div>
+
+                        <input type="hidden" name="latitud" id="latitud" value="{{ old('latitud', $adopcion->latitud ?? '16.9060') }}">
+                        <input type="hidden" name="longitud" id="longitud" value="{{ old('longitud', $adopcion->longitud ?? '-92.0933') }}">
+                    </section>
+                </div>
+
+                <div class="xl:col-span-4 space-y-8">
+
+                    {{-- FOTOS ACTUALES --}}
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 xl:sticky xl:top-24 space-y-8">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Calle / Referencias</label>
-                            <input type="text" name="calle_referencias" value="{{ old('calle_referencias', $adopcion->calle_referencias) }}" class="w-full border-gray-300 rounded-lg shadow-sm focus:border-green-500 focus:ring-green-500 py-2.5 px-3">
+                            <div class="flex items-start gap-4 mb-6">
+                                <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16"></path>
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h2 class="text-xl font-bold text-gray-900">Fotografías actuales</h2>
+                                    <p class="text-sm text-gray-500 mt-1">Estas son las fotos guardadas en tu publicación.</p>
+                                </div>
+                            </div>
+
+                            @if($adopcion->fotos && $adopcion->fotos->count())
+                                <div class="grid grid-cols-2 gap-4">
+                                    @foreach($adopcion->fotos->sortBy('orden') as $foto)
+                                        <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                                            <img src="{{ asset('storage/' . $foto->url) }}"
+                                                 alt="Foto actual"
+                                                 class="w-full h-36 object-cover">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @elseif($adopcion->fotoPrincipal)
+                                <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                                    <img src="{{ asset('storage/' . $adopcion->fotoPrincipal->url) }}"
+                                         alt="Foto actual"
+                                         class="w-full h-56 object-cover">
+                                </div>
+                            @else
+                                <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-500">
+                                    Esta publicación todavía no tiene fotos visibles.
+                                </div>
+                            @endif
                         </div>
-                    </div>
-                </div>
 
-                <div class="pt-6 border-t border-gray-100 flex justify-end gap-4">
-                    <a href="{{ route('adopciones.mis-adopciones') }}" class="px-6 py-3 bg-gray-100 text-gray-700 font-bold rounded-lg hover:bg-gray-200 transition">
-                        Cancelar
-                    </a>
-                    <button type="submit" class="px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition transform hover:-translate-y-0.5">
-                        Guardar cambios
-                    </button>
-                </div>
+                        {{-- REEMPLAZAR FOTO PRINCIPAL --}}
+                        <div class="border-t border-gray-100 pt-8">
+                            <h3 class="text-lg font-bold text-gray-900 mb-3">Reemplazar fotos actuales</h3>
+                            <p class="text-sm text-gray-500 mb-5">
+                                Si eliges una foto aquí, el controlador actual reemplazará las fotos anteriores por esta nueva imagen.
+                            </p>
 
+                            <div class="border-2 border-dashed border-gray-300 rounded-3xl bg-gray-50 p-6 text-center hover:bg-gray-100 transition">
+                                <div class="bg-green-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                    </svg>
+                                </div>
+
+                                <label class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-2xl shadow cursor-pointer transition">
+                                    Seleccionar nueva foto principal
+                                    <input type="file" name="foto" id="foto_principal" class="hidden" accept="image/*">
+                                </label>
+
+                                <p id="nombre-foto-principal" class="mt-4 text-sm text-gray-500">No has seleccionado una nueva foto principal</p>
+
+                                <div id="preview-foto-principal-wrapper" class="mt-6 hidden">
+                                    <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                                        <img id="preview-foto-principal" src="" alt="Vista previa" class="w-full h-52 object-cover">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- AGREGAR MÁS FOTOS --}}
+                        <div class="border-t border-gray-100 pt-8">
+                            <h3 class="text-lg font-bold text-gray-900 mb-3">Agregar fotos adicionales</h3>
+                            <p class="text-sm text-gray-500 mb-5">
+                                También puedes subir fotos extra usando el campo múltiple.
+                            </p>
+
+                            <div class="border-2 border-dashed border-gray-300 rounded-3xl bg-gray-50 p-6 text-center hover:bg-gray-100 transition">
+                                <div class="bg-green-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                    </svg>
+                                </div>
+
+                                <label class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-2xl shadow cursor-pointer transition">
+                                    Seleccionar fotos adicionales
+                                    <input type="file" name="fotos[]" id="fotos" class="hidden" accept="image/*" multiple>
+                                </label>
+
+                                <p id="nombre-archivo" class="mt-4 text-sm text-gray-500">Ningún archivo seleccionado</p>
+
+                                <div id="preview-wrapper" class="mt-6 hidden">
+                                    <div id="preview-grid" class="grid grid-cols-2 gap-4"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-2">
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                                <h3 class="text-sm font-bold text-gray-900 mb-2">Datos de contacto</h3>
+                                <div class="space-y-3">
+                                    <div>
+                                        <p class="text-xs text-gray-400">Nombre del responsable</p>
+                                        <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->nombre ?? 'Usuario' }}</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs text-gray-400">Teléfono registrado</p>
+                                        <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->telefono ?? 'No registrado' }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 pt-2">
+                <button type="submit"
+                        class="w-full md:w-auto inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-8 rounded-2xl shadow transition">
+                    Guardar cambios
+                </button>
+
+                <a href="{{ route('adopciones.mis-adopciones') }}"
+                   class="w-full md:w-auto inline-flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold py-3.5 px-8 rounded-2xl transition">
+                    Cancelar
+                </a>
             </div>
         </form>
     </div>
 </div>
+
+<script>
+    const razasPorEspecie = @json($razasPorEspecie);
+    const razaIdInicial = @json($razaInicial);
+    const otraRazaInicial = @json($otraRazaInicial);
+    const googleMapsApiKey = @json($googleMapsApiKey);
+
+    const especieSelect = document.getElementById('especie_id');
+    const razaSelector = document.getElementById('raza_selector');
+    const razaIdReal = document.getElementById('raza_id_real');
+    const bloqueOtraRaza = document.getElementById('bloque_otra_raza');
+    const inputOtraRaza = document.getElementById('otra_raza');
+
+    function mostrarOtraRaza() {
+        bloqueOtraRaza.classList.remove('hidden');
+        inputOtraRaza.disabled = false;
+    }
+
+    function ocultarOtraRaza() {
+        bloqueOtraRaza.classList.add('hidden');
+        inputOtraRaza.disabled = true;
+    }
+
+    function cargarRazas(mantenerSeleccion = true) {
+        const especieId = especieSelect.value;
+        const valorActual = mantenerSeleccion ? (razaIdReal.value || (inputOtraRaza.value ? '__otra__' : '')) : '';
+
+        razaSelector.innerHTML = '<option value="">Seleccionar...</option>';
+
+        if (especieId && razasPorEspecie[especieId]) {
+            razasPorEspecie[especieId].forEach(function(raza) {
+                const option = document.createElement('option');
+                option.value = raza.id_raza;
+                option.textContent = raza.nombre;
+
+                if (String(valorActual) === String(raza.id_raza)) {
+                    option.selected = true;
+                }
+
+                razaSelector.appendChild(option);
+            });
+        }
+
+        const otraOption = document.createElement('option');
+        otraOption.value = '__otra__';
+        otraOption.textContent = 'Otra raza';
+
+        if (valorActual === '__otra__') {
+            otraOption.selected = true;
+        }
+
+        razaSelector.appendChild(otraOption);
+        manejarCambioRaza();
+    }
+
+    function manejarCambioRaza() {
+        if (razaSelector.value === '__otra__') {
+            razaIdReal.value = '';
+            mostrarOtraRaza();
+            return;
+        }
+
+        if (razaSelector.value) {
+            razaIdReal.value = razaSelector.value;
+            ocultarOtraRaza();
+            return;
+        }
+
+        if (inputOtraRaza.value.trim() !== '') {
+            mostrarOtraRaza();
+            razaIdReal.value = '';
+            return;
+        }
+
+        razaIdReal.value = '';
+        ocultarOtraRaza();
+    }
+
+    especieSelect.addEventListener('change', function () {
+        razaIdReal.value = '';
+        inputOtraRaza.value = '';
+        cargarRazas(false);
+    });
+
+    razaSelector.addEventListener('change', manejarCambioRaza);
+
+    const inputFotoPrincipal = document.getElementById('foto_principal');
+    const nombreFotoPrincipal = document.getElementById('nombre-foto-principal');
+    const previewFotoPrincipalWrapper = document.getElementById('preview-foto-principal-wrapper');
+    const previewFotoPrincipal = document.getElementById('preview-foto-principal');
+
+    inputFotoPrincipal.addEventListener('change', function(e) {
+        const archivo = e.target.files[0];
+
+        if (!archivo) {
+            nombreFotoPrincipal.textContent = 'No has seleccionado una nueva foto principal';
+            previewFotoPrincipalWrapper.classList.add('hidden');
+            return;
+        }
+
+        nombreFotoPrincipal.textContent = archivo.name;
+
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            previewFotoPrincipal.src = ev.target.result;
+            previewFotoPrincipalWrapper.classList.remove('hidden');
+        };
+        reader.readAsDataURL(archivo);
+    });
+
+    const inputFotos = document.getElementById('fotos');
+    const previewWrapper = document.getElementById('preview-wrapper');
+    const previewGrid = document.getElementById('preview-grid');
+    const nombreArchivo = document.getElementById('nombre-archivo');
+    let dtFotos = new DataTransfer();
+
+    function renderPreviewFotos() {
+        previewGrid.innerHTML = '';
+
+        const files = Array.from(dtFotos.files);
+        nombreArchivo.textContent = files.length
+            ? `${files.length} foto(s) seleccionada(s)`
+            : 'Ningún archivo seleccionado';
+
+        if (!files.length) {
+            previewWrapper.classList.add('hidden');
+            return;
+        }
+
+        previewWrapper.classList.remove('hidden');
+
+        files.forEach((file, index) => {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const item = document.createElement('div');
+                item.className = 'relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm';
+
+                item.innerHTML = `
+                    <img src="${e.target.result}" class="w-full h-36 object-cover" alt="Vista previa">
+                    <div class="p-2 text-xs text-gray-600 truncate">${file.name}</div>
+                    <button type="button"
+                            data-index="${index}"
+                            class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow">
+                        ×
+                    </button>
+                `;
+
+                previewGrid.appendChild(item);
+
+                item.querySelector('button').addEventListener('click', function() {
+                    const removeIndex = parseInt(this.dataset.index);
+                    const nuevoDT = new DataTransfer();
+
+                    Array.from(dtFotos.files).forEach((f, i) => {
+                        if (i !== removeIndex) {
+                            nuevoDT.items.add(f);
+                        }
+                    });
+
+                    dtFotos = nuevoDT;
+                    inputFotos.files = dtFotos.files;
+                    renderPreviewFotos();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    inputFotos.addEventListener('change', function(e) {
+        const nuevos = Array.from(e.target.files);
+
+        if ((dtFotos.files.length + nuevos.length) > 8) {
+            alert('Solo puedes subir hasta 8 fotografías nuevas.');
+            e.target.value = '';
+            return;
+        }
+
+        nuevos.forEach(file => dtFotos.items.add(file));
+        inputFotos.files = dtFotos.files;
+        renderPreviewFotos();
+    });
+
+    function obtenerComponente(components, tipos) {
+        for (const component of components) {
+            for (const tipo of tipos) {
+                if (component.types.includes(tipo)) {
+                    return component.long_name;
+                }
+            }
+        }
+        return '';
+    }
+
+    function autocompletarDireccionDesdeMapa(latLng, geocoder) {
+        geocoder.geocode({ location: latLng }, function(results, status) {
+            if (status !== 'OK' || !results || !results.length) {
+                return;
+            }
+
+            const components = results[0].address_components || [];
+
+            const colonia =
+                obtenerComponente(components, ['neighborhood']) ||
+                obtenerComponente(components, ['sublocality_level_1']) ||
+                obtenerComponente(components, ['sublocality']) ||
+                obtenerComponente(components, ['locality']);
+
+            const calle = obtenerComponente(components, ['route']);
+            const numero = obtenerComponente(components, ['street_number']);
+            const referencia = [calle, numero].filter(Boolean).join(' ');
+
+            const coloniaInput = document.getElementById('colonia_barrio');
+            const calleInput = document.getElementById('calle_referencias');
+
+            if (colonia) {
+                coloniaInput.value = colonia;
+            }
+
+            if (referencia) {
+                calleInput.value = referencia;
+            } else if (results[0].formatted_address) {
+                calleInput.value = results[0].formatted_address;
+            }
+        });
+    }
+
+    function initMapFormulario() {
+        if (!googleMapsApiKey) return;
+
+        const latInput = document.getElementById('latitud');
+        const lngInput = document.getElementById('longitud');
+        const geocoder = new google.maps.Geocoder();
+        const estadoMapa = document.getElementById('mapa-estado');
+        const searchInput = document.getElementById('map-search');
+        const usarMiUbicacionBtn = document.getElementById('usar-mi-ubicacion');
+        const autocomplete = new google.maps.places.Autocomplete(searchInput);
+
+        const ubicacionInicial = {
+            lat: parseFloat(latInput.value),
+            lng: parseFloat(lngInput.value)
+        };
+
+        const mapa = new google.maps.Map(document.getElementById('mapa-formulario'), {
+            zoom: 15,
+            center: ubicacionInicial,
+            streetViewControl: false,
+            mapTypeControl: false,
+            fullscreenControl: false
+        });
+
+        const marcador = new google.maps.Marker({
+            position: ubicacionInicial,
+            map: mapa,
+            draggable: true,
+            animation: google.maps.Animation.DROP
+        });
+
+        function actualizarEstado(lat, lng) {
+            estadoMapa.textContent = `Ubicación seleccionada: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        }
+
+        marcador.addListener('dragend', function() {
+            const pos = marcador.getPosition();
+            latInput.value = pos.lat();
+            lngInput.value = pos.lng();
+            actualizarEstado(pos.lat(), pos.lng());
+            autocompletarDireccionDesdeMapa(pos, geocoder);
+        });
+
+        mapa.addListener('click', function(event) {
+            marcador.setPosition(event.latLng);
+            latInput.value = event.latLng.lat();
+            lngInput.value = event.latLng.lng();
+            actualizarEstado(event.latLng.lat(), event.latLng.lng());
+            autocompletarDireccionDesdeMapa(event.latLng, geocoder);
+        });
+
+        autocomplete.addListener('place_changed', function () {
+            const place = autocomplete.getPlace();
+
+            if (!place.geometry || !place.geometry.location) return;
+
+            mapa.setCenter(place.geometry.location);
+            mapa.setZoom(16);
+            marcador.setPosition(place.geometry.location);
+
+            latInput.value = place.geometry.location.lat();
+            lngInput.value = place.geometry.location.lng();
+            actualizarEstado(place.geometry.location.lat(), place.geometry.location.lng());
+            autocompletarDireccionDesdeMapa(place.geometry.location, geocoder);
+        });
+
+        usarMiUbicacionBtn.addEventListener('click', function () {
+            if (!navigator.geolocation) {
+                estadoMapa.textContent = 'Tu navegador no permite geolocalización.';
+                return;
+            }
+
+            estadoMapa.textContent = 'Obteniendo tu ubicación actual...';
+
+            navigator.geolocation.getCurrentPosition(
+                function (position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const nuevaUbicacion = { lat, lng };
+
+                    mapa.setCenter(nuevaUbicacion);
+                    mapa.setZoom(16);
+                    marcador.setPosition(nuevaUbicacion);
+
+                    latInput.value = lat;
+                    lngInput.value = lng;
+                    actualizarEstado(lat, lng);
+                    autocompletarDireccionDesdeMapa(nuevaUbicacion, geocoder);
+                },
+                function () {
+                    estadoMapa.textContent = 'No se pudo obtener tu ubicación actual.';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                }
+            );
+        });
+
+        actualizarEstado(ubicacionInicial.lat, ubicacionInicial.lng);
+
+        if (!document.getElementById('colonia_barrio').value && !document.getElementById('calle_referencias').value) {
+            autocompletarDireccionDesdeMapa(ubicacionInicial, geocoder);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        if (razaIdInicial) {
+            razaIdReal.value = razaIdInicial;
+        }
+
+        if (otraRazaInicial && !razaIdInicial) {
+            inputOtraRaza.value = otraRazaInicial;
+        }
+
+        cargarRazas(true);
+
+        if (otraRazaInicial && !razaIdInicial) {
+            razaSelector.value = '__otra__';
+            mostrarOtraRaza();
+        }
+    });
+</script>
+
+@if($googleMapsApiKey)
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsApiKey }}&libraries=places&callback=initMapFormulario"
+        async defer>
+    </script>
+@endif
 @endsection
