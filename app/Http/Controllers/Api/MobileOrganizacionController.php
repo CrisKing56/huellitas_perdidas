@@ -18,7 +18,7 @@ class MobileOrganizacionController extends Controller
             ->leftJoin('ubicaciones', 'organizaciones.ubicacion_id', '=', 'ubicaciones.id_ubicacion')
             ->leftJoin('organizacion_fotos as foto', function ($join) {
                 $join->on('foto.organizacion_id', '=', 'organizaciones.id_organizacion')
-                     ->where('foto.orden', '=', 1);
+                    ->where('foto.orden', '=', 1);
             })
             ->select(
                 'organizaciones.id_organizacion',
@@ -74,7 +74,6 @@ class MobileOrganizacionController extends Controller
             ->join('usuarios', 'organizaciones.usuario_dueno_id', '=', 'usuarios.id_usuario')
             ->leftJoin('direcciones', 'organizaciones.direccion_id', '=', 'direcciones.id_direccion')
             ->leftJoin('ubicaciones', 'organizaciones.ubicacion_id', '=', 'ubicaciones.id_ubicacion')
-            ->leftJoin('veterinaria_detalle', 'veterinaria_detalle.organizacion_id', '=', 'organizaciones.id_organizacion')
             ->select(
                 'organizaciones.id_organizacion',
                 'organizaciones.tipo',
@@ -91,21 +90,17 @@ class MobileOrganizacionController extends Controller
                 'direcciones.ciudad',
                 'direcciones.estado as estado_direccion',
                 'ubicaciones.latitud',
-                'ubicaciones.longitud',
-                'veterinaria_detalle.medico_responsable',
-                'veterinaria_detalle.cedula_profesional',
-                'veterinaria_detalle.num_veterinarios',
-                'veterinaria_detalle.otros_servicios'
+                'ubicaciones.longitud'
             )
             ->where('organizaciones.id_organizacion', $id)
-            ->where('organizaciones.tipo', 'VETERINARIA')
+            ->whereIn('organizaciones.tipo', ['VETERINARIA', 'REFUGIO'])
             ->where('organizaciones.estado_revision', 'APROBADA')
             ->first();
 
         if (!$organizacion) {
             return response()->json([
                 'ok' => false,
-                'message' => 'Veterinaria no encontrada.'
+                'message' => 'Organización no encontrada.'
             ], 404);
         }
 
@@ -137,30 +132,6 @@ class MobileOrganizacionController extends Controller
             })
             ->values();
 
-        $servicios = DB::table('organizacion_servicio as os')
-            ->join('servicios as s', 'os.servicio_id', '=', 's.id_servicio')
-            ->where('os.organizacion_id', $id)
-            ->select(
-                's.id_servicio',
-                's.nombre'
-            )
-            ->orderBy('s.nombre')
-            ->get()
-            ->values();
-
-        $costos = DB::table('organizacion_costo_servicio as ocs')
-            ->join('servicios as s', 'ocs.servicio_id', '=', 's.id_servicio')
-            ->where('ocs.organizacion_id', $id)
-            ->select(
-                's.nombre as servicio',
-                'ocs.precio',
-                'ocs.moneda',
-                'ocs.nota'
-            )
-            ->orderBy('s.nombre')
-            ->get()
-            ->values();
-
         $organizacion->direccion_completa = collect([
             $organizacion->calle_numero,
             $organizacion->colonia,
@@ -171,8 +142,54 @@ class MobileOrganizacionController extends Controller
         $organizacion->fotos = $fotos;
         $organizacion->foto_principal_url = $fotos->isNotEmpty() ? $fotos[0]['url_completa'] : null;
         $organizacion->horarios = $horarios;
-        $organizacion->servicios = $servicios;
-        $organizacion->costos = $costos;
+
+        // Valores por defecto para no romper pantallas existentes
+        $organizacion->medico_responsable = null;
+        $organizacion->cedula_profesional = null;
+        $organizacion->num_veterinarios = null;
+        $organizacion->otros_servicios = null;
+        $organizacion->servicios = [];
+        $organizacion->costos = [];
+
+        if ($organizacion->tipo === 'VETERINARIA') {
+            $detalleVet = DB::table('veterinaria_detalle')
+                ->where('organizacion_id', $id)
+                ->first();
+
+            if ($detalleVet) {
+                $organizacion->medico_responsable = $detalleVet->medico_responsable;
+                $organizacion->cedula_profesional = $detalleVet->cedula_profesional;
+                $organizacion->num_veterinarios = $detalleVet->num_veterinarios;
+                $organizacion->otros_servicios = $detalleVet->otros_servicios;
+            }
+
+            $servicios = DB::table('organizacion_servicio as os')
+                ->join('servicios as s', 'os.servicio_id', '=', 's.id_servicio')
+                ->where('os.organizacion_id', $id)
+                ->select(
+                    's.id_servicio',
+                    's.nombre'
+                )
+                ->orderBy('s.nombre')
+                ->get()
+                ->values();
+
+            $costos = DB::table('organizacion_costo_servicio as ocs')
+                ->join('servicios as s', 'ocs.servicio_id', '=', 's.id_servicio')
+                ->where('ocs.organizacion_id', $id)
+                ->select(
+                    's.nombre as servicio',
+                    'ocs.precio',
+                    'ocs.moneda',
+                    'ocs.nota'
+                )
+                ->orderBy('s.nombre')
+                ->get()
+                ->values();
+
+            $organizacion->servicios = $servicios;
+            $organizacion->costos = $costos;
+        }
 
         return response()->json([
             'ok' => true,

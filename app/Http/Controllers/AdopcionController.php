@@ -337,6 +337,19 @@ class AdopcionController extends Controller
             }
         }
 
+        // Validar el total final de fotos ANTES de borrar o guardar nada
+        $reemplazaFotoPrincipal = $request->hasFile('foto');
+        $archivosNuevos = $request->hasFile('fotos') ? $request->file('fotos') : [];
+        $cantidadNuevas = count($archivosNuevos);
+
+        $totalFinalFotos = ($reemplazaFotoPrincipal ? 1 : $adopcion->fotos()->count()) + $cantidadNuevas;
+
+        if ($totalFinalFotos > 8) {
+            return back()
+                ->withErrors(['fotos' => 'No puedes tener más de 8 fotografías en total.'])
+                ->withInput();
+        }
+
         $adopcion->nombre = $request->nombre;
         $adopcion->especie_id = $request->especie_id;
         $adopcion->raza_id = $request->filled('raza_id') ? $request->raza_id : null;
@@ -357,7 +370,7 @@ class AdopcionController extends Controller
         $adopcion->longitud = $request->filled('longitud') ? $request->longitud : null;
         $adopcion->save();
 
-        if ($request->hasFile('foto')) {
+        if ($reemplazaFotoPrincipal) {
             foreach ($adopcion->fotos as $fotoExistente) {
                 if ($fotoExistente->url && Storage::disk('public')->exists($fotoExistente->url)) {
                     Storage::disk('public')->delete($fotoExistente->url);
@@ -374,19 +387,10 @@ class AdopcionController extends Controller
             ]);
         }
 
-        if ($request->hasFile('fotos')) {
-            $totalActual = $adopcion->fotos()->count();
-            $nuevas = count($request->file('fotos'));
-
-            if (($totalActual + $nuevas) > 8) {
-                return back()
-                    ->withErrors(['fotos' => 'No puedes tener más de 8 fotografías en total.'])
-                    ->withInput();
-            }
-
+        if (!empty($archivosNuevos)) {
             $ordenInicial = $adopcion->fotos()->max('orden') ?? 0;
 
-            foreach ($request->file('fotos') as $index => $archivo) {
+            foreach ($archivosNuevos as $index => $archivo) {
                 $ruta = $archivo->store('adopciones', 'public');
 
                 AdopcionFoto::create([
@@ -399,7 +403,7 @@ class AdopcionController extends Controller
 
         return redirect()
             ->route('adopciones.mis-adopciones')
-            ->with('success', 'Publicación actualizada correctamente.');
+            ->with('success', 'Se acaba de modificar tu publicación exitosamente.');
     }
 
     public function marcarAdoptada($id)

@@ -54,7 +54,7 @@
             </div>
         @endif
 
-        <form action="{{ route('adopciones.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8">
+        <form action="{{ route('adopciones.store') }}" method="POST" enctype="multipart/form-data" class="space-y-8" id="form-adopcion">
             @csrf
 
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
@@ -360,14 +360,17 @@
                             </div>
 
                             <p class="text-gray-900 font-semibold mb-1">Sube fotografías <span class="text-red-500">*</span></p>
-                            <p class="text-xs text-gray-500 mb-5">Formato JPG o PNG. Máximo 5 MB por imagen. Hasta 8 fotos.</p>
+                            <p class="text-xs text-gray-500 mb-5">
+                                Formato JPG, JPEG, PNG o WEBP. Máximo final 7 MB por imagen. Si una foto pesa más, se optimizará automáticamente antes de enviarse.
+                            </p>
 
                             <label class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-2xl shadow cursor-pointer transition">
                                 Seleccionar fotos
-                                <input type="file" name="fotos[]" id="fotos" class="hidden" accept="image/*" multiple>
+                                <input type="file" name="fotos[]" id="fotos" class="hidden" accept="image/jpeg,image/png,image/webp" multiple>
                             </label>
 
                             <p id="nombre-archivo" class="mt-4 text-sm text-gray-500">Ningún archivo seleccionado</p>
+                            <p id="estado-compresion" class="mt-2 text-xs text-gray-500"></p>
 
                             <div id="preview-wrapper" class="mt-6 hidden">
                                 <div id="preview-grid" class="grid grid-cols-2 gap-4"></div>
@@ -394,6 +397,7 @@
 
             <div class="flex flex-col md:flex-row gap-4 pt-2">
                 <button type="submit"
+                        id="btn-submit-adopcion"
                         class="w-full md:w-auto inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-8 rounded-2xl shadow transition">
                     Publicar en adopción
                 </button>
@@ -488,12 +492,173 @@
     const previewWrapper = document.getElementById('preview-wrapper');
     const previewGrid = document.getElementById('preview-grid');
     const nombreArchivo = document.getElementById('nombre-archivo');
+    const estadoCompresion = document.getElementById('estado-compresion');
+    const formAdopcion = document.getElementById('form-adopcion');
+    const btnSubmitAdopcion = document.getElementById('btn-submit-adopcion');
+
+    const LIMITE_FINAL_BYTES = 7 * 1024 * 1024; // 7 MB
+    const LIMITE_SELECCION_BYTES = 25 * 1024 * 1024; // seguridad para no aceptar monstruos
+    const MAX_FOTOS = 8;
+    const DIMENSION_MAXIMA = 1600;
+    const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+
     let dtFotos = new DataTransfer();
+    let procesandoFotos = false;
+    const textoOriginalBoton = btnSubmitAdopcion.textContent.trim();
+
+    function formatearBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function cambiarExtension(nombre, nuevaExtension) {
+        const base = nombre.replace(/\.[^/.]+$/, '');
+        return `${base}.${nuevaExtension}`;
+    }
+
+    function setEstadoCompresion(texto = '', tipo = 'normal') {
+        estadoCompresion.textContent = texto;
+        estadoCompresion.className = 'mt-2 text-xs';
+
+        if (tipo === 'error') {
+            estadoCompresion.classList.add('text-red-600');
+        } else if (tipo === 'ok') {
+            estadoCompresion.classList.add('text-green-600');
+        } else {
+            estadoCompresion.classList.add('text-gray-500');
+        }
+    }
+
+    function bloquearEnvio(bloquear, texto = 'Procesando imágenes...') {
+        procesandoFotos = bloquear;
+        btnSubmitAdopcion.disabled = bloquear;
+        btnSubmitAdopcion.classList.toggle('opacity-70', bloquear);
+        btnSubmitAdopcion.classList.toggle('cursor-not-allowed', bloquear);
+        btnSubmitAdopcion.textContent = bloquear ? texto : textoOriginalBoton;
+    }
+
+    function canvasToBlob(canvas, tipo, calidad) {
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), tipo, calidad);
+        });
+    }
+
+    function cargarImagenDesdeArchivo(file) {
+        return new Promise((resolve, reject) => {
+            const image = new Image();
+            const objectUrl = URL.createObjectURL(file);
+
+            image.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            };
+
+            image.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error(`No se pudo leer la imagen ${file.name}.`));
+            };
+
+            image.src = objectUrl;
+        });
+    }
+
+    function calcularDimensiones(width, height, maxDimension) {
+        if (width <= maxDimension && height <= maxDimension) {
+            return { width, height };
+        }
+
+        const ratio = Math.min(maxDimension / width, maxDimension / height);
+
+        return {
+            width: Math.round(width * ratio),
+            height: Math.round(height * ratio),
+        };
+    }
+
+    async function optimizarArchivo(file) {
+        if (file.size <= LIMITE_FINAL_BYTES) {
+            return {
+                file,
+                optimizado: false,
+                pesoOriginal: file.size,
+                pesoFinal: file.size,
+            };
+        }
+
+        const image = await cargarImagenDesdeArchivo(file);
+        let { width, height } = calcularDimensiones(image.width, image.height, DIMENSION_MAXIMA);
+
+        const qualitySteps = [0.86, 0.80, 0.74, 0.68, 0.62, 0.56];
+        let mejorBlob = null;
+
+        for (let intento = 0; intento < 5; intento++) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = width;
+            canvas.height = height;
+
+            ctx.drawImage(image, 0, 0, width, height);
+
+            for (const quality of qualitySteps) {
+                const blob = await canvasToBlob(canvas, 'image/webp', quality);
+
+                if (!blob) {
+                    continue;
+                }
+
+                mejorBlob = blob;
+
+                if (blob.size <= LIMITE_FINAL_BYTES) {
+                    const nuevoArchivo = new File(
+                        [blob],
+                        cambiarExtension(file.name, 'webp'),
+                        {
+                            type: 'image/webp',
+                            lastModified: Date.now(),
+                        }
+                    );
+
+                    return {
+                        file: nuevoArchivo,
+                        optimizado: true,
+                        pesoOriginal: file.size,
+                        pesoFinal: blob.size,
+                    };
+                }
+            }
+
+            width = Math.max(Math.round(width * 0.85), 800);
+            height = Math.max(Math.round(height * 0.85), 800);
+        }
+
+        if (mejorBlob && mejorBlob.size < file.size) {
+            const nuevoArchivo = new File(
+                [mejorBlob],
+                cambiarExtension(file.name, 'webp'),
+                {
+                    type: 'image/webp',
+                    lastModified: Date.now(),
+                }
+            );
+
+            return {
+                file: nuevoArchivo,
+                optimizado: true,
+                pesoOriginal: file.size,
+                pesoFinal: mejorBlob.size,
+            };
+        }
+
+        throw new Error(`No se pudo optimizar ${file.name} a un tamaño aceptable.`);
+    }
 
     function renderPreviewFotos() {
         previewGrid.innerHTML = '';
 
         const files = Array.from(dtFotos.files);
+
         nombreArchivo.textContent = files.length
             ? `${files.length} foto(s) seleccionada(s)`
             : 'Ningún archivo seleccionado';
@@ -507,13 +672,17 @@
 
         files.forEach((file, index) => {
             const reader = new FileReader();
+
             reader.onload = function(e) {
                 const item = document.createElement('div');
                 item.className = 'relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm';
 
                 item.innerHTML = `
                     <img src="${e.target.result}" class="w-full h-36 object-cover" alt="Vista previa">
-                    <div class="p-2 text-xs text-gray-600 truncate">${file.name}</div>
+                    <div class="p-2 text-xs text-gray-600">
+                        <div class="truncate font-medium">${file.name}</div>
+                        <div class="text-gray-400 mt-1">${formatearBytes(file.size)}</div>
+                    </div>
                     <button type="button"
                             data-index="${index}"
                             class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow">
@@ -536,24 +705,87 @@
                     dtFotos = nuevoDT;
                     inputFotos.files = dtFotos.files;
                     renderPreviewFotos();
+
+                    if (dtFotos.files.length === 0) {
+                        setEstadoCompresion('');
+                    }
                 });
             };
+
             reader.readAsDataURL(file);
         });
     }
 
-    inputFotos.addEventListener('change', function(e) {
+    async function procesarNuevosArchivos(nuevosArchivos) {
+        const errores = [];
+        let optimizadas = 0;
+
+        bloquearEnvio(true, 'Optimizando imágenes...');
+        setEstadoCompresion('Preparando imágenes para subir...', 'normal');
+
+        for (let i = 0; i < nuevosArchivos.length; i++) {
+            const file = nuevosArchivos[i];
+
+            setEstadoCompresion(`Procesando imagen ${i + 1} de ${nuevosArchivos.length}: ${file.name}`, 'normal');
+
+            if (!TIPOS_PERMITIDOS.includes(file.type)) {
+                errores.push(`${file.name}: formato no permitido. Usa JPG, JPEG, PNG o WEBP.`);
+                continue;
+            }
+
+            if (file.size > LIMITE_SELECCION_BYTES) {
+                errores.push(`${file.name}: pesa ${formatearBytes(file.size)} y supera el máximo permitido para procesarla.`);
+                continue;
+            }
+
+            try {
+                const resultado = await optimizarArchivo(file);
+                dtFotos.items.add(resultado.file);
+
+                if (resultado.optimizado) {
+                    optimizadas++;
+                }
+            } catch (error) {
+                errores.push(error.message || `No se pudo procesar ${file.name}.`);
+            }
+        }
+
+        inputFotos.files = dtFotos.files;
+        renderPreviewFotos();
+
+        if (errores.length) {
+            setEstadoCompresion('Algunas imágenes no pudieron procesarse. Revisa el mensaje mostrado.', 'error');
+            alert(errores.join('\n'));
+        } else if (optimizadas > 0) {
+            setEstadoCompresion(`${optimizadas} imagen(es) fueron optimizadas automáticamente antes de enviarse.`, 'ok');
+        } else {
+            setEstadoCompresion('Las imágenes están listas para enviarse.', 'ok');
+        }
+
+        bloquearEnvio(false);
+    }
+
+    inputFotos.addEventListener('change', async function(e) {
         const nuevos = Array.from(e.target.files);
 
-        if ((dtFotos.files.length + nuevos.length) > 8) {
-            alert('Solo puedes subir hasta 8 fotografías.');
+        if ((dtFotos.files.length + nuevos.length) > MAX_FOTOS) {
+            alert(`Solo puedes subir hasta ${MAX_FOTOS} fotografías.`);
             e.target.value = '';
             return;
         }
 
-        nuevos.forEach(file => dtFotos.items.add(file));
+        await procesarNuevosArchivos(nuevos);
+        e.target.value = '';
+    });
+
+    formAdopcion.addEventListener('submit', function(e) {
+        if (procesandoFotos) {
+            e.preventDefault();
+            alert('Espera a que termine la optimización de imágenes antes de publicar.');
+            return;
+        }
+
         inputFotos.files = dtFotos.files;
-        renderPreviewFotos();
     });
 
     function obtenerComponente(components, tipos) {

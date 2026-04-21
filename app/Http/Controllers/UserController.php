@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class UserController extends Controller
 {
@@ -329,23 +330,34 @@ class UserController extends Controller
         $usuario = $this->usuarioActual();
         abort_if(!$usuario, 403);
 
-        $request->validate([
+        $reglas = [
             'nombre' => ['required', 'string', 'max:120'],
             'telefono' => ['nullable', 'string', 'max:20'],
             'whatsapp' => ['nullable', 'string', 'max:20'],
-            'ciudad' => ['nullable', 'string', 'max:120'],
-        ], [
+        ];
+
+        $mensajes = [
             'nombre.required' => 'El nombre es obligatorio.',
             'nombre.max' => 'El nombre no debe exceder 120 caracteres.',
             'telefono.max' => 'El teléfono no debe exceder 20 caracteres.',
             'whatsapp.max' => 'El WhatsApp no debe exceder 20 caracteres.',
-            'ciudad.max' => 'La ciudad no debe exceder 120 caracteres.',
-        ]);
+        ];
+
+        if (Schema::hasColumn('usuarios', 'ciudad')) {
+            $reglas['ciudad'] = ['nullable', 'string', 'max:120'];
+            $mensajes['ciudad.max'] = 'La ciudad no debe exceder 120 caracteres.';
+        }
+
+        $request->validate($reglas, $mensajes);
 
         $usuario->nombre = trim($request->nombre);
         $usuario->telefono = $request->filled('telefono') ? trim($request->telefono) : null;
         $usuario->whatsapp = $request->filled('whatsapp') ? trim($request->whatsapp) : null;
-        $usuario->ciudad = $request->filled('ciudad') ? trim($request->ciudad) : null;
+
+        if (Schema::hasColumn('usuarios', 'ciudad')) {
+            $usuario->ciudad = $request->filled('ciudad') ? trim($request->ciudad) : null;
+        }
+
         $usuario->save();
 
         return redirect()
