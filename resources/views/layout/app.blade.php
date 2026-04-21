@@ -184,6 +184,11 @@
                             Mascotas en Adopción
                         </a>
 
+                        <a href="{{ route('app.movil') }}"
+                        class="navbar-main-link hover:text-primary transition">
+                            App móvil
+                        </a>
+
                         <div class="relative group" tabindex="0">
                             <button type="button"
                                 class="flex items-center gap-2 navbar-main-link hover:text-primary transition focus:outline-none">
@@ -304,6 +309,13 @@
                                             </svg>
                                             Contáctanos
                                         </a>
+
+                                        <a href="{{ route('app.movil') }}" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-700 hover:bg-orange-50 hover:text-primary transition navbar-dropdown-link">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8.25 3.75h7.5A2.25 2.25 0 0118 6v12a2.25 2.25 0 01-2.25 2.25h-7.5A2.25 2.25 0 016 18V6a2.25 2.25 0 012.25-2.25z"></path>
+                                            </svg>
+                                            Descargar app móvil
+                                        </a>
                                     </div>
 
                                     <div class="border-t border-gray-100 p-2">
@@ -383,6 +395,10 @@
 
                                         <a href="{{ route('adopciones.index') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
                                             Mascotas en Adopción
+                                        </a>
+
+                                        <a href="{{ route('app.movil') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
+                                            App móvil
                                         </a>
 
                                         <details class="group rounded-xl border border-gray-100 bg-gray-50">
@@ -483,6 +499,7 @@
                             <li><a href="{{ route('inicio') }}" class="hover:text-primary transition">Inicio</a></li>
                             <li><a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition">Mascotas perdidas</a></li>
                             <li><a href="{{ route('adopciones.index') }}" class="hover:text-primary transition">Mascotas en adopción</a></li>
+                            <li><a href="{{ route('app.movil') }}" class="hover:text-primary transition">App móvil</a></li>
                             <li><a href="{{ route('consejos.index') }}" class="hover:text-primary transition">Consejos</a></li>
                         </ul>
                     </div>
@@ -523,6 +540,7 @@
                         <a href="{{ route('inicio') }}" class="hover:text-primary transition">Inicio</a>
                         <a href="{{ route('mascotas.index2') }}" class="hover:text-primary transition">Extraviadas</a>
                         <a href="{{ route('adopciones.index') }}" class="hover:text-primary transition">Adopciones</a>
+                        <a href="{{ route('app.movil') }}" class="hover:text-primary transition">App móvil</a>
                         <a href="{{ route('consejos.index') }}" class="hover:text-primary transition">Consejos</a>
                     </div>
                 </div>

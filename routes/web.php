@@ -68,7 +68,7 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
     Route::get('/detalle', function () {
         return view('mascota-detalle');
     })->name('detalle');
-
+    Route::view('/app-movil', 'app-movil')->name('app.movil');
     Route::get('/reportar', function () {
         return view('reportar-mascota');
     })->name('reportar.mascota');
