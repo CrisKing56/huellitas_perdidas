@@ -765,17 +765,27 @@
         bloquearEnvio(false);
     }
 
+    // Permite volver a elegir el mismo archivo si el usuario quiere repetir la selección
+    inputFotos.addEventListener('click', function () {
+        this.value = null;
+    });
+
     inputFotos.addEventListener('change', async function(e) {
         const nuevos = Array.from(e.target.files);
 
+        if (!nuevos.length) {
+            return;
+        }
+
         if ((dtFotos.files.length + nuevos.length) > MAX_FOTOS) {
             alert(`Solo puedes subir hasta ${MAX_FOTOS} fotografías.`);
-            e.target.value = '';
             return;
         }
 
         await procesarNuevosArchivos(nuevos);
-        e.target.value = '';
+
+        // OJO: aquí ya no se limpia e.target.value = ''
+        // porque eso vaciaba el input y por eso Laravel recibía 0 fotos
     });
 
     formAdopcion.addEventListener('submit', function(e) {
