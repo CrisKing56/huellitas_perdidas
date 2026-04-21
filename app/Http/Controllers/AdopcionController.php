@@ -19,6 +19,109 @@ class AdopcionController extends Controller
         return Auth::user()->id_usuario ?? null;
     }
 
+    private function reglasValidacion(): array
+    {
+        return [
+            'nombre' => ['required', 'string', 'max:100'],
+            'especie_id' => ['required', 'integer', Rule::exists('especies', 'id_especie')],
+            'raza_id' => ['nullable', 'integer', Rule::exists('razas', 'id_raza')],
+            'otra_raza' => ['nullable', 'string', 'max:80'],
+            'edad_anios' => ['nullable', 'integer', 'min:0', 'max:30'],
+            'sexo' => ['required', Rule::in(['MACHO', 'HEMBRA', 'DESCONOCIDO'])],
+            'tamano' => ['required', Rule::in(['CHICO', 'MEDIANO', 'GRANDE', 'DESCONOCIDO'])],
+            'color_predominante' => ['nullable', 'string', 'max:120'],
+            'descripcion' => ['required', 'string'],
+            'vacunas_aplicadas' => ['nullable', 'string'],
+            'esterilizado' => ['nullable', 'boolean'],
+            'condicion_salud' => ['nullable', 'string', 'max:120'],
+            'descripcion_salud' => ['nullable', 'string'],
+            'requisitos' => ['nullable', 'string'],
+            'colonia_barrio' => ['nullable', 'string', 'max:120'],
+            'calle_referencias' => ['nullable', 'string', 'max:255'],
+            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
+            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
+
+            // Compatibilidad con una sola foto o múltiples fotos
+            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+            'fotos' => ['nullable', 'array', 'max:8'],
+            'fotos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+        ];
+    }
+
+    private function mensajesValidacion(): array
+    {
+        return [
+            'nombre.required' => 'El nombre de la mascota es obligatorio.',
+            'nombre.max' => 'El nombre no debe superar los 100 caracteres.',
+
+            'especie_id.required' => 'Debes seleccionar una especie.',
+            'especie_id.integer' => 'La especie seleccionada no es válida.',
+            'especie_id.exists' => 'La especie seleccionada no existe.',
+
+            'raza_id.integer' => 'La raza seleccionada no es válida.',
+            'raza_id.exists' => 'La raza seleccionada no existe.',
+
+            'otra_raza.max' => 'La otra raza no debe superar los 80 caracteres.',
+            'edad_anios.integer' => 'La edad debe ser un número entero.',
+            'edad_anios.min' => 'La edad no puede ser negativa.',
+            'edad_anios.max' => 'La edad no debe ser mayor a 30 años.',
+
+            'sexo.required' => 'Debes seleccionar el sexo.',
+            'sexo.in' => 'El sexo seleccionado no es válido.',
+
+            'tamano.required' => 'Debes seleccionar el tamaño.',
+            'tamano.in' => 'El tamaño seleccionado no es válido.',
+
+            'color_predominante.max' => 'El color predominante no debe superar los 120 caracteres.',
+            'descripcion.required' => 'La descripción es obligatoria.',
+            'condicion_salud.max' => 'La condición de salud no debe superar los 120 caracteres.',
+            'colonia_barrio.max' => 'La colonia o barrio no debe superar los 120 caracteres.',
+            'calle_referencias.max' => 'Las referencias no deben superar los 255 caracteres.',
+
+            'latitud.numeric' => 'La latitud debe ser numérica.',
+            'latitud.between' => 'La latitud no es válida.',
+            'longitud.numeric' => 'La longitud debe ser numérica.',
+            'longitud.between' => 'La longitud no es válida.',
+
+            'foto.image' => 'La foto principal debe ser una imagen válida.',
+            'foto.mimes' => 'La foto principal debe estar en formato JPG, JPEG, PNG o WEBP.',
+            'foto.max' => 'La foto principal debe pesar máximo 10 MB.',
+
+            'fotos.array' => 'Las fotografías enviadas no son válidas.',
+            'fotos.max' => 'Solo puedes subir hasta 8 fotografías.',
+            'fotos.*.image' => 'Cada archivo debe ser una imagen válida.',
+            'fotos.*.mimes' => 'Cada fotografía debe estar en formato JPG, JPEG, PNG o WEBP.',
+            'fotos.*.max' => 'Cada fotografía debe pesar máximo 10 MB.',
+        ];
+    }
+
+    private function atributosValidacion(): array
+    {
+        return [
+            'nombre' => 'nombre',
+            'especie_id' => 'especie',
+            'raza_id' => 'raza',
+            'otra_raza' => 'otra raza',
+            'edad_anios' => 'edad',
+            'sexo' => 'sexo',
+            'tamano' => 'tamaño',
+            'color_predominante' => 'color predominante',
+            'descripcion' => 'descripción',
+            'vacunas_aplicadas' => 'vacunas aplicadas',
+            'esterilizado' => 'esterilizado',
+            'condicion_salud' => 'condición de salud',
+            'descripcion_salud' => 'descripción de salud',
+            'requisitos' => 'requisitos',
+            'colonia_barrio' => 'colonia o barrio',
+            'calle_referencias' => 'calle y referencias',
+            'latitud' => 'latitud',
+            'longitud' => 'longitud',
+            'foto' => 'foto principal',
+            'fotos' => 'fotografías',
+            'fotos.*' => 'fotografía',
+        ];
+    }
+
     public function index(Request $request)
     {
         $filtros = [
@@ -102,29 +205,11 @@ class AdopcionController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
-            'especie_id' => ['required', 'integer', Rule::exists('especies', 'id_especie')],
-            'raza_id' => ['nullable', 'integer', Rule::exists('razas', 'id_raza')],
-            'otra_raza' => ['nullable', 'string', 'max:80'],
-            'edad_anios' => ['nullable', 'integer', 'min:0', 'max:30'],
-            'sexo' => ['required', Rule::in(['MACHO', 'HEMBRA', 'DESCONOCIDO'])],
-            'tamano' => ['required', Rule::in(['CHICO', 'MEDIANO', 'GRANDE', 'DESCONOCIDO'])],
-            'color_predominante' => ['nullable', 'string', 'max:120'],
-            'descripcion' => ['required', 'string'],
-            'vacunas_aplicadas' => ['nullable', 'string'],
-            'esterilizado' => ['nullable', 'boolean'],
-            'condicion_salud' => ['nullable', 'string', 'max:120'],
-            'descripcion_salud' => ['nullable', 'string'],
-            'requisitos' => ['nullable', 'string'],
-            'colonia_barrio' => ['nullable', 'string', 'max:120'],
-            'calle_referencias' => ['nullable', 'string', 'max:255'],
-            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
-            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
-            'fotos' => ['nullable', 'array', 'max:8'],
-            'fotos.*' => ['image', 'mimes:jpg,jpeg,png', 'max:5120'],
-        ]);
+        $request->validate(
+            $this->reglasValidacion(),
+            $this->mensajesValidacion(),
+            $this->atributosValidacion()
+        );
 
         if ($request->filled('raza_id')) {
             $raza = Raza::find($request->raza_id);
@@ -236,29 +321,11 @@ class AdopcionController extends Controller
             abort(403);
         }
 
-        $request->validate([
-            'nombre' => ['required', 'string', 'max:100'],
-            'especie_id' => ['required', 'integer', Rule::exists('especies', 'id_especie')],
-            'raza_id' => ['nullable', 'integer', Rule::exists('razas', 'id_raza')],
-            'otra_raza' => ['nullable', 'string', 'max:80'],
-            'edad_anios' => ['nullable', 'integer', 'min:0', 'max:30'],
-            'sexo' => ['required', Rule::in(['MACHO', 'HEMBRA', 'DESCONOCIDO'])],
-            'tamano' => ['required', Rule::in(['CHICO', 'MEDIANO', 'GRANDE', 'DESCONOCIDO'])],
-            'color_predominante' => ['nullable', 'string', 'max:120'],
-            'descripcion' => ['required', 'string'],
-            'vacunas_aplicadas' => ['nullable', 'string'],
-            'esterilizado' => ['nullable', 'boolean'],
-            'condicion_salud' => ['nullable', 'string', 'max:120'],
-            'descripcion_salud' => ['nullable', 'string'],
-            'requisitos' => ['nullable', 'string'],
-            'colonia_barrio' => ['nullable', 'string', 'max:120'],
-            'calle_referencias' => ['nullable', 'string', 'max:255'],
-            'latitud' => ['nullable', 'numeric', 'between:-90,90'],
-            'longitud' => ['nullable', 'numeric', 'between:-180,180'],
-            'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png', 'max:5120'],
-            'fotos' => ['nullable', 'array', 'max:8'],
-            'fotos.*' => ['image', 'mimes:jpg,jpeg,png', 'max:5120'],
-        ]);
+        $request->validate(
+            $this->reglasValidacion(),
+            $this->mensajesValidacion(),
+            $this->atributosValidacion()
+        );
 
         if ($request->filled('raza_id')) {
             $raza = Raza::find($request->raza_id);

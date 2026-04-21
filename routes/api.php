@@ -7,6 +7,13 @@ use App\Http\Controllers\Api\MobileOrganizacionController;
 
 Route::prefix('mobile')->group(function () {
 
+    Route::get('/ping', function () {
+        return response()->json([
+            'ok' => true,
+            'message' => 'API móvil operativa'
+        ]);
+    });
+
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
 

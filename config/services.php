@@ -42,13 +42,20 @@ return [
     ],
 
     'google_maps' => [
-    'api_key' => env('GOOGLE_MAPS_API_KEY')
+        'api_key' => env('GOOGLE_MAPS_API_KEY'),
     ],
 
     'facebook' => [
-    'client_id' => env('FACEBOOK_CLIENT_ID'),
-    'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
-    'redirect' => env('FACEBOOK_REDIRECT_URI'),
-    ]
+        'client_id' => env('FACEBOOK_CLIENT_ID'),
+        'client_secret' => env('FACEBOOK_CLIENT_SECRET'),
+        'redirect' => env('FACEBOOK_REDIRECT_URI'),
+    ],
+
+    'contact' => [
+        'email' => env('CONTACT_EMAIL', 'mendezrodrigo952@gmail.com'),
+        'whatsapp' => env('CONTACT_WHATSAPP', '529191234567'),
+        'address' => env('CONTACT_ADDRESS', 'Ocosingo, Chiapas, México'),
+        'hours' => env('CONTACT_HOURS', 'Lunes a viernes de 9:00 AM a 6:00 PM'),
+    ],
 
 ];

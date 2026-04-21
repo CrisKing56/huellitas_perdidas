@@ -33,6 +33,8 @@ use App\Http\Controllers\Admin\AdminExtravioController;
 use App\Http\Controllers\Admin\AdminAdopcionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 
+use App\Http\Controllers\ContactoController;
+
 
 use App\Models\PublicacionExtravio;
 use App\Models\PublicacionAdopcion;
@@ -71,6 +73,10 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
         return view('reportar-mascota');
     })->name('reportar.mascota');
 
+    Route::get('/contactanos', [ContactoController::class, 'index'])->name('contactanos');
+    Route::post('/contactanos', [ContactoController::class, 'enviar'])
+    ->middleware('throttle:5,1')
+    ->name('contactanos.enviar');
     /*
     |--------------------------------------------------------------------------
     | AUTENTICACIÓN

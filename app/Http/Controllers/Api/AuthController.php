@@ -32,6 +32,13 @@ class AuthController extends Controller
             ], 401);
         }
 
+        if (($usuario->estado ?? null) !== 'ACTIVA') {
+            return response()->json([
+                'ok' => false,
+                'message' => 'La cuenta no está activa'
+            ], 403);
+        }
+
         $tipoAccesoMovil = in_array($usuario->rol, ['VETERINARIA', 'REFUGIO'])
             ? 'ORGANIZACION'
             : 'USUARIO';
@@ -48,7 +55,7 @@ class AuthController extends Controller
                 'estado' => $usuario->estado,
                 'tipo_acceso_movil' => $tipoAccesoMovil,
             ]
-        ]);
+        ], 200);
     }
 
     public function register(Request $request)
