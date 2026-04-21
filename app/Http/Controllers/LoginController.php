@@ -10,11 +10,19 @@ class LoginController extends Controller
 {
     public function showLoginForm()
     {
+        if (Auth::check()) {
+            return $this->redirectByRole(Auth::user());
+        }
+
         return view('auth.login');
     }
 
     public function login(Request $request)
     {
+        if (Auth::check()) {
+            return $this->redirectByRole(Auth::user());
+        }
+
         $credentials = $request->validate([
             'correo' => ['required', 'email'],
             'password' => ['required'],
@@ -108,6 +116,20 @@ class LoginController extends Controller
             }
         }
 
+        return $this->redirectByRole($user);
+    }
+
+    public function logout(Request $request)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    }
+
+    private function redirectByRole($user)
+    {
         if ($user->rol === 'ADMIN') {
             return redirect()->intended(route('admin.dashboard'));
         }
@@ -121,14 +143,5 @@ class LoginController extends Controller
         }
 
         return redirect()->intended(route('dashboard'));
-    }
-
-    public function logout(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect('/');
     }
 }
