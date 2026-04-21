@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
-
 // =========================
 // CONTROLLERS
 // =========================
@@ -35,11 +34,9 @@ use App\Http\Controllers\Admin\AdminAdopcionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 
 
-// =========================
-// MODELOS
-// =========================
 use App\Models\PublicacionExtravio;
 use App\Models\PublicacionAdopcion;
+use App\Http\Controllers\SocialController;
 
 
 Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(function () {
@@ -421,3 +418,8 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
         });
     });
 });
+Route::get('/refugios', [RefugioController::class, 'index'])->name('refugios.index');
+Route::get('/refugios/{id}', [RefugioController::class, 'show'])->name('refugios.show');
+
+Route::get('/auth/facebook', [SocialController::class, 'redirectFacebook'])->name('facebook.login');
+Route::get('/auth/facebook/callback', [SocialController::class, 'callbackFacebook']);
