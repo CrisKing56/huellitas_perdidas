@@ -765,7 +765,6 @@
         bloquearEnvio(false);
     }
 
-    // Permite volver a elegir el mismo archivo si el usuario quiere repetir la selección
     inputFotos.addEventListener('click', function () {
         this.value = null;
     });
@@ -783,19 +782,74 @@
         }
 
         await procesarNuevosArchivos(nuevos);
-
-        // OJO: aquí ya no se limpia e.target.value = ''
-        // porque eso vaciaba el input y por eso Laravel recibía 0 fotos
     });
 
-    formAdopcion.addEventListener('submit', function(e) {
+    formAdopcion.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
         if (procesandoFotos) {
-            e.preventDefault();
             alert('Espera a que termine la optimización de imágenes antes de publicar.');
             return;
         }
 
-        inputFotos.files = dtFotos.files;
+        if (dtFotos.files.length === 0) {
+            alert('Debes subir al menos una fotografía.');
+            return;
+        }
+
+        bloquearEnvio(true, 'Publicando...');
+
+        try {
+            const formData = new FormData(formAdopcion);
+
+            formData.delete('fotos[]');
+            formData.delete('fotos');
+            formData.delete('foto');
+
+            Array.from(dtFotos.files).forEach((file) => {
+                formData.append('fotos[]', file, file.name);
+            });
+
+            const response = await fetch(formAdopcion.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.errors) {
+                    const mensajes = [];
+
+                    Object.values(data.errors).forEach((grupo) => {
+                        grupo.forEach((mensaje) => mensajes.push(mensaje));
+                    });
+
+                    alert(mensajes.join('\n'));
+                } else {
+                    alert(data.message || 'No se pudo publicar la mascota.');
+                }
+
+                bloquearEnvio(false);
+                return;
+            }
+
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+
+            bloquearEnvio(false);
+        } catch (error) {
+            console.error(error);
+            alert('Ocurrió un error inesperado al enviar la publicación.');
+            bloquearEnvio(false);
+        }
     });
 
     function obtenerComponente(components, tipos) {

@@ -1,5 +1,20 @@
 @extends('layout.app')
 
+@section('title', 'Detalle de mascota en adopción')
+
+@section('meta_tags')
+    <meta property="og:title" content="¡{{ $adopcion->nombre }} busca un hogar!" />
+    <meta property="og:description" content="{{ \Illuminate\Support\Str::limit($adopcion->descripcion ?? 'Conoce esta mascota en adopción en Huellitas Perdidas.', 160) }}" />
+    <meta property="og:url" content="{{ url()->current() }}" />
+    <meta property="og:type" content="article" />
+
+    @if(isset($adopcion->fotos) && $adopcion->fotos->count() > 0)
+        <meta property="og:image" content="{{ asset('storage/' . $adopcion->fotos->sortBy('orden')->first()->url) }}" />
+    @elseif($adopcion->fotoPrincipal)
+        <meta property="og:image" content="{{ asset('storage/' . $adopcion->fotoPrincipal->url) }}" />
+    @endif
+@endsection
+
 @section('content')
 
 @php
@@ -12,11 +27,17 @@
         $telefonoLimpio = '52' . $telefonoLimpio;
     }
 
-    $mensaje = "Hola, me interesa adoptar a {$adopcion->nombre} que vi en Huellitas Perdidas.";
-    $whatsappUrl = $telefonoLimpio ? "https://wa.me/{$telefonoLimpio}?text=" . urlencode($mensaje) : null;
+    $mensajeWhatsapp = "Hola, me interesa adoptar a {$adopcion->nombre} que vi en Huellitas Perdidas.";
+    $whatsappUrl = $telefonoLimpio ? "https://wa.me/{$telefonoLimpio}?text=" . urlencode($mensajeWhatsapp) : null;
+
+    $urlActual = urlencode(url()->current());
+    $facebookShareUrl = "https://www.facebook.com/sharer/sharer.php?u=" . $urlActual;
 
     $authUserId = auth()->check() ? (auth()->user()->id_usuario ?? null) : null;
     $esAutor = auth()->check() && ((int) $authUserId === (int) ($adopcion->autor_usuario_id ?? 0));
+
+    $puedeVerContacto = $puedeVerContacto ?? false;
+    $solicitudAceptada = $solicitudAceptada ?? null;
 
     $clasesEstado = [
         'DISPONIBLE' => 'bg-green-100 text-green-700 border-green-200',
@@ -36,7 +57,6 @@
     $razaTexto = $adopcion->raza->nombre ?? (!empty($adopcion->otra_raza) ? $adopcion->otra_raza : null);
 
     $fotosGaleria = collect();
-
     if (isset($adopcion->fotos) && $adopcion->fotos->count()) {
         $fotosGaleria = $adopcion->fotos->sortBy('orden')->values();
     } elseif ($adopcion->fotoPrincipal) {
@@ -52,7 +72,6 @@
     foreach (array_slice($partesNombre, 0, 2) as $parte) {
         $inicialesAutor .= mb_strtoupper(mb_substr($parte, 0, 1));
     }
-
     if ($inicialesAutor === '') {
         $inicialesAutor = 'U';
     }
@@ -65,6 +84,19 @@
     $descripcionSalud = $adopcion->descripcion_salud ?? null;
     $requisitos = $adopcion->requisitos ?? null;
     $esterilizado = isset($adopcion->esterilizado) ? $adopcion->esterilizado : null;
+
+    $latitud = $adopcion->latitud ?? null;
+    $longitud = $adopcion->longitud ?? null;
+    $hayCoordenadas = is_numeric($latitud) && is_numeric($longitud);
+    $mapaEmbedUrl = $hayCoordenadas
+        ? "https://www.google.com/maps?q={$latitud},{$longitud}&z=16&output=embed"
+        : null;
+
+    $mostrarWhatsapp = !$esAutor && $puedeVerContacto && !empty($whatsappUrl);
+
+    $mascotasRelacionadas = ($mascotasRelacionadas ?? collect())
+        ->filter(fn($m) => (int) $m->id_publicacion !== (int) $adopcion->id_publicacion)
+        ->values();
 @endphp
 
 <style>
@@ -92,16 +124,6 @@
                 {{ session('error') }}
             </div>
         @endif
-
-        <div class="mb-8">
-            <nav class="text-sm text-gray-400 flex flex-wrap items-center gap-2">
-                <a href="{{ route('inicio') }}" class="hover:text-green-600 transition">Inicio</a>
-                <span>/</span>
-                <a href="{{ route('adopciones.index') }}" class="hover:text-green-600 transition">Adopciones</a>
-                <span>/</span>
-                <span class="text-gray-600 font-medium">{{ $adopcion->nombre }}</span>
-            </nav>
-        </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <div class="lg:col-span-7 space-y-6">
@@ -231,16 +253,16 @@
                             </div>
 
                             <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Tamaño</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Ubicación</p>
                                 <p class="text-sm font-semibold text-gray-900 mt-1">
-                                    {{ $adopcion->tamano ? ucfirst(mb_strtolower($adopcion->tamano)) : 'No especificado' }}
+                                    {{ $colonia ?: 'No especificada' }}
                                 </p>
                             </div>
 
                             <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Sexo</p>
+                                <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400">Tamaño</p>
                                 <p class="text-sm font-semibold text-gray-900 mt-1">
-                                    {{ $adopcion->sexo ? ucfirst(mb_strtolower($adopcion->sexo)) : 'No especificado' }}
+                                    {{ $adopcion->tamano ? ucfirst(mb_strtolower($adopcion->tamano)) : 'No especificado' }}
                                 </p>
                             </div>
 
@@ -287,6 +309,14 @@
                             <div class="rounded-2xl border border-green-200 bg-green-50 p-4">
                                 <p class="text-sm font-semibold text-green-800">
                                     Tu solicitud fue aceptada. Ya puedes ponerte en contacto con el responsable.
+                                </p>
+                            </div>
+                        @endif
+
+                        @if($esAutor)
+                            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                                <p class="text-sm font-semibold text-blue-800">
+                                    Esta publicación es tuya. No puedes escribirte a ti mismo por WhatsApp.
                                 </p>
                             </div>
                         @endif
@@ -370,12 +400,16 @@
                                 @endguest
                             @endif
 
-                            @if(($esAutor || $puedeVerContacto) && $whatsappUrl)
+                            @if($mostrarWhatsapp)
                                 <a
                                     href="{{ $whatsappUrl }}"
                                     target="_blank"
-                                    class="w-full inline-flex items-center justify-center bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
+                                    class="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
                                 >
+                                    <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                                        <path d="M19.11 17.39c-.3-.15-1.77-.87-2.05-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.8-1.67-2.1-.18-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.67-1.62-.92-2.23-.24-.57-.48-.5-.67-.51h-.57c-.2 0-.52.08-.8.38-.27.3-1.05 1.02-1.05 2.48s1.08 2.88 1.23 3.08c.15.2 2.13 3.25 5.17 4.56.72.31 1.28.5 1.72.64.72.23 1.37.2 1.89.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/>
+                                        <path d="M16.03 3.2C9.03 3.2 3.34 8.88 3.34 15.9c0 2.23.58 4.4 1.68 6.32L3 29l6.98-1.83a12.62 12.62 0 0 0 6.05 1.54h.01c7 0 12.69-5.69 12.69-12.7 0-3.39-1.32-6.58-3.72-8.98a12.58 12.58 0 0 0-8.98-3.72zm0 23.25h-.01a10.52 10.52 0 0 1-5.36-1.47l-.38-.23-4.14 1.09 1.1-4.03-.25-.41a10.51 10.51 0 0 1-1.62-5.5c0-5.8 4.72-10.52 10.53-10.52 2.81 0 5.45 1.09 7.43 3.08a10.45 10.45 0 0 1 3.08 7.44c0 5.8-4.72 10.52-10.52 10.52z"/>
+                                    </svg>
                                     Escribir por WhatsApp
                                 </a>
                             @elseif(!$esAutor && !$puedeVerContacto)
@@ -388,13 +422,16 @@
                                 </button>
                             @endif
 
-                            <button
-                                type="button"
-                                onclick="navigator.share ? navigator.share({ title: '{{ $adopcion->nombre }}', text: 'Me interesa esta mascota en adopción', url: window.location.href }) : window.prompt('Copia este enlace:', window.location.href)"
-                                class="w-full inline-flex items-center justify-center border border-green-100 bg-green-50 hover:bg-green-100 text-green-600 font-semibold py-3.5 px-5 rounded-xl transition"
+                            <a
+                                href="{{ $facebookShareUrl }}"
+                                target="_blank"
+                                class="w-full inline-flex items-center justify-center gap-2 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-3.5 px-5 rounded-xl transition"
                             >
-                                Compartir publicación
-                            </button>
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 10.998 10.125 11.854v-8.385H7.078v-3.47h3.047V9.428c0-3.007 1.792-4.67 4.533-4.67 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.49 0-1.956.926-1.956 1.874v2.252h3.328l-.532 3.469h-2.796v8.385C19.612 23.07 24 18.09 24 12.073z"/>
+                                </svg>
+                                Compartir en Facebook
+                            </a>
 
                             @if($esAutor)
                                 <a
@@ -470,6 +507,32 @@
                                 @endif
                             </div>
                         </div>
+
+                        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-3">Mapa de ubicación</p>
+
+                            @if($mapaEmbedUrl)
+                                <div class="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
+                                    <iframe
+                                        src="{{ $mapaEmbedUrl }}"
+                                        width="100%"
+                                        height="360"
+                                        style="border:0;"
+                                        allowfullscreen=""
+                                        loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade">
+                                    </iframe>
+                                </div>
+
+                                <p class="text-sm text-gray-500 mt-4">
+                                    Cerca de: <span class="font-medium text-gray-700">{{ $colonia ?: 'Ubicación registrada' }}</span>
+                                </p>
+                            @else
+                                <div class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
+                                    <p class="text-gray-500 font-medium">No hay coordenadas exactas para esta mascota.</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
@@ -539,31 +602,93 @@
                                 La ubicación todavía no fue guardada en esta publicación.
                             </p>
                         @endif
-                            <span class="leading-relaxed">{{ $adopcion->requisitos }}</span>
-                        </li>
-                    </ul>
-                </div>
-
-            </div>
-
-            <div class="space-y-6">
-                
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-6">
-                    <h3 class="text-lg font-bold text-gray-900 mb-6">Información de Contacto</h3>
-                    
-                    <div class="flex items-start gap-4 mb-6">
-                        <div class="bg-orange-50 p-2 rounded-full text-orange-500 mt-1">
-                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-                        </div>
-                        <div>
-                            <p class="text-xs text-gray-400 font-bold uppercase mb-0.5">Responsable</p>
-                            <p class="font-bold text-gray-900 text-base leading-tight">{{ $adopcion->autor->nombre ?? 'Usuario' }}</p>
-                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
+        <section class="mt-14">
+            <div class="flex items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Otras mascotas que buscan un hogar</h2>
+                    <p class="text-sm text-gray-500 mt-1">Más publicaciones de adopción que podrían interesarte.</p>
+                </div>
+
+                <a href="{{ route('adopciones.index') }}"
+                   class="hidden md:inline-flex items-center text-sm font-semibold text-green-600 hover:text-green-700 transition">
+                    Ver todas
+                </a>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                @forelse($mascotasRelacionadas as $mascota)
+                    @php
+                        $especieRelacionada = $mascota->especie->nombre ?? match ((int) $mascota->especie_id) {
+                            1 => 'Perro',
+                            2 => 'Gato',
+                            default => 'Mascota',
+                        };
+                    @endphp
+
+                    <a href="{{ route('adopciones.show', $mascota->id_publicacion) }}">
+                        <div class="bg-white rounded-3xl shadow-sm hover:shadow-lg transition duration-300 border border-gray-100 overflow-hidden group flex flex-col h-full">
+                            <div class="h-64 relative overflow-hidden bg-gray-100">
+                                @if($mascota->fotoPrincipal)
+                                    <img src="{{ asset('storage/' . $mascota->fotoPrincipal->url) }}"
+                                         class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
+                                @elseif(isset($mascota->fotos) && $mascota->fotos->count())
+                                    <img src="{{ asset('storage/' . $mascota->fotos->sortBy('orden')->first()->url) }}"
+                                         class="w-full h-full object-cover transition duration-700 group-hover:scale-105">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center text-gray-300 bg-gray-50">
+                                        <span class="text-sm">Sin imagen</span>
+                                    </div>
+                                @endif
+
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-transparent"></div>
+
+                                <span class="absolute top-3 left-3 px-3 py-1 rounded-full text-[11px] font-bold shadow-sm uppercase tracking-wide bg-green-100 text-green-600">
+                                    En adopción
+                                </span>
+
+                                <span class="absolute top-3 right-3 px-3 py-1 rounded-full text-[11px] font-semibold shadow-sm bg-white/90 text-gray-700 backdrop-blur-sm">
+                                    {{ $especieRelacionada }}
+                                </span>
+                            </div>
+
+                            <div class="p-5 flex-1 flex flex-col">
+                                <h3 class="font-bold text-gray-900 text-lg mb-1">{{ $mascota->nombre }}</h3>
+
+                                <p class="text-sm text-gray-500 mb-3 min-h-[44px] leading-relaxed">
+                                    {{ \Illuminate\Support\Str::limit($mascota->descripcion, 85) }}
+                                </p>
+
+                                <div class="mt-auto flex items-center text-gray-500 text-xs font-medium mb-4">
+                                    <svg class="w-4 h-4 mr-1.5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    {{ $mascota->colonia_barrio ?: 'Ubicación no especificada' }}
+                                </div>
+
+                                <div class="pt-4 border-t border-gray-100">
+                                    <span class="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-green-50 text-green-600 font-semibold py-2.5 border border-green-100 group-hover:bg-green-600 group-hover:text-white group-hover:border-green-600 transition">
+                                        Ver publicación
+                                        <svg class="w-4 h-4 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                @empty
+                    <div class="col-span-1 md:col-span-2 xl:col-span-4 text-center py-12 rounded-3xl border border-dashed border-gray-200 bg-white">
+                        <p class="text-gray-500 text-lg">No hay más mascotas en adopción para mostrar por ahora.</p>
+                    </div>
+                @endforelse
+            </div>
+        </section>
     </div>
 </div>
 

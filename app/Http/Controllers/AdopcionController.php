@@ -8,6 +8,7 @@ use App\Models\PublicacionAdopcion;
 use App\Models\Raza;
 use App\Models\SolicitudAdopcion;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -41,10 +42,12 @@ class AdopcionController extends Controller
             'latitud' => ['nullable', 'numeric', 'between:-90,90'],
             'longitud' => ['nullable', 'numeric', 'between:-180,180'],
 
-            // Compatibilidad con una sola foto o múltiples fotos
             'foto' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
             'fotos' => ['nullable', 'array', 'max:8'],
             'fotos.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
+
+            'fotos_eliminar' => ['nullable', 'array'],
+            'fotos_eliminar.*' => ['integer'],
         ];
     }
 
@@ -92,6 +95,9 @@ class AdopcionController extends Controller
             'fotos.*.image' => 'Cada archivo debe ser una imagen válida.',
             'fotos.*.mimes' => 'Cada fotografía debe estar en formato JPG, JPEG, PNG o WEBP.',
             'fotos.*.max' => 'Cada fotografía debe pesar máximo 10 MB.',
+
+            'fotos_eliminar.array' => 'Las fotos marcadas para eliminar no son válidas.',
+            'fotos_eliminar.*.integer' => 'Una de las fotos marcadas para eliminar no es válida.',
         ];
     }
 
@@ -119,7 +125,51 @@ class AdopcionController extends Controller
             'foto' => 'foto principal',
             'fotos' => 'fotografías',
             'fotos.*' => 'fotografía',
+            'fotos_eliminar' => 'fotos a eliminar',
+            'fotos_eliminar.*' => 'foto a eliminar',
         ];
+    }
+
+    private function flattenFiles($files): array
+    {
+        $resultado = [];
+
+        if ($files instanceof UploadedFile) {
+            $resultado[] = $files;
+            return $resultado;
+        }
+
+        if (is_array($files)) {
+            foreach ($files as $file) {
+                $resultado = array_merge($resultado, $this->flattenFiles($file));
+            }
+        }
+
+        return $resultado;
+    }
+
+    private function extraerArchivosFotos(Request $request): array
+    {
+        $archivos = [];
+
+        foreach (['fotos', 'fotos[]', 'foto'] as $campo) {
+            $valor = $request->file($campo);
+
+            if ($valor) {
+                $archivos = array_merge($archivos, $this->flattenFiles($valor));
+            }
+        }
+
+        // respaldo extra por si llegan con otra estructura
+        if (empty($archivos)) {
+            foreach ($request->allFiles() as $valor) {
+                $archivos = array_merge($archivos, $this->flattenFiles($valor));
+            }
+        }
+
+        return array_values(array_filter($archivos, function ($archivo) {
+            return $archivo instanceof UploadedFile;
+        }));
     }
 
     public function index(Request $request)
@@ -215,20 +265,33 @@ class AdopcionController extends Controller
             $raza = Raza::find($request->raza_id);
 
             if (!$raza || (int) $raza->especie_id !== (int) $request->especie_id) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'La raza seleccionada no corresponde a la especie elegida.',
+                        'errors' => [
+                            'raza_id' => ['La raza seleccionada no corresponde a la especie elegida.']
+                        ]
+                    ], 422);
+                }
+
                 return back()
                     ->withErrors(['raza_id' => 'La raza seleccionada no corresponde a la especie elegida.'])
                     ->withInput();
             }
         }
 
-        $archivos = [];
-        if ($request->hasFile('fotos')) {
-            $archivos = $request->file('fotos');
-        } elseif ($request->hasFile('foto')) {
-            $archivos = [$request->file('foto')];
-        }
+        $archivos = $this->extraerArchivosFotos($request);
 
         if (count($archivos) === 0) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Debes subir al menos una fotografía.',
+                    'errors' => [
+                        'fotos' => ['Debes subir al menos una fotografía.']
+                    ]
+                ], 422);
+            }
+
             return back()
                 ->withErrors(['fotos' => 'Debes subir al menos una fotografía.'])
                 ->withInput();
@@ -264,6 +327,16 @@ class AdopcionController extends Controller
                 'publicacion_id' => $adopcion->id_publicacion,
                 'url' => $ruta,
                 'orden' => $index + 1,
+            ]);
+        }
+
+        if ($request->expectsJson()) {
+            session()->flash('success', 'Mascota publicada para adopción correctamente.');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Mascota publicada para adopción correctamente.',
+                'redirect' => route('adopciones.mis-adopciones'),
             ]);
         }
 
@@ -331,20 +404,61 @@ class AdopcionController extends Controller
             $raza = Raza::find($request->raza_id);
 
             if (!$raza || (int) $raza->especie_id !== (int) $request->especie_id) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'La raza seleccionada no corresponde a la especie elegida.',
+                        'errors' => [
+                            'raza_id' => ['La raza seleccionada no corresponde a la especie elegida.']
+                        ]
+                    ], 422);
+                }
+
                 return back()
                     ->withErrors(['raza_id' => 'La raza seleccionada no corresponde a la especie elegida.'])
                     ->withInput();
             }
         }
 
-        // Validar el total final de fotos ANTES de borrar o guardar nada
-        $reemplazaFotoPrincipal = $request->hasFile('foto');
-        $archivosNuevos = $request->hasFile('fotos') ? $request->file('fotos') : [];
-        $cantidadNuevas = count($archivosNuevos);
+        $idsEliminar = collect($request->input('fotos_eliminar', []))
+            ->filter(fn($idFoto) => is_numeric($idFoto))
+            ->map(fn($idFoto) => (int) $idFoto)
+            ->unique()
+            ->values();
 
-        $totalFinalFotos = ($reemplazaFotoPrincipal ? 1 : $adopcion->fotos()->count()) + $cantidadNuevas;
+        $fotosExistentes = $adopcion->fotos;
+        $fotosParaEliminar = $fotosExistentes->filter(function ($foto) use ($idsEliminar) {
+            return $idsEliminar->contains((int) $foto->id_foto);
+        });
+
+        $archivosNuevos = $this->extraerArchivosFotos($request);
+
+        $totalFinalFotos = $fotosExistentes->count() - $fotosParaEliminar->count() + count($archivosNuevos);
+
+        if ($totalFinalFotos < 1) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'La publicación debe conservar al menos una fotografía.',
+                    'errors' => [
+                        'fotos' => ['La publicación debe conservar al menos una fotografía.']
+                    ]
+                ], 422);
+            }
+
+            return back()
+                ->withErrors(['fotos' => 'La publicación debe conservar al menos una fotografía.'])
+                ->withInput();
+        }
 
         if ($totalFinalFotos > 8) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'No puedes tener más de 8 fotografías en total.',
+                    'errors' => [
+                        'fotos' => ['No puedes tener más de 8 fotografías en total.']
+                    ]
+                ], 422);
+            }
+
             return back()
                 ->withErrors(['fotos' => 'No puedes tener más de 8 fotografías en total.'])
                 ->withInput();
@@ -370,35 +484,43 @@ class AdopcionController extends Controller
         $adopcion->longitud = $request->filled('longitud') ? $request->longitud : null;
         $adopcion->save();
 
-        if ($reemplazaFotoPrincipal) {
-            foreach ($adopcion->fotos as $fotoExistente) {
-                if ($fotoExistente->url && Storage::disk('public')->exists($fotoExistente->url)) {
-                    Storage::disk('public')->delete($fotoExistente->url);
-                }
-                $fotoExistente->delete();
+        foreach ($fotosParaEliminar as $fotoEliminar) {
+            if ($fotoEliminar->url && Storage::disk('public')->exists($fotoEliminar->url)) {
+                Storage::disk('public')->delete($fotoEliminar->url);
             }
+            $fotoEliminar->delete();
+        }
 
-            $ruta = $request->file('foto')->store('adopciones', 'public');
+        $fotosRestantes = $adopcion->fotos()->orderBy('orden')->get();
+
+        foreach ($fotosRestantes as $index => $fotoRestante) {
+            $nuevoOrden = $index + 1;
+            if ((int) $fotoRestante->orden !== $nuevoOrden) {
+                $fotoRestante->orden = $nuevoOrden;
+                $fotoRestante->save();
+            }
+        }
+
+        $ordenInicial = $fotosRestantes->count();
+
+        foreach ($archivosNuevos as $index => $archivo) {
+            $ruta = $archivo->store('adopciones', 'public');
 
             AdopcionFoto::create([
                 'publicacion_id' => $adopcion->id_publicacion,
                 'url' => $ruta,
-                'orden' => 1,
+                'orden' => $ordenInicial + $index + 1,
             ]);
         }
 
-        if (!empty($archivosNuevos)) {
-            $ordenInicial = $adopcion->fotos()->max('orden') ?? 0;
+        if ($request->expectsJson()) {
+            session()->flash('success', 'Se acaba de modificar tu publicación exitosamente.');
 
-            foreach ($archivosNuevos as $index => $archivo) {
-                $ruta = $archivo->store('adopciones', 'public');
-
-                AdopcionFoto::create([
-                    'publicacion_id' => $adopcion->id_publicacion,
-                    'url' => $ruta,
-                    'orden' => $ordenInicial + $index + 1,
-                ]);
-            }
+            return response()->json([
+                'success' => true,
+                'message' => 'Se acaba de modificar tu publicación exitosamente.',
+                'redirect' => route('adopciones.mis-adopciones'),
+            ]);
         }
 
         return redirect()

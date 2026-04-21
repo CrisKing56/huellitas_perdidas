@@ -2,15 +2,14 @@
 
 @section('meta_tags')
     <meta property="og:title" content="¡Ayúdame a encontrar a {{ $publicacion->nombre }}!" />
-    <meta property="og:description" content="Se extravió el {{ $publicacion->fecha_extravio }} por la zona de {{ $publicacion->ultimo_avistamiento }}. Características: {{ $publicacion->sexo }}, tamaño {{ $publicacion->tamano }}." />
+    <meta property="og:description" content="Se extravió el {{ $publicacion->fecha_extravio }} por la zona de {{ $publicacion->colonia_barrio }}. Características: {{ $publicacion->sexo }}, tamaño {{ $publicacion->tamano }}." />
     <meta property="og:url" content="{{ url()->current() }}" />
     <meta property="og:type" content="article" />
-    
+
     @if($publicacion->fotos->count() > 0)
         <meta property="og:image" content="{{ asset('storage/' . $publicacion->fotos->first()->url) }}" />
     @endif
 @endsection
-
 
 @section('content')
 
@@ -23,6 +22,7 @@
 
 @php
     $fechaPublicacion = $publicacion->creado_en ?? $publicacion->created_at ?? null;
+
     $telefonoCrudo = $publicacion->autor->whatsapp ?? $publicacion->autor->telefono ?? null;
     $telefonoLimpio = $telefonoCrudo ? preg_replace('/\D+/', '', $telefonoCrudo) : null;
 
@@ -33,8 +33,8 @@
     $mensaje = "Hola, vi tu publicación de {$publicacion->nombre} en Huellitas Perdidas.";
     $whatsappUrl = $telefonoLimpio ? "https://wa.me/{$telefonoLimpio}?text=" . urlencode($mensaje) : null;
 
-    $latitudMapa = $publicacion->ubicacion->latitud ?? null;
-    $longitudMapa = $publicacion->ubicacion->longitud ?? null;
+    $latitudMapa = $publicacion->ubicacion->latitud ?? $publicacion->latitud ?? null;
+    $longitudMapa = $publicacion->ubicacion->longitud ?? $publicacion->longitud ?? null;
     $mapaEmbedUrl = ($latitudMapa && $longitudMapa)
         ? "https://www.google.com/maps?q={$latitudMapa},{$longitudMapa}&z=16&output=embed"
         : null;
@@ -62,6 +62,14 @@
 
     $clase = $clasesEstado[$publicacion->estado] ?? 'bg-gray-100 text-gray-600 border-gray-200';
 
+    $especieTexto = $publicacion->especie->nombre ?? match ((int) $publicacion->especie_id) {
+        1 => 'Perro',
+        2 => 'Gato',
+        default => 'Mascota',
+    };
+
+    $razaTexto = $publicacion->raza->nombre ?? null;
+
     $fotosGaleria = collect();
 
     if (isset($publicacion->fotos) && $publicacion->fotos->count()) {
@@ -69,6 +77,11 @@
     } elseif ($publicacion->fotoPrincipal) {
         $fotosGaleria = collect([$publicacion->fotoPrincipal]);
     }
+
+    $urlActual = urlencode(url()->current());
+    $urlFacebook = "https://www.facebook.com/sharer/sharer.php?u=" . $urlActual;
+
+    $descripcionCartel = \Illuminate\Support\Str::limit($publicacion->descripcion ?? '', 230);
 @endphp
 
 <style>
@@ -92,50 +105,67 @@
         z-index: 1;
     }
 
-    @if($esAutor)
-    #cartel-imprimible { display: none; }
+    #cartel-imprimible {
+        display: none;
+    }
 
     @media print {
-        @page { margin: 0; size: auto; }
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+
+        html, body {
+            width: 210mm;
+            height: 297mm;
+            background: #fff;
+        }
 
         body * {
-            visibility: hidden;
+            visibility: hidden !important;
         }
 
         #cartel-imprimible,
         #cartel-imprimible * {
-            visibility: visible;
+            visibility: visible !important;
         }
 
         #cartel-imprimible {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100vh;
-            display: flex;
+            display: flex !important;
+            position: fixed;
+            inset: 0;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            background: white;
+            z-index: 999999;
+            box-sizing: border-box;
+            padding: 12mm;
+            overflow: hidden;
             flex-direction: column;
             justify-content: space-between;
-            padding: 20px;
-            background: white;
-            z-index: 9999;
+        }
+
+        .no-print {
+            display: none !important;
         }
     }
-    @endif
 </style>
 
-<div class="bg-white min-h-screen">
+<div class="bg-white min-h-screen no-print">
     <div class="max-w-7xl mx-auto px-6 py-8 lg:py-10">
 
-        <div class="mb-8">
-            <nav class="text-sm text-gray-400 flex flex-wrap items-center gap-2">
-                <a href="{{ route('inicio') }}" class="hover:text-orange-500 transition">Inicio</a>
-                <span>/</span>
-                <a href="{{ route('mascotas.index2') }}" class="hover:text-orange-500 transition">Mascotas perdidas</a>
-                <span>/</span>
-                <span class="text-gray-600 font-medium">{{ $publicacion->nombre }}</span>
-            </nav>
-        </div>
+        @if (session('success'))
+            <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700">
+                {{ session('error') }}
+            </div>
+        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             <div class="lg:col-span-7 space-y-6">
@@ -301,16 +331,28 @@
                             </div>
                         </div>
 
+                        @if($esAutor)
+                            <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                                <p class="text-sm font-semibold text-blue-800">
+                                    Esta publicación es tuya. No puedes escribirte a ti mismo por WhatsApp.
+                                </p>
+                            </div>
+                        @endif
+
                         <div class="space-y-3">
-                            @if($whatsappUrl)
+                            @if($whatsappUrl && !$esAutor)
                                 <a
                                     href="{{ $whatsappUrl }}"
                                     target="_blank"
-                                    class="w-full inline-flex items-center justify-center bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
+                                    class="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
                                 >
+                                    <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                                        <path d="M19.11 17.39c-.3-.15-1.77-.87-2.05-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.8-1.67-2.1-.18-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.67-1.62-.92-2.23-.24-.57-.48-.5-.67-.51h-.57c-.2 0-.52.08-.8.38-.27.3-1.05 1.02-1.05 2.48s1.08 2.88 1.23 3.08c.15.2 2.13 3.25 5.17 4.56.72.31 1.28.5 1.72.64.72.23 1.37.2 1.89.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/>
+                                        <path d="M16.03 3.2C9.03 3.2 3.34 8.88 3.34 15.9c0 2.23.58 4.4 1.68 6.32L3 29l6.98-1.83a12.62 12.62 0 0 0 6.05 1.54h.01c7 0 12.69-5.69 12.69-12.7 0-3.39-1.32-6.58-3.72-8.98a12.58 12.58 0 0 0-8.98-3.72zm0 23.25h-.01a10.52 10.52 0 0 1-5.36-1.47l-.38-.23-4.14 1.09 1.1-4.03-.25-.41a10.51 10.51 0 0 1-1.62-5.5c0-5.8 4.72-10.52 10.53-10.52 2.81 0 5.45 1.09 7.43 3.08a10.45 10.45 0 0 1 3.08 7.44c0 5.8-4.72 10.52-10.52 10.52z"/>
+                                    </svg>
                                     Contactar por WhatsApp
                                 </a>
-                            @else
+                            @elseif(!$esAutor)
                                 <button
                                     type="button"
                                     disabled
@@ -320,12 +362,26 @@
                                 </button>
                             @endif
 
+                            <a
+                                href="{{ $urlFacebook }}"
+                                target="_blank"
+                                class="w-full inline-flex items-center justify-center gap-2 border border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold py-3.5 px-5 rounded-xl transition"
+                            >
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 10.998 10.125 11.854v-8.385H7.078v-3.47h3.047V9.428c0-3.007 1.792-4.67 4.533-4.67 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.49 0-1.956.926-1.956 1.874v2.252h3.328l-.532 3.469h-2.796v8.385C19.612 23.07 24 18.09 24 12.073z"/>
+                                </svg>
+                                Compartir en Facebook
+                            </a>
+
                             <button
                                 type="button"
-                                onclick="navigator.share ? navigator.share({ title: '{{ $publicacion->nombre }}', text: 'Ayuda a encontrar a {{ $publicacion->nombre }}', url: window.location.href }) : window.prompt('Copia este enlace:', window.location.href)"
-                                class="w-full inline-flex items-center justify-center border border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold py-3.5 px-5 rounded-xl transition"
+                                onclick="imprimirCartel()"
+                                class="w-full inline-flex items-center justify-center gap-2 border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold py-3.5 px-5 rounded-xl transition"
                             >
-                                Compartir reporte
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                </svg>
+                                Descargar cartel PDF
                             </button>
                         </div>
 
@@ -610,57 +666,59 @@
                                 @endif
                             </div>
                         </div>
+
+                        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                            <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-3">Mapa de ubicación</p>
+
+                            @if($mapaEmbedUrl)
+                                <div class="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
+                                    <iframe
+                                        src="{{ $mapaEmbedUrl }}"
+                                        width="100%"
+                                        height="360"
+                                        style="border:0;"
+                                        allowfullscreen=""
+                                        loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade">
+                                    </iframe>
+                                </div>
+
+                                <p class="text-sm text-gray-500 mt-4">
+                                    Cerca de: <span class="font-medium text-gray-700">{{ $publicacion->colonia_barrio }}</span>
+                                </p>
+                            @else
+                                <div class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center">
+                                    <p class="text-gray-500 font-medium">No hay coordenadas exactas para esta mascota.</p>
+                                </div>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
                 <div class="px-6 sm:px-8 py-5 border-b border-gray-100">
-                    <h3 class="text-2xl font-bold text-gray-900">Última ubicación conocida</h3>
-                    <p class="text-sm text-gray-500 mt-1">Referencia geográfica del reporte.</p>
+                    <h3 class="text-2xl font-bold text-gray-900">Ubicación y detalles</h3>
+                    <p class="text-sm text-gray-500 mt-1">Información complementaria del reporte.</p>
                 </div>
 
-                <div class="p-6 sm:p-8">
-                    @if($mapaEmbedUrl)
-                        <div class="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
-                            <iframe
-                                src="{{ $mapaEmbedUrl }}"
-                                width="100%"
-                                height="360"
-                                style="border:0;"
-                                allowfullscreen=""
-                                loading="lazy"
-                                referrerpolicy="no-referrer-when-downgrade">
-                            </iframe>
-                        </div>
-
-                        <p class="text-sm text-gray-500 mt-4">
-                            Cerca de: <span class="font-medium text-gray-700">{{ $publicacion->colonia_barrio }}</span>
+                <div class="p-6 sm:p-8 space-y-6">
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Ubicación de referencia</p>
+                        <p class="text-gray-700 leading-relaxed">
+                            {{ $publicacion->colonia_barrio ?: 'No especificada' }}
                         </p>
-                    @else
-                        <div class="rounded-2xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
-                            <p class="text-gray-500 font-medium">No hay coordenadas exactas para esta mascota.</p>
-                        </div>
-                    @endif
-                    
-                    <hr class="my-6 border-gray-100">
 
-                    <p class="text-xs text-gray-500 mb-3 font-medium">Acciones</p>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button onclick="window.print()" class="flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-600 text-sm font-medium transition border border-gray-200">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                            Imprimir
-                        </button>
-                        @php
-                            // Obtenemos la URL exacta de esta página y la codificamos para que sea segura
-                            $urlActual = urlencode(url()->current());
-                            $urlFacebook = "https://www.facebook.com/sharer/sharer.php?u=" . $urlActual;
-                        @endphp
+                        @if($publicacion->calle_referencias)
+                            <p class="text-gray-600 mt-2">{{ $publicacion->calle_referencias }}</p>
+                        @endif
+                    </div>
 
-                        <a href="{{ $urlFacebook }}" target="_blank" class="w-full inline-flex justify-center items-center px-4 py-2 bg-orange-50 border border-orange-200 rounded-lg font-semibold text-orange-600 hover:bg-orange-100 transition-colors">
-                            <svg class="w-5 h-5 mr-2 text-orange-600" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                            Compartir en Facebook
-                        </a>
+                    <div class="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 mb-2">Notas importantes</p>
+                        <p class="text-gray-700 leading-relaxed">
+                            {{ $publicacion->descripcion ?: 'Sin notas adicionales.' }}
+                        </p>
                     </div>
                 </div>
             </div>
@@ -1153,78 +1211,106 @@
     </div>
 </div>
 
-@if($esAutor)
-<div id="cartel-imprimible" class="font-sans text-center">
-    <div class="border-b-4 border-red-600 pb-2 mb-2">
-        <h1 class="text-5xl font-black text-red-600 uppercase tracking-tighter">¡SE BUSCA!</h1>
-        <p class="text-xl text-gray-800 font-bold uppercase">Ayúdanos a encontrarlo</p>
+<div id="cartel-imprimible">
+    <div class="w-full border-b-[5px] border-red-600 pb-3">
+        <h1 style="font-size: 30px; line-height: 1; font-weight: 900; color: #dc2626; text-transform: uppercase; letter-spacing: -0.03em; text-align: center;">
+            ¡SE BUSCA!
+        </h1>
+        <p style="font-size: 15px; color: #1f2937; font-weight: 700; text-transform: uppercase; text-align: center; margin-top: 4px;">
+            Ayúdanos a encontrarlo
+        </p>
     </div>
 
-    <div class="flex-grow flex flex-col justify-center items-center overflow-hidden min-h-0">
-        <div class="w-full h-full max-h-[45vh] flex justify-center mb-4">
-            @if($fotosGaleria->count())
-                <img
-                    src="{{ asset('storage/' . $fotosGaleria->first()->url) }}"
-                    class="h-full w-auto object-contain border-4 border-gray-800 rounded-lg"
-                >
-            @else
-                <div class="h-64 w-64 bg-gray-200 flex items-center justify-center border-2 border-dashed border-gray-400 rounded-lg">
-                    <span class="text-2xl text-gray-400 font-bold">Sin Foto</span>
+    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; justify-content: space-between;">
+        <div style="display: flex; gap: 10px; min-height: 0;">
+            <div style="flex: 0 0 48%; display: flex; align-items: center; justify-content: center; min-height: 0;">
+                @if($fotosGaleria->count())
+                    <img
+                        src="{{ asset('storage/' . $fotosGaleria->first()->url) }}"
+                        style="width: 100%; max-height: 145mm; object-fit: cover; border-radius: 12px; border: 3px solid #111827;"
+                    >
+                @else
+                    <div style="width: 100%; height: 145mm; display: flex; align-items: center; justify-content: center; border: 2px dashed #9ca3af; border-radius: 12px; color: #9ca3af; font-weight: 700;">
+                        Sin foto
+                    </div>
+                @endif
+            </div>
+
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
+                <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+                    <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Nombre</p>
+                    <p style="font-size: 26px; line-height: 1.1; font-weight: 900; color: #111827;">{{ $publicacion->nombre }}</p>
                 </div>
-            @endif
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Especie</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $especieTexto }}</p>
+                    </div>
+
+                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Raza</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $razaTexto ?? $publicacion->otra_raza ?? 'No especificada' }}</p>
+                    </div>
+
+                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Sexo</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ ucfirst(strtolower($publicacion->sexo)) }}</p>
+                    </div>
+
+                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Tamaño</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ ucfirst(strtolower($publicacion->tamano)) }}</p>
+                    </div>
+
+                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px; grid-column: span 2;">
+                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Color</p>
+                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $publicacion->color }}</p>
+                    </div>
+                </div>
+
+                <div style="border: 1px solid #fde68a; border-radius: 12px; background: #fffbeb; padding: 10px;">
+                    <p style="font-size: 10px; font-weight: 700; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">Último lugar visto</p>
+                    <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $publicacion->colonia_barrio }}</p>
+                    @if($publicacion->calle_referencias)
+                        <p style="font-size: 12px; color: #4b5563; margin-top: 4px;">{{ $publicacion->calle_referencias }}</p>
+                    @endif
+                </div>
+
+                <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+                    <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Fecha de extravío</p>
+                    <p style="font-size: 14px; font-weight: 700; color: #111827;">
+                        {{ \Carbon\Carbon::parse($publicacion->fecha_extravio)->locale('es')->translatedFormat('d \d\e F, Y') }}
+                    </p>
+                </div>
+            </div>
         </div>
 
-        <div class="w-full">
-            <h2 class="text-4xl font-bold text-gray-900 leading-tight">{{ $publicacion->nombre }}</h2>
+        <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
+            <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Descripción</p>
+            <p style="font-size: 12px; color: #374151; line-height: 1.45;">{{ $descripcionCartel }}</p>
+        </div>
+    </div>
 
-            <p class="text-xl text-gray-600 font-semibold mb-2">
-                {{ $especieTexto }} - {{ ucfirst($razaTexto ?? $publicacion->otra_raza ?? 'Raza desconocida') }}
+    <div style="border-top: 5px solid #dc2626; padding-top: 10px;">
+        <p style="font-size: 16px; font-weight: 800; color: #111827; text-transform: uppercase; text-align: center; margin-bottom: 6px;">
+            Si tienes información comunícate al:
+        </p>
+
+        <div style="background: #dc2626; color: white; border-radius: 14px; padding: 10px 14px; text-align: center;">
+            <p style="font-size: 28px; line-height: 1.05; font-weight: 900; letter-spacing: 0.04em; margin: 0;">
+                {{ $publicacion->autor->telefono ?? $publicacion->autor->whatsapp ?? 'SIN NÚMERO' }}
             </p>
-
-            <div class="flex justify-center gap-6 text-lg border-t border-b border-gray-300 py-2 mb-4 bg-gray-50">
-                <div>
-                    <span class="font-bold block text-xs text-gray-500">SEXO</span>
-                    {{ ucfirst(strtolower($publicacion->sexo)) }}
-                </div>
-                <div>
-                    <span class="font-bold block text-xs text-gray-500">TAMAÑO</span>
-                    {{ ucfirst(strtolower($publicacion->tamano)) }}
-                </div>
-                <div>
-                    <span class="font-bold block text-xs text-gray-500">COLOR</span>
-                    {{ $publicacion->color }}
-                </div>
-            </div>
-
-            <div class="text-left px-4">
-                <p class="text-lg mb-1">
-                    <strong class="text-red-600">📍 Visto en:</strong> {{ $publicacion->colonia_barrio }}
-                </p>
-
-                <p class="text-lg mb-2">
-                    <strong class="text-red-600">📅 Fecha:</strong>
-                    {{ \Carbon\Carbon::parse($publicacion->fecha_extravio)->locale('es')->translatedFormat('d/m/Y') }}
-                </p>
-
-                <div class="bg-yellow-50 p-3 rounded border border-yellow-200 text-sm italic text-gray-700">
-                    "{{ $publicacion->descripcion }}"
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-4 pt-2 border-t-4 border-red-600">
-        <p class="text-xl font-bold text-gray-800 uppercase">Si tienes información llama al:</p>
-
-        <div class="bg-red-600 text-white rounded-xl py-2 px-4 mt-2 inline-block w-full">
-            <h2 class="text-6xl font-black tracking-widest">{{ $publicacion->autor->telefono ?? 'SIN NÚMERO' }}</h2>
-            <p class="text-lg font-medium">{{ $publicacion->autor->nombre ?? 'Contacto' }}</p>
+            <p style="font-size: 14px; font-weight: 600; margin-top: 4px;">
+                {{ $publicacion->autor->nombre ?? 'Contacto' }}
+            </p>
         </div>
 
-        <p class="mt-2 text-xs text-gray-400">Generado en HuellitasPerdidas.com</p>
+        <p style="margin-top: 6px; text-align: center; font-size: 10px; color: #9ca3af;">
+            Generado en Huellitas Perdidas
+        </p>
     </div>
 </div>
-@endif
 
 <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
@@ -1233,6 +1319,10 @@
 ></script>
 
 <script>
+    function imprimirCartel() {
+        window.print();
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const track = document.getElementById('galleryTrack');
         const prevBtn = document.getElementById('galleryPrev');
@@ -1290,7 +1380,7 @@
             const usarUbicacionBtn = document.getElementById('usarUbicacionActualBtn');
 
             const initialLat = latInput.value || "{{ $latitudMapa ?? '16.7569' }}";
-            const initialLng = lngInput.value || "{{ $longitudMapa ?? '-93.1292' }}";
+            const initialLng = latInput.value && lngInput.value ? lngInput.value : "{{ $longitudMapa ?? '-93.1292' }}";
 
             const map = L.map('mapa-avistamiento').setView([parseFloat(initialLat), parseFloat(initialLng)], 15);
 

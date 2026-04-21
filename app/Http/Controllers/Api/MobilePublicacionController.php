@@ -488,4 +488,219 @@ class MobilePublicacionController extends Controller
             ] : null,
         ];
     }
+    
+    public function detalleAdopcion(Request $request, $id)
+    {
+        $idUsuario = (int) $request->query('id_usuario', 0);
+
+        $adopcion = DB::table('publicaciones_adopcion as p')
+            ->leftJoin('especies as e', 'e.id_especie', '=', 'p.especie_id')
+            ->leftJoin('razas as r', 'r.id_raza', '=', 'p.raza_id')
+            ->leftJoin('usuarios as u', 'u.id_usuario', '=', 'p.autor_usuario_id')
+            ->leftJoin('organizaciones as o', 'o.id_organizacion', '=', 'p.autor_organizacion_id')
+            ->where('p.id_publicacion', $id)
+            ->select(
+                'p.*',
+                'e.nombre as especie_nombre',
+                'r.nombre as raza_nombre',
+                'u.id_usuario as autor_usuario_id_real',
+                'u.nombre as autor_usuario_nombre',
+                'u.telefono as autor_usuario_telefono',
+                'u.whatsapp as autor_usuario_whatsapp',
+                'u.correo as autor_usuario_correo',
+                'o.id_organizacion as autor_organizacion_id_real',
+                'o.nombre as autor_organizacion_nombre',
+                'o.telefono as autor_organizacion_telefono',
+                'o.whatsapp as autor_organizacion_whatsapp',
+                'o.sitio_web as autor_organizacion_sitio_web'
+            )
+            ->first();
+
+        if (!$adopcion) {
+            return response()->json([
+                'ok' => false,
+                'message' => 'Publicación de adopción no encontrada',
+            ], 404);
+        }
+
+        $organizacionIdsUsuario = [];
+
+        if ($idUsuario > 0) {
+            $organizacionIdsUsuario = DB::table('organizaciones')
+                ->where('usuario_dueno_id', $idUsuario)
+                ->pluck('id_organizacion')
+                ->map(fn ($idOrg) => (int) $idOrg)
+                ->toArray();
+        }
+
+        $esAutor = false;
+
+        if ($idUsuario > 0) {
+            $esAutor =
+                ((int) ($adopcion->autor_usuario_id ?? 0) === $idUsuario) ||
+                in_array((int) ($adopcion->autor_organizacion_id ?? 0), $organizacionIdsUsuario, true);
+        }
+
+        $solicitudUsuario = null;
+
+        $solicitudUsuario = null;
+
+        if ($idUsuario > 0 && !$esAutor) {
+            $solicitudUsuario = \App\Models\SolicitudAdopcion::where('publicacion_id', $id)
+                ->where('solicitante_usuario_id', $idUsuario)
+                ->latest('id_solicitud')
+                ->first();
+        }
+
+        $estadoSolicitud = strtoupper((string) ($solicitudUsuario->estado ?? ''));
+        $puedeVerContacto = $esAutor || $estadoSolicitud === 'ACEPTADA';
+        $puedeSolicitar = !$esAutor
+            && strtoupper((string) ($adopcion->estado ?? '')) === 'DISPONIBLE'
+            && !$solicitudUsuario;
+
+        $estadoSolicitud = strtoupper((string) ($solicitudUsuario->estado ?? ''));
+        $puedeVerContacto = $esAutor || in_array($estadoSolicitud, ['SELECCIONADA', 'APROBADA', 'ACEPTADA'], true);
+        $puedeSolicitar = !$esAutor
+            && strtoupper((string) ($adopcion->estado ?? '')) === 'DISPONIBLE'
+            && !$solicitudUsuario;
+
+        $fotos = DB::table('adopcion_fotos')
+            ->where('publicacion_id', $id)
+            ->orderBy('orden')
+            ->get()
+            ->map(function ($foto) {
+                return [
+                    'id_foto' => $foto->id_foto,
+                    'url' => $foto->url,
+                    'url_completa' => asset('storage/' . ltrim($foto->url, '/')),
+                    'orden' => $foto->orden,
+                ];
+            })
+            ->values();
+
+        $fotoPrincipal = $fotos->first();
+
+        $nombreAutor = $adopcion->autor_organizacion_nombre ?: $adopcion->autor_usuario_nombre ?: 'Usuario';
+        $telefonoAutor = $adopcion->autor_organizacion_telefono ?: $adopcion->autor_usuario_telefono;
+        $whatsappAutor = $adopcion->autor_organizacion_whatsapp ?: $adopcion->autor_usuario_whatsapp;
+        $correoAutor = $adopcion->autor_usuario_correo;
+        $sitioWebAutor = $adopcion->autor_organizacion_sitio_web;
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'id_publicacion' => (int) $adopcion->id_publicacion,
+                'autor_usuario_id' => $adopcion->autor_usuario_id,
+                'autor_organizacion_id' => $adopcion->autor_organizacion_id,
+                'nombre' => $adopcion->nombre,
+                'especie_id' => $adopcion->especie_id,
+                'especie_nombre' => $adopcion->especie_nombre,
+                'raza_id' => $adopcion->raza_id,
+                'raza_nombre' => $adopcion->raza_nombre,
+                'otra_raza' => $adopcion->otra_raza,
+                'edad_anios' => $adopcion->edad_anios,
+                'sexo' => $adopcion->sexo,
+                'tamano' => $adopcion->tamano,
+                'color_predominante' => $adopcion->color_predominante,
+                'vacunas_aplicadas' => $adopcion->vacunas_aplicadas,
+                'esterilizado' => $adopcion->esterilizado,
+                'condicion_salud' => $adopcion->condicion_salud,
+                'descripcion_salud' => $adopcion->descripcion_salud,
+                'requisitos' => $adopcion->requisitos,
+                'colonia_barrio' => $adopcion->colonia_barrio,
+                'calle_referencias' => $adopcion->calle_referencias,
+                'latitud' => $adopcion->latitud,
+                'longitud' => $adopcion->longitud,
+                'descripcion' => $adopcion->descripcion,
+                'estado' => $adopcion->estado,
+                'created_at' => $adopcion->created_at,
+                'contacto_visible' => $puedeVerContacto,
+                'es_autor' => $esAutor,
+                'puede_solicitar' => $puedeSolicitar,
+                'estado_solicitud' => $solicitudUsuario->estado ?? null,
+                'autor' => [
+                    'nombre' => $nombreAutor,
+                    'telefono' => $puedeVerContacto ? $telefonoAutor : null,
+                    'whatsapp' => $puedeVerContacto ? $whatsappAutor : null,
+                    'correo' => $puedeVerContacto ? $correoAutor : null,
+                    'sitio_web' => $puedeVerContacto ? $sitioWebAutor : null,
+                ],
+                'foto_principal' => $fotoPrincipal,
+                'foto_principal_url' => $fotoPrincipal['url_completa'] ?? null,
+                'fotos' => $fotos,
+            ],
+        ]);
+    }
+
+    public function misAdopciones($idUsuario)
+    {
+        $idUsuario = (int) $idUsuario;
+
+        $organizacionIds = DB::table('organizaciones')
+            ->where('usuario_dueno_id', $idUsuario)
+            ->pluck('id_organizacion')
+            ->map(fn ($idOrg) => (int) $idOrg)
+            ->toArray();
+
+        $publicaciones = DB::table('publicaciones_adopcion as p')
+            ->leftJoin('especies as e', 'e.id_especie', '=', 'p.especie_id')
+            ->where(function ($query) use ($idUsuario, $organizacionIds) {
+                $query->where('p.autor_usuario_id', $idUsuario);
+
+                if (!empty($organizacionIds)) {
+                    $query->orWhereIn('p.autor_organizacion_id', $organizacionIds);
+                }
+            })
+            ->orderByDesc('p.id_publicacion')
+            ->select(
+                'p.id_publicacion',
+                'p.nombre',
+                'p.descripcion',
+                'p.colonia_barrio',
+                'p.estado',
+                'p.edad_anios',
+                'p.sexo',
+                'p.tamano',
+                'p.color_predominante',
+                'p.otra_raza',
+                'p.created_at',
+                'e.nombre as especie_nombre'
+            )
+            ->get()
+            ->map(function ($item) {
+                $foto = DB::table('adopcion_fotos')
+                    ->where('publicacion_id', $item->id_publicacion)
+                    ->orderBy('orden')
+                    ->first();
+
+                return [
+                    'id_publicacion' => (int) $item->id_publicacion,
+                    'nombre' => $item->nombre,
+                    'descripcion' => $item->descripcion,
+                    'colonia_barrio' => $item->colonia_barrio,
+                    'estado' => $item->estado,
+                    'edad_anios' => $item->edad_anios,
+                    'sexo' => $item->sexo,
+                    'tamano' => $item->tamano,
+                    'color_predominante' => $item->color_predominante,
+                    'otra_raza' => $item->otra_raza,
+                    'especie_nombre' => $item->especie_nombre,
+                    'created_at' => $item->created_at,
+                    'foto_principal' => $foto ? [
+                        'id_foto' => $foto->id_foto,
+                        'url' => $foto->url,
+                        'url_completa' => asset('storage/' . ltrim($foto->url, '/')),
+                    ] : null,
+                    'foto_principal_url' => $foto
+                        ? asset('storage/' . ltrim($foto->url, '/'))
+                        : null,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'ok' => true,
+            'data' => $publicaciones,
+        ]);
+    }
 }

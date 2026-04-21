@@ -575,7 +575,7 @@
         });
     }
 
-    function initMapFormulario() {
+function initMapFormulario() {
         if (!googleMapsApiKey) return;
 
         const latInput = document.getElementById('latitud');
@@ -602,7 +602,8 @@
         const marcador = new google.maps.Marker({
             position: ubicacionInicial,
             map: mapa,
-            draggable: true
+            draggable: true,
+            animation: google.maps.Animation.DROP
         });
 
         function actualizarEstado(lat, lng) {
@@ -674,7 +675,13 @@
         });
 
         actualizarEstado(ubicacionInicial.lat, ubicacionInicial.lng);
+
+        if (!document.getElementById('colonia_barrio').value && !document.getElementById('calle_referencias').value) {
+            autocompletarDireccionDesdeMapa(ubicacionInicial, geocoder);
+        }
     }
+
+    window.initMapFormulario = initMapFormulario;
 
     document.addEventListener('DOMContentLoaded', function () {
         if (razaIdInicial) {
@@ -691,6 +698,8 @@
             razaSelector.value = '__otra__';
             manejarCambioRaza();
         }
+
+        actualizarResumenFotos();
     });
 </script>
 

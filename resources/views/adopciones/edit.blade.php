@@ -14,36 +14,10 @@
     });
 
     $googleMapsApiKey = config('services.google_maps.api_key') ?: env('GOOGLE_MAPS_API_KEY');
-
-    $razaInicial = old('raza_id', $adopcion->raza_id);
-    $otraRazaInicial = old('otra_raza', $adopcion->otra_raza ?? '');
-    $esterilizadoInicial = old('esterilizado', isset($adopcion->esterilizado) ? (string) (int) $adopcion->esterilizado : '');
 @endphp
 
-<div class="bg-gradient-to-b from-white via-green-50/30 to-white min-h-screen">
+<div class="bg-white min-h-screen">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-10">
-
-        {{-- TOAST DE ÉXITO --}}
-        @if(session('success'))
-            <div id="toast-success"
-                 class="fixed top-5 right-5 z-50 max-w-sm w-[92%] sm:w-full bg-white border border-green-200 shadow-xl rounded-2xl overflow-hidden">
-                <div class="flex items-start gap-3 p-4">
-                    <div class="shrink-0 w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                        </svg>
-                    </div>
-                    <div class="flex-1">
-                        <p class="text-sm font-bold text-gray-900">Cambios guardados</p>
-                        <p class="text-sm text-gray-600 mt-1">{{ session('success') }}</p>
-                    </div>
-                    <button type="button" id="cerrar-toast-success" class="text-gray-400 hover:text-gray-600 text-xl leading-none">
-                        ×
-                    </button>
-                </div>
-                <div class="h-1 bg-green-500" id="toast-success-bar"></div>
-            </div>
-        @endif
 
         <div class="mb-8">
             <a href="{{ route('adopciones.mis-adopciones') }}"
@@ -54,39 +28,23 @@
                 Volver a mis adopciones
             </a>
 
-            <div class="bg-white rounded-3xl border border-green-100 shadow-sm p-6 sm:p-8 relative overflow-hidden">
-                <div class="absolute inset-y-0 right-0 w-40 bg-gradient-to-l from-green-100/60 to-transparent pointer-events-none"></div>
-
-                <div class="max-w-3xl relative z-10">
+            <div class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
+                <div class="max-w-3xl">
                     <span class="inline-flex items-center rounded-full bg-green-50 text-green-600 px-3 py-1 text-xs font-bold tracking-wide uppercase border border-green-100">
                         Editar publicación
                     </span>
-
                     <h1 class="mt-4 text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight leading-tight">
-                        Actualiza la información de la mascota
+                        Editar mascota en adopción
                     </h1>
-
                     <p class="text-gray-500 mt-3 text-base md:text-lg leading-relaxed">
-                        Modifica los datos necesarios para mantener la publicación actualizada y más clara para futuros adoptantes.
+                        Actualiza la información con el mayor detalle posible para mantener la publicación clara y útil.
                     </p>
-
-                    <div class="mt-5 flex flex-wrap gap-3">
-                        <span class="inline-flex items-center rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
-                            Información general
-                        </span>
-                        <span class="inline-flex items-center rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
-                            Salud y requisitos
-                        </span>
-                        <span class="inline-flex items-center rounded-full bg-gray-50 border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-600">
-                            Ubicación y fotos
-                        </span>
-                    </div>
                 </div>
             </div>
         </div>
 
         @if ($errors->any())
-            <div class="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl mb-6 shadow-sm">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl mb-6">
                 <strong class="font-bold">Revisa estos campos:</strong>
                 <ul class="list-disc list-inside mt-2 space-y-1">
                     @foreach ($errors->all() as $error)
@@ -96,13 +54,15 @@
             </div>
         @endif
 
-        <form id="form-editar-adopcion"
-              action="{{ route('adopciones.update', $adopcion->id_publicacion) }}"
+        <form action="{{ route('adopciones.update', $adopcion->id_publicacion) }}"
               method="POST"
               enctype="multipart/form-data"
-              class="space-y-8">
+              class="space-y-8"
+              id="form-editar-adopcion">
             @csrf
             @method('PUT')
+
+            <div id="fotos-eliminar-container"></div>
 
             <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
 
@@ -118,7 +78,7 @@
                             </div>
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900">Información de la mascota</h2>
-                                <p class="text-sm text-gray-500 mt-1">Edita los datos principales de la publicación.</p>
+                                <p class="text-sm text-gray-500 mt-1">Datos básicos para identificarla mejor.</p>
                             </div>
                         </div>
 
@@ -143,7 +103,7 @@
                                         class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
                                     <option value="">Seleccionar...</option>
                                     @foreach($especies as $especie)
-                                        <option value="{{ $especie->id_especie }}" {{ (string) old('especie_id', $adopcion->especie_id) === (string) $especie->id_especie ? 'selected' : '' }}>
+                                        <option value="{{ $especie->id_especie }}" {{ old('especie_id', $adopcion->especie_id) == $especie->id_especie ? 'selected' : '' }}>
                                             {{ $especie->nombre }}
                                         </option>
                                     @endforeach
@@ -154,7 +114,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">
                                     Raza
                                 </label>
-                                <input type="hidden" name="raza_id" id="raza_id_real" value="{{ $razaInicial }}">
+                                <input type="hidden" name="raza_id" id="raza_id_real" value="{{ old('raza_id', $adopcion->raza_id) }}">
 
                                 <select id="raza_selector"
                                         class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
@@ -171,7 +131,7 @@
                                 <input type="text"
                                        name="otra_raza"
                                        id="otra_raza"
-                                       value="{{ $otraRazaInicial }}"
+                                       value="{{ old('otra_raza', $adopcion->otra_raza) }}"
                                        placeholder="Ej: Criollo, mestizo, mezcla..."
                                        class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
                             </div>
@@ -235,11 +195,11 @@
                             <textarea name="descripcion"
                                       rows="6"
                                       class="w-full rounded-2xl border border-gray-300 bg-white py-4 px-4 focus:border-green-500 focus:ring-green-500 placeholder-gray-400"
-                                      placeholder="Describe la personalidad, comportamiento o cualquier detalle importante...">{{ old('descripcion', $adopcion->descripcion) }}</textarea>
+                                      placeholder="Ej: Es muy noble, convive con niños, es juguetón, ya está listo para un hogar...">{{ old('descripcion', $adopcion->descripcion) }}</textarea>
                         </div>
                     </section>
 
-                    {{-- SALUD Y REQUISITOS --}}
+                    {{-- SALUD --}}
                     <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8">
                         <div class="flex items-start gap-4 mb-6">
                             <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
@@ -249,7 +209,7 @@
                             </div>
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900">Salud y adopción responsable</h2>
-                                <p class="text-sm text-gray-500 mt-1">Edita la información complementaria de la mascota.</p>
+                                <p class="text-sm text-gray-500 mt-1">Estos campos quedarán listos visualmente para el módulo.</p>
                             </div>
                         </div>
 
@@ -268,8 +228,8 @@
                                 <select name="esterilizado"
                                         class="w-full rounded-2xl border border-gray-300 bg-white py-3 px-4 focus:border-green-500 focus:ring-green-500">
                                     <option value="">Seleccionar...</option>
-                                    <option value="0" {{ $esterilizadoInicial === '0' ? 'selected' : '' }}>No</option>
-                                    <option value="1" {{ $esterilizadoInicial === '1' ? 'selected' : '' }}>Sí</option>
+                                    <option value="0" {{ old('esterilizado', isset($adopcion->esterilizado) ? (string)(int)$adopcion->esterilizado : '') === '0' ? 'selected' : '' }}>No</option>
+                                    <option value="1" {{ old('esterilizado', isset($adopcion->esterilizado) ? (string)(int)$adopcion->esterilizado : '') === '1' ? 'selected' : '' }}>Sí</option>
                                 </select>
                             </div>
                         </div>
@@ -311,7 +271,7 @@
                             <div>
                                 <h2 class="text-xl font-bold text-gray-900">Ubicación de referencia</h2>
                                 <p class="text-sm text-gray-500 mt-1">
-                                    Puedes buscar una ubicación o mover el pin para autocompletar la referencia.
+                                    Puedes marcar el punto y autocompletar los campos como apoyo visual del formulario.
                                 </p>
                             </div>
                         </div>
@@ -334,7 +294,7 @@
 
                                 <div class="rounded-2xl border border-green-100 bg-green-50 p-4 text-sm text-gray-700">
                                     <p class="font-semibold text-gray-800 mb-1">Sugerencia</p>
-                                    <p>Puedes mover el pin o buscar una referencia para visualizar mejor la zona.</p>
+                                    <p>Puedes buscar una dirección, mover el marcador o hacer clic directo en el mapa.</p>
                                 </div>
 
                                 <p id="mapa-estado" class="text-xs text-gray-500"></p>
@@ -366,7 +326,7 @@
                                        name="colonia_barrio"
                                        id="colonia_barrio"
                                        value="{{ old('colonia_barrio', $adopcion->colonia_barrio) }}"
-                                       placeholder="Ej: Centro, Barrio Norte"
+                                       placeholder="Ej: Centro, La Cañada, Barrio Norte"
                                        class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
                             </div>
 
@@ -378,7 +338,7 @@
                                        name="calle_referencias"
                                        id="calle_referencias"
                                        value="{{ old('calle_referencias', $adopcion->calle_referencias) }}"
-                                       placeholder="Ej: Frente al parque"
+                                       placeholder="Ej: Frente al parque, cerca de la farmacia"
                                        class="w-full rounded-2xl border border-gray-300 bg-gray-50 py-3 px-4 focus:border-green-500 focus:ring-green-500">
                             </div>
                         </div>
@@ -390,119 +350,90 @@
 
                 <div class="xl:col-span-4 space-y-8">
 
-                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 xl:sticky xl:top-24 space-y-8">
+                    {{-- FOTOS --}}
+                    <section class="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 sm:p-8 xl:sticky xl:top-24">
+                        <div class="flex items-start gap-4 mb-6">
+                            <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16"></path>
+                                </svg>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900">Fotografías</h2>
+                                <p class="text-sm text-gray-500 mt-1">Conserva, elimina o agrega hasta llegar a un máximo de 8.</p>
+                            </div>
+                        </div>
 
-                        {{-- FOTOS ACTUALES --}}
-                        <div>
-                            <div class="flex items-start gap-4 mb-6">
-                                <div class="w-11 h-11 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16"></path>
-                                    </svg>
+                        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4 mb-6">
+                            <div class="grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <p class="text-gray-400">Fotos actuales</p>
+                                    <p class="font-bold text-gray-900" id="contador-actuales">{{ $adopcion->fotos->count() }}</p>
                                 </div>
                                 <div>
-                                    <h2 class="text-xl font-bold text-gray-900">Fotografías actuales</h2>
-                                    <p class="text-sm text-gray-500 mt-1">Estas son las fotos guardadas en tu publicación.</p>
+                                    <p class="text-gray-400">Nuevas por agregar</p>
+                                    <p class="font-bold text-gray-900" id="contador-nuevas">0</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400">Marcadas para borrar</p>
+                                    <p class="font-bold text-red-600" id="contador-eliminar">0</p>
+                                </div>
+                                <div>
+                                    <p class="text-gray-400">Total final</p>
+                                    <p class="font-bold text-green-700"><span id="contador-total-final">{{ $adopcion->fotos->count() }}</span> / 8</p>
                                 </div>
                             </div>
+                        </div>
 
-                            @if($adopcion->fotos && $adopcion->fotos->count())
-                                <div class="grid grid-cols-2 gap-4">
+                        @if($adopcion->fotos && $adopcion->fotos->count())
+                            <div class="mb-6">
+                                <p class="text-sm font-semibold text-gray-800 mb-3">Fotos actuales</p>
+                                <div class="grid grid-cols-2 gap-4" id="grid-fotos-actuales">
                                     @foreach($adopcion->fotos->sortBy('orden') as $foto)
-                                        <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm group">
+                                        <div class="relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm foto-actual-card" data-foto-id="{{ $foto->id_foto }}">
                                             <img src="{{ asset('storage/' . $foto->url) }}"
                                                  alt="Foto actual"
-                                                 class="w-full h-36 object-cover transition duration-300 group-hover:scale-[1.03]">
+                                                 class="w-full h-36 object-cover">
+
+                                            <div class="absolute inset-0 bg-red-600/70 text-white text-sm font-bold items-center justify-center hidden foto-overlay-eliminar">
+                                                Se eliminará
+                                            </div>
+
+                                            <div class="p-3">
+                                                <button type="button"
+                                                        class="w-full text-sm font-semibold bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl py-2 px-3 btn-toggle-eliminar-foto"
+                                                        data-foto-id="{{ $foto->id_foto }}">
+                                                    Marcar para eliminar
+                                                </button>
+                                            </div>
                                         </div>
                                     @endforeach
                                 </div>
-                            @elseif($adopcion->fotoPrincipal)
-                                <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
-                                    <img src="{{ asset('storage/' . $adopcion->fotoPrincipal->url) }}"
-                                         alt="Foto actual"
-                                         class="w-full h-56 object-cover">
-                                </div>
-                            @else
-                                <div class="rounded-2xl border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-gray-500">
-                                    Esta publicación todavía no tiene fotos visibles.
-                                </div>
-                            @endif
-                        </div>
-
-                        {{-- REEMPLAZAR FOTO PRINCIPAL --}}
-                        <div class="border-t border-gray-100 pt-8">
-                            <h3 class="text-lg font-bold text-gray-900 mb-3">Reemplazar foto principal</h3>
-                            <p class="text-sm text-gray-500 mb-5">
-                                Si eliges una imagen aquí, se usará como nueva foto principal. Si es pesada, se optimizará automáticamente antes de enviarse.
-                            </p>
-
-                            <div class="border-2 border-dashed border-gray-300 rounded-3xl bg-gray-50 p-6 text-center hover:bg-gray-100 transition">
-                                <div class="bg-green-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                                    </svg>
-                                </div>
-
-                                <label class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-2xl shadow cursor-pointer transition">
-                                    Seleccionar nueva foto principal
-                                    <input type="file" name="foto" id="foto_principal" class="hidden" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp">
-                                </label>
-
-                                <p id="nombre-foto-principal" class="mt-4 text-sm text-gray-500">No has seleccionado una nueva foto principal</p>
-                                <p id="estado-foto-principal" class="mt-2 text-xs text-gray-400"></p>
-
-                                <div id="preview-foto-principal-wrapper" class="mt-6 hidden">
-                                    <div class="rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm">
-                                        <img id="preview-foto-principal" src="" alt="Vista previa" class="w-full h-52 object-cover">
-                                    </div>
-                                </div>
                             </div>
-                        </div>
+                        @endif
 
-                        {{-- AGREGAR MÁS FOTOS --}}
-                        <div class="border-t border-gray-100 pt-8">
-                            <h3 class="text-lg font-bold text-gray-900 mb-3">Agregar fotos adicionales</h3>
-                            <p class="text-sm text-gray-500 mb-2">
-                                Puedes subir hasta <strong>8 fotos nuevas</strong>. Si alguna pesa más de <strong>7 MB</strong>, se comprimirá automáticamente.
-                            </p>
-                            <p class="text-xs text-gray-400 mb-5">
-                                Formatos permitidos: JPG, JPEG, PNG y WEBP.
-                            </p>
-
-                            <div class="border-2 border-dashed border-gray-300 rounded-3xl bg-gray-50 p-6 text-center hover:bg-gray-100 transition">
-                                <div class="bg-green-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                                    </svg>
-                                </div>
-
-                                <label class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-2xl shadow cursor-pointer transition">
-                                    Seleccionar fotos adicionales
-                                    <input type="file" name="fotos[]" id="fotos" class="hidden" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" multiple>
-                                </label>
-
-                                <p id="nombre-archivo" class="mt-4 text-sm text-gray-500">Ningún archivo seleccionado</p>
-                                <p id="estado-fotos" class="mt-2 text-xs text-gray-400"></p>
-
-                                <div id="preview-wrapper" class="mt-6 hidden">
-                                    <div id="preview-grid" class="grid grid-cols-2 gap-4"></div>
-                                </div>
+                        <div class="border-2 border-dashed border-gray-300 rounded-3xl bg-gray-50 p-6 text-center hover:bg-gray-100 transition">
+                            <div class="bg-green-100 w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                                </svg>
                             </div>
-                        </div>
 
-                        <div class="pt-2">
-                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
-                                <h3 class="text-sm font-bold text-gray-900 mb-2">Datos de contacto</h3>
-                                <div class="space-y-3">
-                                    <div>
-                                        <p class="text-xs text-gray-400">Nombre del responsable</p>
-                                        <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->nombre ?? 'Usuario' }}</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-xs text-gray-400">Teléfono registrado</p>
-                                        <p class="text-sm font-semibold text-gray-800">{{ Auth::user()->telefono ?? 'No registrado' }}</p>
-                                    </div>
-                                </div>
+                            <p class="text-gray-900 font-semibold mb-1">Agregar nuevas fotografías</p>
+                            <p class="text-xs text-gray-500 mb-5">
+                                Formato JPG, JPEG, PNG o WEBP. Máximo final 7 MB por imagen. Si una foto pesa más, se optimizará automáticamente antes de enviarse.
+                            </p>
+
+                            <label class="inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-2xl shadow cursor-pointer transition">
+                                Seleccionar fotos
+                                <input type="file" name="fotos[]" id="fotos" class="hidden" accept="image/jpeg,image/png,image/webp" multiple>
+                            </label>
+
+                            <p id="nombre-archivo" class="mt-4 text-sm text-gray-500">Ningún archivo seleccionado</p>
+                            <p id="estado-fotos" class="mt-2 text-xs text-gray-500"></p>
+
+                            <div id="preview-wrapper" class="mt-6 hidden">
+                                <div id="preview-grid" class="grid grid-cols-2 gap-4"></div>
                             </div>
                         </div>
                     </section>
@@ -513,12 +444,8 @@
             <div class="flex flex-col md:flex-row gap-4 pt-2">
                 <button type="submit"
                         id="btn-guardar-cambios"
-                        class="w-full md:w-auto inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-8 rounded-2xl shadow transition disabled:opacity-70 disabled:cursor-not-allowed">
-                    <span id="btn-texto">Guardar cambios</span>
-                    <svg id="btn-spinner" class="hidden animate-spin ml-2 w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-                    </svg>
+                        class="w-full md:w-auto inline-flex items-center justify-center bg-green-600 hover:bg-green-700 text-white font-bold py-3.5 px-8 rounded-2xl shadow transition">
+                    Guardar cambios
                 </button>
 
                 <a href="{{ route('adopciones.mis-adopciones') }}"
@@ -532,8 +459,8 @@
 
 <script>
     const razasPorEspecie = @json($razasPorEspecie);
-    const razaIdInicial = @json($razaInicial);
-    const otraRazaInicial = @json($otraRazaInicial);
+    const razaIdInicial = @json(old('raza_id', $adopcion->raza_id));
+    const otraRazaInicial = @json(old('otra_raza', $adopcion->otra_raza ?? ''));
     const googleMapsApiKey = @json($googleMapsApiKey);
 
     const especieSelect = document.getElementById('especie_id');
@@ -542,40 +469,15 @@
     const bloqueOtraRaza = document.getElementById('bloque_otra_raza');
     const inputOtraRaza = document.getElementById('otra_raza');
 
-    const formEditar = document.getElementById('form-editar-adopcion');
-    const btnGuardar = document.getElementById('btn-guardar-cambios');
-    const btnTexto = document.getElementById('btn-texto');
-    const btnSpinner = document.getElementById('btn-spinner');
-
-    const inputFotoPrincipal = document.getElementById('foto_principal');
-    const nombreFotoPrincipal = document.getElementById('nombre-foto-principal');
-    const estadoFotoPrincipal = document.getElementById('estado-foto-principal');
-    const previewFotoPrincipalWrapper = document.getElementById('preview-foto-principal-wrapper');
-    const previewFotoPrincipal = document.getElementById('preview-foto-principal');
-
-    const inputFotos = document.getElementById('fotos');
-    const previewWrapper = document.getElementById('preview-wrapper');
-    const previewGrid = document.getElementById('preview-grid');
-    const nombreArchivo = document.getElementById('nombre-archivo');
-    const estadoFotos = document.getElementById('estado-fotos');
-
-    let dtFotos = new DataTransfer();
-    let procesandoImagenes = false;
-
-    const MAX_FOTOS_NUEVAS = 8;
-    const MB = 1024 * 1024;
-    const LIMITE_COMPRESION = 7 * MB;
-    const LIMITE_DURO = 25 * MB;
-    const MAX_DIMENSION = 1600;
-
-    function mostrarOtraRaza() {
-        bloqueOtraRaza.classList.remove('hidden');
-        inputOtraRaza.disabled = false;
-    }
-
-    function ocultarOtraRaza() {
-        bloqueOtraRaza.classList.add('hidden');
-        inputOtraRaza.disabled = true;
+    function toggleOtraRaza(show) {
+        if (show) {
+            bloqueOtraRaza.classList.remove('hidden');
+            inputOtraRaza.disabled = false;
+        } else {
+            bloqueOtraRaza.classList.add('hidden');
+            inputOtraRaza.disabled = true;
+            inputOtraRaza.value = '';
+        }
     }
 
     function cargarRazas(mantenerSeleccion = true) {
@@ -589,11 +491,9 @@
                 const option = document.createElement('option');
                 option.value = raza.id_raza;
                 option.textContent = raza.nombre;
-
                 if (String(valorActual) === String(raza.id_raza)) {
                     option.selected = true;
                 }
-
                 razaSelector.appendChild(option);
             });
         }
@@ -601,213 +501,248 @@
         const otraOption = document.createElement('option');
         otraOption.value = '__otra__';
         otraOption.textContent = 'Otra raza';
-
         if (valorActual === '__otra__') {
             otraOption.selected = true;
         }
-
         razaSelector.appendChild(otraOption);
+
         manejarCambioRaza();
     }
 
     function manejarCambioRaza() {
         if (razaSelector.value === '__otra__') {
             razaIdReal.value = '';
-            mostrarOtraRaza();
-            return;
+            bloqueOtraRaza.classList.remove('hidden');
+            inputOtraRaza.disabled = false;
+        } else {
+            razaIdReal.value = razaSelector.value || '';
+            if (razaSelector.value) {
+                toggleOtraRaza(false);
+            } else if (inputOtraRaza.value.trim() !== '') {
+                toggleOtraRaza(true);
+            } else {
+                toggleOtraRaza(false);
+            }
         }
-
-        if (razaSelector.value) {
-            razaIdReal.value = razaSelector.value;
-            ocultarOtraRaza();
-            return;
-        }
-
-        if (inputOtraRaza.value.trim() !== '') {
-            mostrarOtraRaza();
-            razaIdReal.value = '';
-            return;
-        }
-
-        razaIdReal.value = '';
-        ocultarOtraRaza();
     }
 
     especieSelect.addEventListener('change', function () {
         razaIdReal.value = '';
-        inputOtraRaza.value = '';
+        toggleOtraRaza(false);
         cargarRazas(false);
     });
 
     razaSelector.addEventListener('change', manejarCambioRaza);
 
-    function setBotonProcesando(estado, texto = 'Guardando cambios...') {
-        procesandoImagenes = estado;
-        btnGuardar.disabled = estado;
+    const inputFotos = document.getElementById('fotos');
+    const previewWrapper = document.getElementById('preview-wrapper');
+    const previewGrid = document.getElementById('preview-grid');
+    const nombreArchivo = document.getElementById('nombre-archivo');
+    const estadoFotos = document.getElementById('estado-fotos');
+    const formEditar = document.getElementById('form-editar-adopcion');
+    const btnGuardar = document.getElementById('btn-guardar-cambios');
+    const fotosEliminarContainer = document.getElementById('fotos-eliminar-container');
 
-        if (estado) {
-            btnTexto.textContent = texto;
-            btnSpinner.classList.remove('hidden');
+    const contadorActuales = document.getElementById('contador-actuales');
+    const contadorNuevas = document.getElementById('contador-nuevas');
+    const contadorEliminar = document.getElementById('contador-eliminar');
+    const contadorTotalFinal = document.getElementById('contador-total-final');
+
+    const LIMITE_FINAL_BYTES = 7 * 1024 * 1024;
+    const LIMITE_SELECCION_BYTES = 25 * 1024 * 1024;
+    const MAX_FOTOS = 8;
+    const DIMENSION_MAXIMA = 1600;
+    const TIPOS_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+
+    let dtFotos = new DataTransfer();
+    let procesandoFotos = false;
+    let fotosEliminarSet = new Set();
+    const textoOriginalBoton = btnGuardar.textContent.trim();
+
+    function formatearBytes(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+    }
+
+    function cambiarExtension(nombre, nuevaExtension) {
+        const base = nombre.replace(/\.[^/.]+$/, '');
+        return `${base}.${nuevaExtension}`;
+    }
+
+    function setEstadoFotos(texto = '', tipo = 'normal') {
+        estadoFotos.textContent = texto;
+        estadoFotos.className = 'mt-2 text-xs';
+
+        if (tipo === 'error') {
+            estadoFotos.classList.add('text-red-600');
+        } else if (tipo === 'ok') {
+            estadoFotos.classList.add('text-green-600');
         } else {
-            btnTexto.textContent = 'Guardar cambios';
-            btnSpinner.classList.add('hidden');
+            estadoFotos.classList.add('text-gray-500');
         }
     }
 
-    function formatoValido(file) {
-        const tipos = ['image/jpeg', 'image/png', 'image/webp'];
-        return tipos.includes(file.type);
+    function bloquearEnvio(bloquear, texto = 'Procesando...') {
+        procesandoFotos = bloquear;
+        btnGuardar.disabled = bloquear;
+        btnGuardar.classList.toggle('opacity-70', bloquear);
+        btnGuardar.classList.toggle('cursor-not-allowed', bloquear);
+        btnGuardar.textContent = bloquear ? texto : textoOriginalBoton;
     }
 
-    function leerComoDataURL(file) {
+    function canvasToBlob(canvas, tipo, calidad) {
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => resolve(blob), tipo, calidad);
+        });
+    }
+
+    function cargarImagenDesdeArchivo(file) {
         return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = e => resolve(e.target.result);
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
+            const image = new Image();
+            const objectUrl = URL.createObjectURL(file);
+
+            image.onload = () => {
+                URL.revokeObjectURL(objectUrl);
+                resolve(image);
+            };
+
+            image.onerror = () => {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error(`No se pudo leer la imagen ${file.name}.`));
+            };
+
+            image.src = objectUrl;
         });
     }
 
-    function cargarImagen(src) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.onerror = reject;
-            img.src = src;
-        });
-    }
-
-    function canvasABlob(canvas, quality = 0.82, type = 'image/webp') {
-        return new Promise(resolve => {
-            canvas.toBlob(blob => resolve(blob), type, quality);
-        });
-    }
-
-    async function comprimirImagenSiEsNecesario(file) {
-        if (!formatoValido(file)) {
-            throw new Error(`El archivo "${file.name}" no tiene un formato permitido.`);
+    function calcularDimensiones(width, height, maxDimension) {
+        if (width <= maxDimension && height <= maxDimension) {
+            return { width, height };
         }
 
-        if (file.size > LIMITE_DURO) {
-            throw new Error(`La imagen "${file.name}" es demasiado pesada. Intenta con una menor a 25 MB.`);
-        }
+        const ratio = Math.min(maxDimension / width, maxDimension / height);
 
-        if (file.size <= LIMITE_COMPRESION) {
+        return {
+            width: Math.round(width * ratio),
+            height: Math.round(height * ratio),
+        };
+    }
+
+    async function optimizarArchivo(file) {
+        if (file.size <= LIMITE_FINAL_BYTES) {
             return {
                 file,
-                comprimida: false,
-                mensaje: `${file.name} no necesitó compresión.`
+                optimizado: false,
+                pesoOriginal: file.size,
+                pesoFinal: file.size,
             };
         }
 
-        const dataUrl = await leerComoDataURL(file);
-        const img = await cargarImagen(dataUrl);
+        const image = await cargarImagenDesdeArchivo(file);
+        let { width, height } = calcularDimensiones(image.width, image.height, DIMENSION_MAXIMA);
 
-        let width = img.width;
-        let height = img.height;
+        const qualitySteps = [0.86, 0.80, 0.74, 0.68, 0.62, 0.56];
+        let mejorBlob = null;
 
-        if (width > height && width > MAX_DIMENSION) {
-            height = Math.round((height * MAX_DIMENSION) / width);
-            width = MAX_DIMENSION;
-        } else if (height >= width && height > MAX_DIMENSION) {
-            width = Math.round((width * MAX_DIMENSION) / height);
-            height = MAX_DIMENSION;
-        }
+        for (let intento = 0; intento < 5; intento++) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
 
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+            canvas.width = width;
+            canvas.height = height;
 
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
+            ctx.drawImage(image, 0, 0, width, height);
 
-        let qualityLevels = [0.86, 0.80, 0.74, 0.68, 0.60];
-        let finalBlob = null;
+            for (const quality of qualitySteps) {
+                const blob = await canvasToBlob(canvas, 'image/webp', quality);
 
-        for (const quality of qualityLevels) {
-            const blob = await canvasABlob(canvas, quality, 'image/webp');
-            if (!blob) continue;
+                if (!blob) continue;
 
-            finalBlob = blob;
+                mejorBlob = blob;
 
-            if (blob.size <= 7 * MB) {
-                break;
+                if (blob.size <= LIMITE_FINAL_BYTES) {
+                    const nuevoArchivo = new File(
+                        [blob],
+                        cambiarExtension(file.name, 'webp'),
+                        {
+                            type: 'image/webp',
+                            lastModified: Date.now(),
+                        }
+                    );
+
+                    return {
+                        file: nuevoArchivo,
+                        optimizado: true,
+                        pesoOriginal: file.size,
+                        pesoFinal: blob.size,
+                    };
+                }
             }
+
+            width = Math.max(Math.round(width * 0.85), 800);
+            height = Math.max(Math.round(height * 0.85), 800);
         }
 
-        if (!finalBlob) {
-            throw new Error(`No se pudo procesar la imagen "${file.name}".`);
+        if (mejorBlob && mejorBlob.size < file.size) {
+            const nuevoArchivo = new File(
+                [mejorBlob],
+                cambiarExtension(file.name, 'webp'),
+                {
+                    type: 'image/webp',
+                    lastModified: Date.now(),
+                }
+            );
+
+            return {
+                file: nuevoArchivo,
+                optimizado: true,
+                pesoOriginal: file.size,
+                pesoFinal: mejorBlob.size,
+            };
         }
 
-        const nuevoNombre = file.name.replace(/\.[^.]+$/, '') + '.webp';
-        const nuevoArchivo = new File([finalBlob], nuevoNombre, { type: 'image/webp' });
-
-        return {
-            file: nuevoArchivo,
-            comprimida: true,
-            mensaje: `${file.name} fue optimizada automáticamente.`
-        };
+        throw new Error(`No se pudo optimizar ${file.name} a un tamaño aceptable.`);
     }
 
-    function mostrarPreviewPrincipal(file) {
-        if (!file) {
-            nombreFotoPrincipal.textContent = 'No has seleccionado una nueva foto principal';
-            previewFotoPrincipalWrapper.classList.add('hidden');
-            estadoFotoPrincipal.textContent = '';
-            return;
-        }
-
-        nombreFotoPrincipal.textContent = file.name;
-
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-            previewFotoPrincipal.src = ev.target.result;
-            previewFotoPrincipalWrapper.classList.remove('hidden');
-        };
-        reader.readAsDataURL(file);
+    function contarFotosActualesActivas() {
+        return document.querySelectorAll('.foto-actual-card').length - fotosEliminarSet.size;
     }
 
-    inputFotoPrincipal.addEventListener('change', async function(e) {
-        const archivo = e.target.files[0];
+    function obtenerTotalFinalFotos() {
+        return contarFotosActualesActivas() + dtFotos.files.length;
+    }
 
-        if (!archivo) {
-            mostrarPreviewPrincipal(null);
-            return;
-        }
+    function syncFotosEliminarInputs() {
+        fotosEliminarContainer.innerHTML = '';
+        fotosEliminarSet.forEach((idFoto) => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'fotos_eliminar[]';
+            input.value = idFoto;
+            fotosEliminarContainer.appendChild(input);
+        });
+    }
 
-        try {
-            setBotonProcesando(true, 'Procesando imagen...');
-            estadoFotoPrincipal.textContent = 'Procesando foto principal...';
+    function actualizarResumenFotos() {
+        contadorActuales.textContent = contarFotosActualesActivas();
+        contadorNuevas.textContent = dtFotos.files.length;
+        contadorEliminar.textContent = fotosEliminarSet.size;
+        contadorTotalFinal.textContent = obtenerTotalFinalFotos();
 
-            const resultado = await comprimirImagenSiEsNecesario(archivo);
-
-            const nuevoDT = new DataTransfer();
-            nuevoDT.items.add(resultado.file);
-            inputFotoPrincipal.files = nuevoDT.files;
-
-            mostrarPreviewPrincipal(resultado.file);
-            estadoFotoPrincipal.textContent = resultado.mensaje;
-        } catch (error) {
-            inputFotoPrincipal.value = '';
-            mostrarPreviewPrincipal(null);
-            estadoFotoPrincipal.textContent = '';
-            alert(error.message || 'No se pudo procesar la foto principal.');
-        } finally {
-            setBotonProcesando(false);
-        }
-    });
+        nombreArchivo.textContent = dtFotos.files.length
+            ? `${dtFotos.files.length} foto(s) nueva(s) lista(s)`
+            : 'Ningún archivo seleccionado';
+    }
 
     function renderPreviewFotos() {
         previewGrid.innerHTML = '';
 
         const files = Array.from(dtFotos.files);
-        nombreArchivo.textContent = files.length
-            ? `${files.length} foto(s) seleccionada(s)`
-            : 'Ningún archivo seleccionado';
 
         if (!files.length) {
             previewWrapper.classList.add('hidden');
-            estadoFotos.textContent = '';
+            actualizarResumenFotos();
             return;
         }
 
@@ -815,13 +750,17 @@
 
         files.forEach((file, index) => {
             const reader = new FileReader();
+
             reader.onload = function(e) {
                 const item = document.createElement('div');
                 item.className = 'relative rounded-2xl overflow-hidden border border-gray-200 bg-white shadow-sm';
 
                 item.innerHTML = `
                     <img src="${e.target.result}" class="w-full h-36 object-cover" alt="Vista previa">
-                    <div class="p-2 text-xs text-gray-600 truncate">${file.name}</div>
+                    <div class="p-2 text-xs text-gray-600">
+                        <div class="truncate font-medium">${file.name}</div>
+                        <div class="text-gray-400 mt-1">${formatearBytes(file.size)}</div>
+                    </div>
                     <button type="button"
                             data-index="${index}"
                             class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow">
@@ -844,11 +783,107 @@
                     dtFotos = nuevoDT;
                     inputFotos.files = dtFotos.files;
                     renderPreviewFotos();
+
+                    if (dtFotos.files.length === 0) {
+                        setEstadoFotos('');
+                    }
                 });
             };
+
             reader.readAsDataURL(file);
         });
+
+        actualizarResumenFotos();
     }
+
+    async function procesarNuevosArchivos(nuevosArchivos) {
+        const errores = [];
+        let optimizadas = 0;
+
+        bloquearEnvio(true, 'Optimizando fotos...');
+        setEstadoFotos('Preparando imágenes para subir...', 'normal');
+
+        for (let i = 0; i < nuevosArchivos.length; i++) {
+            const file = nuevosArchivos[i];
+
+            setEstadoFotos(`Procesando imagen ${i + 1} de ${nuevosArchivos.length}: ${file.name}`, 'normal');
+
+            if (!TIPOS_PERMITIDOS.includes(file.type)) {
+                errores.push(`${file.name}: formato no permitido. Usa JPG, JPEG, PNG o WEBP.`);
+                continue;
+            }
+
+            if (file.size > LIMITE_SELECCION_BYTES) {
+                errores.push(`${file.name}: pesa ${formatearBytes(file.size)} y supera el máximo permitido para procesarla.`);
+                continue;
+            }
+
+            try {
+                const resultado = await optimizarArchivo(file);
+                dtFotos.items.add(resultado.file);
+
+                if (resultado.optimizado) {
+                    optimizadas++;
+                }
+            } catch (error) {
+                errores.push(error.message || `No se pudo procesar ${file.name}.`);
+            }
+        }
+
+        inputFotos.files = dtFotos.files;
+        renderPreviewFotos();
+
+        if (errores.length) {
+            setEstadoFotos('Algunas imágenes no pudieron procesarse. Revisa el mensaje mostrado.', 'error');
+            alert(errores.join('\n'));
+        } else if (optimizadas > 0) {
+            setEstadoFotos(`${optimizadas} imagen(es) fueron optimizadas automáticamente antes de enviarse.`, 'ok');
+        } else {
+            setEstadoFotos('Las imágenes están listas para enviarse.', 'ok');
+        }
+
+        bloquearEnvio(false);
+    }
+
+    function toggleEliminarFoto(idFoto) {
+        const idString = String(idFoto);
+        const card = document.querySelector(`.foto-actual-card[data-foto-id="${idString}"]`);
+        if (!card) return;
+
+        const overlay = card.querySelector('.foto-overlay-eliminar');
+        const boton = card.querySelector('.btn-toggle-eliminar-foto');
+
+        if (fotosEliminarSet.has(idString)) {
+            fotosEliminarSet.delete(idString);
+            card.classList.remove('ring-2', 'ring-red-300', 'opacity-70');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            boton.textContent = 'Marcar para eliminar';
+            boton.classList.remove('bg-gray-100', 'text-gray-700', 'border-gray-300');
+            boton.classList.add('bg-red-50', 'text-red-600', 'border-red-200');
+        } else {
+            fotosEliminarSet.add(idString);
+            card.classList.add('ring-2', 'ring-red-300', 'opacity-70');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            boton.textContent = 'No eliminar';
+            boton.classList.remove('bg-red-50', 'text-red-600', 'border-red-200');
+            boton.classList.add('bg-gray-100', 'text-gray-700', 'border-gray-300');
+        }
+
+        syncFotosEliminarInputs();
+        actualizarResumenFotos();
+    }
+
+    document.querySelectorAll('.btn-toggle-eliminar-foto').forEach((btn) => {
+        btn.addEventListener('click', function () {
+            toggleEliminarFoto(this.dataset.fotoId);
+        });
+    });
+
+    inputFotos.addEventListener('click', function () {
+        this.value = null;
+    });
 
     inputFotos.addEventListener('change', async function(e) {
         const nuevos = Array.from(e.target.files);
@@ -857,30 +892,86 @@
             return;
         }
 
-        if ((dtFotos.files.length + nuevos.length) > MAX_FOTOS_NUEVAS) {
-            alert(`Solo puedes subir hasta ${MAX_FOTOS_NUEVAS} fotografías nuevas.`);
-            e.target.value = '';
+        if ((obtenerTotalFinalFotos() + nuevos.length) > MAX_FOTOS) {
+            alert(`No puedes tener más de ${MAX_FOTOS} fotografías en total.`);
             return;
         }
 
-        try {
-            setBotonProcesando(true, 'Procesando imágenes...');
-            estadoFotos.textContent = 'Optimizando fotos, por favor espera...';
+        await procesarNuevosArchivos(nuevos);
+    });
 
-            for (const archivo of nuevos) {
-                const resultado = await comprimirImagenSiEsNecesario(archivo);
-                dtFotos.items.add(resultado.file);
+    formEditar.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        if (procesandoFotos) {
+            alert('Espera a que termine la optimización de imágenes antes de guardar.');
+            return;
+        }
+
+        syncFotosEliminarInputs();
+
+        const totalFinal = obtenerTotalFinalFotos();
+
+        if (totalFinal < 1) {
+            alert('La publicación debe conservar al menos una fotografía.');
+            return;
+        }
+
+        if (totalFinal > MAX_FOTOS) {
+            alert(`No puedes tener más de ${MAX_FOTOS} fotografías en total.`);
+            return;
+        }
+
+        bloquearEnvio(true, 'Guardando cambios...');
+
+        try {
+            const formData = new FormData(formEditar);
+
+            formData.delete('fotos[]');
+            formData.delete('fotos');
+            formData.delete('foto');
+            formData.delete('fotos_eliminar[]');
+
+            fotosEliminarSet.forEach((idFoto) => {
+                formData.append('fotos_eliminar[]', idFoto);
+            });
+
+            Array.from(dtFotos.files).forEach((file, index) => {
+                formData.append(`fotos[${index}]`, file, file.name);
+            });
+
+            const response = await fetch(formEditar.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                if (data.errors) {
+                    const mensajes = [];
+                    Object.values(data.errors).forEach((grupo) => {
+                        grupo.forEach((mensaje) => mensajes.push(mensaje));
+                    });
+                    alert(mensajes.join('\n'));
+                } else {
+                    alert(data.message || 'No se pudo actualizar la publicación.');
+                }
+
+                bloquearEnvio(false);
+                return;
             }
 
-            inputFotos.files = dtFotos.files;
-            renderPreviewFotos();
-            estadoFotos.textContent = 'Las fotos nuevas están listas para enviarse.';
+            window.location.href = data.redirect || '{{ route('adopciones.mis-adopciones') }}';
         } catch (error) {
-            estadoFotos.textContent = '';
-            alert(error.message || 'Ocurrió un error al procesar las fotos.');
-        } finally {
-            e.target.value = '';
-            setBotonProcesando(false);
+            console.error(error);
+            alert('Ocurrió un error inesperado al guardar los cambios.');
+            bloquearEnvio(false);
         }
     });
 
@@ -1047,46 +1138,10 @@
 
         if (otraRazaInicial && !razaIdInicial) {
             razaSelector.value = '__otra__';
-            mostrarOtraRaza();
+            manejarCambioRaza();
         }
 
-        const toast = document.getElementById('toast-success');
-        const cerrarToast = document.getElementById('cerrar-toast-success');
-        const toastBar = document.getElementById('toast-success-bar');
-
-        if (toast) {
-            let duracion = 4500;
-            let inicio = Date.now();
-
-            const intervalo = setInterval(() => {
-                const transcurrido = Date.now() - inicio;
-                const restante = Math.max(0, 100 - ((transcurrido / duracion) * 100));
-                if (toastBar) toastBar.style.width = restante + '%';
-
-                if (transcurrido >= duracion) {
-                    clearInterval(intervalo);
-                    toast.classList.add('opacity-0', 'translate-y-2', 'transition', 'duration-300');
-                    setTimeout(() => toast.remove(), 300);
-                }
-            }, 50);
-
-            if (cerrarToast) {
-                cerrarToast.addEventListener('click', () => {
-                    clearInterval(intervalo);
-                    toast.remove();
-                });
-            }
-        }
-    });
-
-    formEditar.addEventListener('submit', function(e) {
-        if (procesandoImagenes) {
-            e.preventDefault();
-            alert('Espera a que terminen de procesarse las imágenes.');
-            return;
-        }
-
-        setBotonProcesando(true, 'Guardando cambios...');
+        actualizarResumenFotos();
     });
 </script>
 
