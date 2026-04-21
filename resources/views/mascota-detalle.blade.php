@@ -1212,103 +1212,133 @@
 </div>
 
 <div id="cartel-imprimible">
-    <div class="w-full border-b-[5px] border-red-600 pb-3">
-        <h1 style="font-size: 30px; line-height: 1; font-weight: 900; color: #dc2626; text-transform: uppercase; letter-spacing: -0.03em; text-align: center;">
-            ¡SE BUSCA!
-        </h1>
-        <p style="font-size: 15px; color: #1f2937; font-weight: 700; text-transform: uppercase; text-align: center; margin-top: 4px;">
-            Ayúdanos a encontrarlo
-        </p>
-    </div>
+    <div style="height: 100%; display: flex; flex-direction: column; gap: 8mm; box-sizing: border-box;">
 
-    <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; justify-content: space-between;">
-        <div style="display: flex; gap: 10px; min-height: 0;">
-            <div style="flex: 0 0 48%; display: flex; align-items: center; justify-content: center; min-height: 0;">
-                @if($fotosGaleria->count())
-                    <img
-                        src="{{ asset('storage/' . $fotosGaleria->first()->url) }}"
-                        style="width: 100%; max-height: 145mm; object-fit: cover; border-radius: 12px; border: 3px solid #111827;"
-                    >
-                @else
-                    <div style="width: 100%; height: 145mm; display: flex; align-items: center; justify-content: center; border: 2px dashed #9ca3af; border-radius: 12px; color: #9ca3af; font-weight: 700;">
-                        Sin foto
-                    </div>
-                @endif
+        <div style="background: linear-gradient(135deg, #dc2626 0%, #ef4444 60%, #f97316 100%); border-radius: 18px; padding: 10mm 10mm 8mm 10mm; color: white; text-align: center; box-shadow: 0 10px 30px rgba(220,38,38,.18);">
+            <div style="font-size: 13px; font-weight: 800; letter-spacing: .25em; text-transform: uppercase; opacity: .9;">
+                Huellitas Perdidas
             </div>
 
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0;">
-                <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-                    <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Nombre</p>
-                    <p style="font-size: 26px; line-height: 1.1; font-weight: 900; color: #111827;">{{ $publicacion->nombre }}</p>
-                </div>
+            <div style="margin-top: 3mm; font-size: 44px; line-height: .95; font-weight: 900; letter-spacing: -.04em; text-transform: uppercase;">
+                ¡Se busca!
+            </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Especie</p>
-                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $especieTexto }}</p>
-                    </div>
+            <div style="margin-top: 3mm; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em;">
+                Ayúdanos a encontrar a {{ $publicacion->nombre }}
+            </div>
+        </div>
 
-                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Raza</p>
-                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $razaTexto ?? $publicacion->otra_raza ?? 'No especificada' }}</p>
-                    </div>
+        <div style="display: flex; gap: 8mm; flex: 1; min-height: 0;">
 
-                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Sexo</p>
-                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ ucfirst(strtolower($publicacion->sexo)) }}</p>
-                    </div>
-
-                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Tamaño</p>
-                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ ucfirst(strtolower($publicacion->tamano)) }}</p>
-                    </div>
-
-                    <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px; grid-column: span 2;">
-                        <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Color</p>
-                        <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $publicacion->color }}</p>
-                    </div>
-                </div>
-
-                <div style="border: 1px solid #fde68a; border-radius: 12px; background: #fffbeb; padding: 10px;">
-                    <p style="font-size: 10px; font-weight: 700; color: #b45309; text-transform: uppercase; margin-bottom: 4px;">Último lugar visto</p>
-                    <p style="font-size: 14px; font-weight: 700; color: #111827;">{{ $publicacion->colonia_barrio }}</p>
-                    @if($publicacion->calle_referencias)
-                        <p style="font-size: 12px; color: #4b5563; margin-top: 4px;">{{ $publicacion->calle_referencias }}</p>
+            <div style="flex: 0 0 52%; display: flex; flex-direction: column; gap: 5mm; min-height: 0;">
+                <div style="flex: 1; min-height: 0; border: 3px solid #111827; border-radius: 18px; overflow: hidden; background: #f3f4f6; display: flex; align-items: center; justify-content: center;">
+                    @if($fotosGaleria->count())
+                        <img
+                            src="{{ asset('storage/' . $fotosGaleria->first()->url) }}"
+                            style="width: 100%; height: 100%; object-fit: cover;"
+                        >
+                    @else
+                        <div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 18px; font-weight: 700;">
+                            Sin foto
+                        </div>
                     @endif
                 </div>
 
-                <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-                    <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Fecha de extravío</p>
-                    <p style="font-size: 14px; font-weight: 700; color: #111827;">
+                <div style="background: #fff7ed; border: 2px solid #fdba74; border-radius: 16px; padding: 5mm;">
+                    <div style="font-size: 11px; font-weight: 800; color: #c2410c; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 2mm;">
+                        Último lugar visto
+                    </div>
+                    <div style="font-size: 18px; font-weight: 800; color: #111827; line-height: 1.15;">
+                        {{ $publicacion->colonia_barrio }}
+                    </div>
+
+                    @if($publicacion->calle_referencias)
+                        <div style="margin-top: 2mm; font-size: 12px; color: #4b5563; line-height: 1.35;">
+                            {{ $publicacion->calle_referencias }}
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 4mm; min-width: 0;">
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 16px; padding: 5mm;">
+                    <div style="font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .12em; margin-bottom: 2mm;">
+                        Nombre
+                    </div>
+                    <div style="font-size: 30px; line-height: .98; font-weight: 900; color: #111827; letter-spacing: -.03em;">
+                        {{ $publicacion->nombre }}
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4mm;">
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 4mm;">
+                        <div style="font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .1em;">Especie</div>
+                        <div style="margin-top: 1.5mm; font-size: 14px; font-weight: 800; color: #111827;">{{ $especieTexto }}</div>
+                    </div>
+
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 4mm;">
+                        <div style="font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .1em;">Raza</div>
+                        <div style="margin-top: 1.5mm; font-size: 14px; font-weight: 800; color: #111827;">
+                            {{ $razaTexto ?? $publicacion->otra_raza ?? 'No especificada' }}
+                        </div>
+                    </div>
+
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 4mm;">
+                        <div style="font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .1em;">Sexo</div>
+                        <div style="margin-top: 1.5mm; font-size: 14px; font-weight: 800; color: #111827;">{{ ucfirst(strtolower($publicacion->sexo)) }}</div>
+                    </div>
+
+                    <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 4mm;">
+                        <div style="font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .1em;">Tamaño</div>
+                        <div style="margin-top: 1.5mm; font-size: 14px; font-weight: 800; color: #111827;">{{ ucfirst(strtolower($publicacion->tamano)) }}</div>
+                    </div>
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 4mm;">
+                    <div style="font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .1em;">Color</div>
+                    <div style="margin-top: 1.5mm; font-size: 14px; font-weight: 800; color: #111827;">{{ $publicacion->color }}</div>
+                </div>
+
+                <div style="background: #fef2f2; border: 2px solid #fecaca; border-radius: 14px; padding: 4mm;">
+                    <div style="font-size: 10px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: .1em;">Fecha de extravío</div>
+                    <div style="margin-top: 1.5mm; font-size: 16px; font-weight: 900; color: #111827;">
                         {{ \Carbon\Carbon::parse($publicacion->fecha_extravio)->locale('es')->translatedFormat('d \d\e F, Y') }}
-                    </p>
+                    </div>
+                </div>
+
+                <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 14px; padding: 4mm;">
+                    <div style="font-size: 10px; font-weight: 800; color: #9ca3af; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1.5mm;">
+                        Descripción
+                    </div>
+                    <div style="font-size: 12px; color: #374151; line-height: 1.45;">
+                        {{ $descripcionCartel }}
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div style="border: 1px solid #e5e7eb; border-radius: 12px; background: #f9fafb; padding: 10px;">
-            <p style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px;">Descripción</p>
-            <p style="font-size: 12px; color: #374151; line-height: 1.45;">{{ $descripcionCartel }}</p>
-        </div>
-    </div>
+        <div style="background: #111827; color: white; border-radius: 18px; padding: 7mm 8mm; text-align: center; box-shadow: 0 10px 24px rgba(17,24,39,.14);">
+            <div style="font-size: 14px; font-weight: 800; text-transform: uppercase; letter-spacing: .14em; color: #fdba74;">
+                Si tienes información
+            </div>
 
-    <div style="border-top: 5px solid #dc2626; padding-top: 10px;">
-        <p style="font-size: 16px; font-weight: 800; color: #111827; text-transform: uppercase; text-align: center; margin-bottom: 6px;">
-            Si tienes información comunícate al:
-        </p>
+            <div style="margin-top: 2mm; font-size: 16px; font-weight: 700;">
+                Comunícate de inmediato
+            </div>
 
-        <div style="background: #dc2626; color: white; border-radius: 14px; padding: 10px 14px; text-align: center;">
-            <p style="font-size: 28px; line-height: 1.05; font-weight: 900; letter-spacing: 0.04em; margin: 0;">
+            <div style="margin-top: 3mm; font-size: 31px; line-height: 1; font-weight: 900; letter-spacing: .04em;">
                 {{ $publicacion->autor->telefono ?? $publicacion->autor->whatsapp ?? 'SIN NÚMERO' }}
-            </p>
-            <p style="font-size: 14px; font-weight: 600; margin-top: 4px;">
-                {{ $publicacion->autor->nombre ?? 'Contacto' }}
-            </p>
-        </div>
+            </div>
 
-        <p style="margin-top: 6px; text-align: center; font-size: 10px; color: #9ca3af;">
-            Generado en Huellitas Perdidas
-        </p>
+            <div style="margin-top: 2mm; font-size: 15px; font-weight: 700; color: #e5e7eb;">
+                {{ $publicacion->autor->nombre ?? 'Contacto' }}
+            </div>
+
+            <div style="margin-top: 3mm; font-size: 10px; color: #9ca3af;">
+                Comparte este cartel para ayudar a encontrarlo
+            </div>
+        </div>
     </div>
 </div>
 
