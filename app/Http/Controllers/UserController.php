@@ -19,6 +19,40 @@ class UserController extends Controller
         return Auth::user();
     }
 
+    private function valorUsuario($usuario, array $campos, $default = null)
+    {
+        foreach ($campos as $campo) {
+            $valor = data_get($usuario, $campo);
+
+            if ($valor !== null && $valor !== '') {
+                return $valor;
+            }
+        }
+
+        return $default;
+    }
+
+    private function esAdmin($usuario): bool
+    {
+        if (!$usuario) {
+            return false;
+        }
+
+        $rol = strtoupper((string) $this->valorUsuario(
+            $usuario,
+            ['rol', 'role', 'tipo_usuario', 'tipo', 'perfil'],
+            ''
+        ));
+
+        if (in_array($rol, ['ADMIN', 'ADMINISTRADOR', 'ADMIN_GENERAL'], true)) {
+            return true;
+        }
+
+        $bandera = $this->valorUsuario($usuario, ['es_admin', 'is_admin'], 0);
+
+        return in_array($bandera, [1, '1', true, 'true', 'TRUE'], true);
+    }
+
     private function configuracionUsuario(int $usuarioId): UsuarioConfiguracion
     {
         return UsuarioConfiguracion::firstOrCreate(
@@ -35,18 +69,85 @@ class UserController extends Controller
 
     private function organizacionActual(int $usuarioId)
     {
-        return DB::table('organizaciones as o')
-            ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
-            ->select(
-                'o.*',
-                'd.calle_numero',
-                'd.colonia',
-                'd.codigo_postal',
-                'd.ciudad as ciudad_direccion',
-                'd.estado as estado_direccion'
-            )
+        if (!Schema::hasTable('organizaciones')) {
+            return null;
+        }
+
+        $query = DB::table('organizaciones as o');
+
+        if (Schema::hasTable('direcciones')) {
+            $query->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
+                ->select(
+                    'o.*',
+                    'd.calle_numero',
+                    'd.colonia',
+                    'd.codigo_postal',
+                    'd.ciudad as ciudad_direccion',
+                    'd.estado as estado_direccion'
+                );
+        } else {
+            $query->select('o.*');
+        }
+
+        return $query
             ->where('o.usuario_dueno_id', $usuarioId)
             ->first();
+    }
+
+    private function contarTabla(string $tabla): int
+    {
+        return Schema::hasTable($tabla) ? DB::table($tabla)->count() : 0;
+    }
+
+    private function contarOrganizacionesPorTipo(string $tipo): int
+    {
+        if (!Schema::hasTable('organizaciones')) {
+            return 0;
+        }
+
+        return DB::table('organizaciones')
+            ->where('tipo', $tipo)
+            ->count();
+    }
+
+    private function contarReportesAdmin(): int
+    {
+        $total = 0;
+
+        if (Schema::hasTable('reportes')) {
+            $total += DB::table('reportes')->count();
+        }
+
+        if (Schema::hasTable('reportes_consejos')) {
+            $total += DB::table('reportes_consejos')->count();
+        }
+
+        return $total;
+    }
+
+    private function contarPendientesAdmin(): int
+    {
+        $total = 0;
+
+        if (Schema::hasTable('publicaciones_extravio') && Schema::hasColumn('publicaciones_extravio', 'estado')) {
+            $total += DB::table('publicaciones_extravio')
+                ->whereIn('estado', ['PENDIENTE', 'EN_REVISION'])
+                ->count();
+        }
+
+        if (Schema::hasTable('publicaciones_adopcion') && Schema::hasColumn('publicaciones_adopcion', 'estado')) {
+            $total += DB::table('publicaciones_adopcion')
+                ->whereIn('estado', ['PENDIENTE', 'EN_REVISION'])
+                ->count();
+        }
+
+        if (Schema::hasTable('consejos') && Schema::hasColumn('consejos', 'estado_publicacion')) {
+            $total += DB::table('consejos')
+                ->whereIn('estado_publicacion', ['PENDIENTE', 'EN_REVISION'])
+                ->count();
+        }
+
+        return $total;
     }
 
     private function contarExtravios(int $usuarioId, $organizacion = null): int
@@ -79,10 +180,18 @@ class UserController extends Controller
 
     private function contarComentarios(int $usuarioId): int
     {
-        return DB::table('comentarios_extravio')
-            ->where('usuario_id', $usuarioId)
-            ->where('estado', '<>', 'ELIMINADO')
-            ->count();
+        if (!Schema::hasTable('comentarios_extravio')) {
+            return 0;
+        }
+
+        $query = DB::table('comentarios_extravio')
+            ->where('usuario_id', $usuarioId);
+
+        if (Schema::hasColumn('comentarios_extravio', 'estado')) {
+            $query->where('estado', '<>', 'ELIMINADO');
+        }
+
+        return $query->count();
     }
 
     private function contarSolicitudesEnviadas(int $usuarioId): int
@@ -92,7 +201,7 @@ class UserController extends Controller
 
     private function contarConsejos($organizacion): int
     {
-        if (!$organizacion) {
+        if (!$organizacion || !Schema::hasTable('consejos')) {
             return 0;
         }
 
@@ -103,6 +212,10 @@ class UserController extends Controller
 
     private function contarSolicitudesRecibidas(int $usuarioId, $organizacion = null): int
     {
+        if (!Schema::hasTable('solicitudes_adopcion') || !Schema::hasTable('publicaciones_adopcion')) {
+            return 0;
+        }
+
         return DB::table('solicitudes_adopcion as s')
             ->join('publicaciones_adopcion as p', 'p.id_publicacion', '=', 's.publicacion_id')
             ->where(function ($query) use ($usuarioId, $organizacion) {
@@ -119,71 +232,75 @@ class UserController extends Controller
     {
         $items = collect();
 
-        $extravios = DB::table('publicaciones_extravio as p')
-            ->select(
-                'p.id_publicacion',
-                'p.nombre as titulo',
-                'p.estado',
-                'p.created_at as fecha',
-                'p.descripcion',
-                DB::raw("'Extravío' as tipo"),
-                DB::raw("(SELECT ef.url FROM extravio_fotos ef WHERE ef.publicacion_id = p.id_publicacion ORDER BY ef.orden ASC LIMIT 1) as imagen")
-            )
-            ->where(function ($query) use ($usuarioId, $organizacion) {
-                $query->where('p.autor_usuario_id', $usuarioId);
+        if (Schema::hasTable('publicaciones_extravio')) {
+            $extravios = DB::table('publicaciones_extravio as p')
+                ->select(
+                    'p.id_publicacion',
+                    'p.nombre as titulo',
+                    'p.estado',
+                    'p.created_at as fecha',
+                    'p.descripcion',
+                    DB::raw("'Extravío' as tipo"),
+                    DB::raw("(SELECT ef.url FROM extravio_fotos ef WHERE ef.publicacion_id = p.id_publicacion ORDER BY ef.orden ASC LIMIT 1) as imagen")
+                )
+                ->where(function ($query) use ($usuarioId, $organizacion) {
+                    $query->where('p.autor_usuario_id', $usuarioId);
 
-                if ($organizacion) {
-                    $query->orWhere('p.autor_organizacion_id', $organizacion->id_organizacion);
-                }
-            })
-            ->orderByDesc('p.created_at')
-            ->limit(6)
-            ->get();
+                    if ($organizacion) {
+                        $query->orWhere('p.autor_organizacion_id', $organizacion->id_organizacion);
+                    }
+                })
+                ->orderByDesc('p.created_at')
+                ->limit(6)
+                ->get();
 
-        foreach ($extravios as $item) {
-            $items->push((object) [
-                'titulo' => $item->titulo,
-                'tipo' => $item->tipo,
-                'estado' => $item->estado,
-                'fecha' => $item->fecha,
-                'imagen' => $item->imagen,
-                'url' => route('extravios.show', $item->id_publicacion),
-            ]);
+            foreach ($extravios as $item) {
+                $items->push((object) [
+                    'titulo' => $item->titulo,
+                    'tipo' => $item->tipo,
+                    'estado' => $item->estado,
+                    'fecha' => $item->fecha,
+                    'imagen' => $item->imagen,
+                    'url' => route('extravios.show', $item->id_publicacion),
+                ]);
+            }
         }
 
-        $adopciones = DB::table('publicaciones_adopcion as p')
-            ->select(
-                'p.id_publicacion',
-                'p.nombre as titulo',
-                'p.estado',
-                'p.created_at as fecha',
-                'p.descripcion',
-                DB::raw("'Adopción' as tipo"),
-                DB::raw("(SELECT af.url FROM adopcion_fotos af WHERE af.publicacion_id = p.id_publicacion ORDER BY af.orden ASC LIMIT 1) as imagen")
-            )
-            ->where(function ($query) use ($usuarioId, $organizacion) {
-                $query->where('p.autor_usuario_id', $usuarioId);
+        if (Schema::hasTable('publicaciones_adopcion')) {
+            $adopciones = DB::table('publicaciones_adopcion as p')
+                ->select(
+                    'p.id_publicacion',
+                    'p.nombre as titulo',
+                    'p.estado',
+                    'p.created_at as fecha',
+                    'p.descripcion',
+                    DB::raw("'Adopción' as tipo"),
+                    DB::raw("(SELECT af.url FROM adopcion_fotos af WHERE af.publicacion_id = p.id_publicacion ORDER BY af.orden ASC LIMIT 1) as imagen")
+                )
+                ->where(function ($query) use ($usuarioId, $organizacion) {
+                    $query->where('p.autor_usuario_id', $usuarioId);
 
-                if ($organizacion) {
-                    $query->orWhere('p.autor_organizacion_id', $organizacion->id_organizacion);
-                }
-            })
-            ->orderByDesc('p.created_at')
-            ->limit(6)
-            ->get();
+                    if ($organizacion) {
+                        $query->orWhere('p.autor_organizacion_id', $organizacion->id_organizacion);
+                    }
+                })
+                ->orderByDesc('p.created_at')
+                ->limit(6)
+                ->get();
 
-        foreach ($adopciones as $item) {
-            $items->push((object) [
-                'titulo' => $item->titulo,
-                'tipo' => $item->tipo,
-                'estado' => $item->estado,
-                'fecha' => $item->fecha,
-                'imagen' => $item->imagen,
-                'url' => route('adopciones.show', $item->id_publicacion),
-            ]);
+            foreach ($adopciones as $item) {
+                $items->push((object) [
+                    'titulo' => $item->titulo,
+                    'tipo' => $item->tipo,
+                    'estado' => $item->estado,
+                    'fecha' => $item->fecha,
+                    'imagen' => $item->imagen,
+                    'url' => route('adopciones.show', $item->id_publicacion),
+                ]);
+            }
         }
 
-        if ($organizacion) {
+        if ($organizacion && Schema::hasTable('consejos')) {
             $consejos = DB::table('consejos as c')
                 ->select(
                     'c.id_consejo',
@@ -219,6 +336,10 @@ class UserController extends Controller
 
     private function cargarComentariosRecientes(int $usuarioId): Collection
     {
+        if (!Schema::hasTable('comentarios_extravio') || !Schema::hasTable('publicaciones_extravio')) {
+            return collect();
+        }
+
         return DB::table('comentarios_extravio as c')
             ->join('publicaciones_extravio as p', 'p.id_publicacion', '=', 'c.publicacion_id')
             ->select(
@@ -229,7 +350,9 @@ class UserController extends Controller
                 'p.id_publicacion'
             )
             ->where('c.usuario_id', $usuarioId)
-            ->where('c.estado', '<>', 'ELIMINADO')
+            ->when(Schema::hasColumn('comentarios_extravio', 'estado'), function ($query) {
+                $query->where('c.estado', '<>', 'ELIMINADO');
+            })
             ->orderByDesc('c.creado_en')
             ->limit(6)
             ->get()
@@ -241,9 +364,18 @@ class UserController extends Controller
 
     private function cargarSolicitudesRecibidasRecientes(int $usuarioId, $organizacion = null): Collection
     {
-        return DB::table('solicitudes_adopcion as s')
-            ->join('publicaciones_adopcion as p', 'p.id_publicacion', '=', 's.publicacion_id')
-            ->leftJoin('usuarios as u', 'u.id_usuario', '=', 's.solicitante_usuario_id')
+        if (!Schema::hasTable('solicitudes_adopcion') || !Schema::hasTable('publicaciones_adopcion')) {
+            return collect();
+        }
+
+        $query = DB::table('solicitudes_adopcion as s')
+            ->join('publicaciones_adopcion as p', 'p.id_publicacion', '=', 's.publicacion_id');
+
+        if (Schema::hasTable('usuarios')) {
+            $query->leftJoin('usuarios as u', 'u.id_usuario', '=', 's.solicitante_usuario_id');
+        }
+
+        return $query
             ->select(
                 's.id_solicitud',
                 's.nombre_completo',
@@ -251,7 +383,7 @@ class UserController extends Controller
                 's.created_at as fecha',
                 'p.nombre as mascota',
                 'p.id_publicacion',
-                'u.correo as correo_usuario'
+                DB::raw(Schema::hasTable('usuarios') ? 'u.correo as correo_usuario' : 'NULL as correo_usuario')
             )
             ->where(function ($query) use ($usuarioId, $organizacion) {
                 $query->where('p.autor_usuario_id', $usuarioId);
@@ -278,32 +410,67 @@ class UserController extends Controller
         $organizacion = $this->organizacionActual($usuario->id_usuario);
 
         $tipoPerfil = 'USUARIO';
-        if ($organizacion && $organizacion->tipo === 'VETERINARIA') {
+        $adminResumen = [
+            'usuarios' => 0,
+            'organizaciones' => 0,
+            'reportes' => 0,
+            'pendientes' => 0,
+            'veterinarias' => 0,
+            'refugios' => 0,
+        ];
+
+        if ($this->esAdmin($usuario)) {
+            $tipoPerfil = 'ADMIN';
+        } elseif ($organizacion && strtoupper((string) $organizacion->tipo) === 'VETERINARIA') {
             $tipoPerfil = 'VETERINARIA';
-        } elseif ($organizacion && $organizacion->tipo === 'REFUGIO') {
+        } elseif ($organizacion && strtoupper((string) $organizacion->tipo) === 'REFUGIO') {
             $tipoPerfil = 'REFUGIO';
         }
-
-        $conteoExtravios = $this->contarExtravios($usuario->id_usuario, $organizacion);
-        $conteoAdopciones = $this->contarAdopciones($usuario->id_usuario, $organizacion);
-        $conteoComentarios = $this->contarComentarios($usuario->id_usuario);
-        $conteoSolicitudesEnviadas = $this->contarSolicitudesEnviadas($usuario->id_usuario);
-        $conteoConsejos = $this->contarConsejos($organizacion);
-        $conteoSolicitudesRecibidas = $this->contarSolicitudesRecibidas($usuario->id_usuario, $organizacion);
-
-        $publicaciones = $this->cargarPublicacionesRecientes($usuario->id_usuario, $organizacion);
-        $comentarios = $this->cargarComentariosRecientes($usuario->id_usuario);
-        $solicitudesRecibidas = $this->cargarSolicitudesRecibidasRecientes($usuario->id_usuario, $organizacion);
 
         $panelOrganizacionUrl = null;
         $perfilPublicoUrl = null;
 
-        if ($tipoPerfil === 'VETERINARIA') {
-            $panelOrganizacionUrl = route('veterinaria.dashboard');
-            $perfilPublicoUrl = route('veterinarias.show', $organizacion->id_organizacion);
-        } elseif ($tipoPerfil === 'REFUGIO') {
-            $panelOrganizacionUrl = route('refugio.dashboard');
-            $perfilPublicoUrl = route('refugios.show', $organizacion->id_organizacion);
+        if ($tipoPerfil === 'ADMIN') {
+            $conteoExtravios = $this->contarTabla('publicaciones_extravio');
+            $conteoAdopciones = $this->contarTabla('publicaciones_adopcion');
+            $conteoComentarios = $this->contarTabla('comentarios_extravio');
+            $conteoSolicitudesEnviadas = 0;
+            $conteoConsejos = $this->contarTabla('consejos');
+            $conteoSolicitudesRecibidas = $this->contarTabla('solicitudes_adopcion');
+
+            $publicaciones = collect();
+            $comentarios = collect();
+            $solicitudesRecibidas = collect();
+
+            $panelOrganizacionUrl = route('admin.dashboard');
+
+            $adminResumen = [
+                'usuarios' => $this->contarTabla('usuarios'),
+                'organizaciones' => $this->contarTabla('organizaciones'),
+                'reportes' => $this->contarReportesAdmin(),
+                'pendientes' => $this->contarPendientesAdmin(),
+                'veterinarias' => $this->contarOrganizacionesPorTipo('VETERINARIA'),
+                'refugios' => $this->contarOrganizacionesPorTipo('REFUGIO'),
+            ];
+        } else {
+            $conteoExtravios = $this->contarExtravios($usuario->id_usuario, $organizacion);
+            $conteoAdopciones = $this->contarAdopciones($usuario->id_usuario, $organizacion);
+            $conteoComentarios = $this->contarComentarios($usuario->id_usuario);
+            $conteoSolicitudesEnviadas = $this->contarSolicitudesEnviadas($usuario->id_usuario);
+            $conteoConsejos = $this->contarConsejos($organizacion);
+            $conteoSolicitudesRecibidas = $this->contarSolicitudesRecibidas($usuario->id_usuario, $organizacion);
+
+            $publicaciones = $this->cargarPublicacionesRecientes($usuario->id_usuario, $organizacion);
+            $comentarios = $this->cargarComentariosRecientes($usuario->id_usuario);
+            $solicitudesRecibidas = $this->cargarSolicitudesRecibidasRecientes($usuario->id_usuario, $organizacion);
+
+            if ($tipoPerfil === 'VETERINARIA' && $organizacion) {
+                $panelOrganizacionUrl = route('veterinaria.dashboard');
+                $perfilPublicoUrl = route('veterinarias.show', $organizacion->id_organizacion);
+            } elseif ($tipoPerfil === 'REFUGIO' && $organizacion) {
+                $panelOrganizacionUrl = route('refugio.dashboard');
+                $perfilPublicoUrl = route('refugios.show', $organizacion->id_organizacion);
+            }
         }
 
         return view('perfil.perfil', compact(
@@ -321,7 +488,8 @@ class UserController extends Controller
             'comentarios',
             'solicitudesRecibidas',
             'panelOrganizacionUrl',
-            'perfilPublicoUrl'
+            'perfilPublicoUrl',
+            'adminResumen'
         ));
     }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\MobilePublicacionController;
 use App\Http\Controllers\Api\MobileOrganizacionController;
 use App\Http\Controllers\Api\MobilePerfilController;
 use App\Http\Controllers\Api\MobileSolicitudAdopcionController;
+use App\Http\Controllers\Api\MobileAdopcionController;
 
 Route::prefix('mobile')->group(function () {
 
@@ -16,12 +17,21 @@ Route::prefix('mobile')->group(function () {
         ]);
     });
 
+    // =====================
+    // AUTH
+    // =====================
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
 
+    // =====================
+    // CATÁLOGOS
+    // =====================
     Route::get('/especies', [MobilePublicacionController::class, 'especies']);
     Route::get('/razas', [MobilePublicacionController::class, 'razas']);
 
+    // =====================
+    // EXTRAVÍOS
+    // =====================
     Route::get('/extravios', [MobilePublicacionController::class, 'extravios']);
     Route::get('/mis-extravios/{idUsuario}', [MobilePublicacionController::class, 'misExtravios']);
     Route::get('/extravios/{id}', [MobilePublicacionController::class, 'detalleExtravio']);
@@ -29,22 +39,35 @@ Route::prefix('mobile')->group(function () {
     Route::post('/extravios/{id}/update', [MobilePublicacionController::class, 'updateExtravio']);
     Route::post('/extravios/{id}/delete', [MobilePublicacionController::class, 'deleteExtravio']);
 
+    // =====================
+    // ADOPCIONES
+    // =====================
     Route::get('/adopciones', [MobilePublicacionController::class, 'adopciones']);
-    Route::get('/adopciones/{id}', [MobilePublicacionController::class, 'detalleAdopcion']);
     Route::get('/mis-adopciones/{idUsuario}', [MobilePublicacionController::class, 'misAdopciones']);
+
+    // solicitudes: específicas primero
     Route::post('/adopciones/{id}/solicitudes', [MobileSolicitudAdopcionController::class, 'store']);
     Route::get('/adopciones/solicitudes/enviadas/{idUsuario}', [MobileSolicitudAdopcionController::class, 'enviadas']);
     Route::get('/adopciones/solicitudes/recibidas/{idUsuario}', [MobileSolicitudAdopcionController::class, 'recibidas']);
     Route::post('/adopciones/solicitudes/{id}/estado', [MobileSolicitudAdopcionController::class, 'updateEstado']);
-    Route::post('/adopciones/{id}/marcar-adoptada', [MobileSolicitudAdopcionController::class, 'marcarAdoptada']);
-    Route::post('/adopciones/{id}/volver-en-proceso', [MobileSolicitudAdopcionController::class, 'volverEnProceso']);
 
+    // acciones de publicación
+    Route::post('/adopciones/{id}/marcar-adoptada', [MobileAdopcionController::class, 'marcarAdoptada']);
+    Route::post('/adopciones/{id}/volver-en-proceso', [MobileAdopcionController::class, 'volverEnProceso']);
+
+    // detalle al final
+    Route::get('/adopciones/{id}', [MobileAdopcionController::class, 'detalle']);
+
+    // =====================
+    // ORGANIZACIONES
+    // =====================
     Route::get('/organizaciones', [MobileOrganizacionController::class, 'index']);
     Route::get('/organizaciones/{id}', [MobileOrganizacionController::class, 'show']);
 
+    // =====================
+    // PERFIL
+    // =====================
     Route::get('/profile/{idUsuario}', [MobilePerfilController::class, 'show']);
     Route::post('/profile/{idUsuario}/update', [MobilePerfilController::class, 'update']);
     Route::post('/profile/{idUsuario}/settings', [MobilePerfilController::class, 'settings']);
-
-    
 });

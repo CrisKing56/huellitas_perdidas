@@ -8,11 +8,32 @@
         ->map(fn($parte) => mb_strtoupper(mb_substr($parte, 0, 1)))
         ->implode('');
 
+    $esAdmin = $tipoPerfil === 'ADMIN';
     $esVeterinaria = $tipoPerfil === 'VETERINARIA';
     $esRefugio = $tipoPerfil === 'REFUGIO';
     $esInstitucional = $esVeterinaria || $esRefugio;
 
-    if ($esVeterinaria) {
+    $adminResumen = $adminResumen ?? [
+        'usuarios' => 0,
+        'organizaciones' => 0,
+        'reportes' => 0,
+        'pendientes' => 0,
+        'veterinarias' => 0,
+        'refugios' => 0,
+    ];
+
+    if ($esAdmin) {
+        $tema = [
+            'gradiente' => 'from-slate-800 to-indigo-700',
+            'soft' => 'bg-indigo-50 border-indigo-100 text-indigo-700',
+            'solid' => 'bg-indigo-600 hover:bg-indigo-700',
+            'text' => 'text-indigo-700',
+            'ring' => 'focus:ring-indigo-500',
+            'border' => 'focus:border-indigo-500',
+            'avatar' => 'bg-indigo-100 text-indigo-700',
+            'badge' => 'ADMINISTRADOR',
+        ];
+    } elseif ($esVeterinaria) {
         $tema = [
             'gradiente' => 'from-sky-600 to-cyan-500',
             'soft' => 'bg-sky-50 border-sky-100 text-sky-700',
@@ -47,12 +68,14 @@
         ];
     }
 
-    $totalPublicaciones = $conteoExtravios + $conteoAdopciones;
+    $totalPublicaciones = $esAdmin
+        ? ($conteoExtravios + $conteoAdopciones + $conteoConsejos)
+        : ($conteoExtravios + $conteoAdopciones);
 
     $estadoPublicacionClase = function ($estado) {
         return match ($estado) {
             'ACTIVA', 'DISPONIBLE', 'APROBADO' => 'bg-green-100 text-green-700',
-            'EN_PROCESO', 'PENDIENTE', 'ENVIADA' => 'bg-yellow-100 text-yellow-700',
+            'EN_PROCESO', 'PENDIENTE', 'ENVIADA', 'EN_REVISION' => 'bg-yellow-100 text-yellow-700',
             'RESUELTA', 'ADOPTADA', 'ACEPTADA' => 'bg-blue-100 text-blue-700',
             'RECHAZADA', 'ELIMINADA', 'PAUSADA' => 'bg-red-100 text-red-700',
             default => 'bg-gray-100 text-gray-600',
@@ -67,12 +90,22 @@
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
                 <div>
                     <div class="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-1.5 text-xs font-bold tracking-wide uppercase">
-                        Perfil de cuenta
+                        {{ $esAdmin ? 'Panel de administración' : 'Perfil de cuenta' }}
                     </div>
+
                     <h1 class="text-3xl sm:text-4xl font-bold mt-4">{{ $usuario->nombre }}</h1>
                     <p class="text-white/90 mt-2">{{ $usuario->correo }}</p>
 
-                    @if($esInstitucional && $organizacion)
+                    @if($esAdmin)
+                        <div class="mt-4 flex flex-wrap gap-3">
+                            <span class="inline-flex items-center rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
+                                Gestión global de la plataforma
+                            </span>
+                            <span class="inline-flex items-center rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
+                                {{ $adminResumen['pendientes'] }} pendientes
+                            </span>
+                        </div>
+                    @elseif($esInstitucional && $organizacion)
                         <div class="mt-4 flex flex-wrap gap-3">
                             <span class="inline-flex items-center rounded-full bg-white/15 px-4 py-2 text-sm font-semibold">
                                 {{ data_get($organizacion, 'nombre') ?: 'Organización' }}
@@ -127,39 +160,63 @@
                             </span>
                         </div>
 
-                        <div class="grid grid-cols-2 gap-3 w-full mt-6">
-                            <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
-                                <p class="text-xl font-bold">{{ $totalPublicaciones }}</p>
-                                <p class="text-xs mt-1">Publicaciones</p>
+                        @if($esAdmin)
+                            <div class="grid grid-cols-2 gap-3 w-full mt-6">
+                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                    <p class="text-xl font-bold">{{ $adminResumen['usuarios'] }}</p>
+                                    <p class="text-xs mt-1">Usuarios</p>
+                                </div>
+
+                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                    <p class="text-xl font-bold">{{ $adminResumen['organizaciones'] }}</p>
+                                    <p class="text-xs mt-1">Organizaciones</p>
+                                </div>
+
+                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                    <p class="text-xl font-bold">{{ $adminResumen['reportes'] }}</p>
+                                    <p class="text-xs mt-1">Reportes</p>
+                                </div>
+
+                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                    <p class="text-xl font-bold">{{ $adminResumen['pendientes'] }}</p>
+                                    <p class="text-xs mt-1">Pendientes</p>
+                                </div>
                             </div>
+                        @else
+                            <div class="grid grid-cols-2 gap-3 w-full mt-6">
+                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                    <p class="text-xl font-bold">{{ $totalPublicaciones }}</p>
+                                    <p class="text-xs mt-1">Publicaciones</p>
+                                </div>
 
-                            <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
-                                <p class="text-xl font-bold">{{ $conteoComentarios }}</p>
-                                <p class="text-xs mt-1">Comentarios</p>
+                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                    <p class="text-xl font-bold">{{ $conteoComentarios }}</p>
+                                    <p class="text-xs mt-1">Comentarios</p>
+                                </div>
+
+                                @if($esInstitucional)
+                                    <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                        <p class="text-xl font-bold">{{ $conteoConsejos }}</p>
+                                        <p class="text-xs mt-1">Consejos</p>
+                                    </div>
+
+                                    <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                        <p class="text-xl font-bold">{{ $conteoSolicitudesRecibidas }}</p>
+                                        <p class="text-xs mt-1">Solicitudes recibidas</p>
+                                    </div>
+                                @else
+                                    <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                        <p class="text-xl font-bold">{{ $conteoAdopciones }}</p>
+                                        <p class="text-xs mt-1">Adopciones</p>
+                                    </div>
+
+                                    <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
+                                        <p class="text-xl font-bold">{{ $conteoSolicitudesEnviadas }}</p>
+                                        <p class="text-xs mt-1">Solicitudes enviadas</p>
+                                    </div>
+                                @endif
                             </div>
-
-                            @if($esInstitucional)
-                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
-                                    <p class="text-xl font-bold">{{ $conteoConsejos }}</p>
-                                    <p class="text-xs mt-1">Consejos</p>
-                                </div>
-
-                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
-                                    <p class="text-xl font-bold">{{ $conteoSolicitudesRecibidas }}</p>
-                                    <p class="text-xs mt-1">Solicitudes recibidas</p>
-                                </div>
-                            @else
-                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
-                                    <p class="text-xl font-bold">{{ $conteoAdopciones }}</p>
-                                    <p class="text-xs mt-1">Adopciones</p>
-                                </div>
-
-                                <div class="rounded-2xl {{ $tema['soft'] }} px-3 py-4 border">
-                                    <p class="text-xl font-bold">{{ $conteoSolicitudesEnviadas }}</p>
-                                    <p class="text-xs mt-1">Solicitudes enviadas</p>
-                                </div>
-                            @endif
-                        </div>
+                        @endif
 
                         <div class="w-full mt-6 space-y-3 text-left">
                             <div class="flex items-center gap-3">
@@ -202,46 +259,48 @@
                     </div>
                 </div>
 
-                <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-                    <h3 class="text-xl font-bold text-gray-800 mb-5">Privacidad actual</h3>
+                @if(!$esAdmin)
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-5">Privacidad actual</h3>
 
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
-                            <span class="text-sm font-medium text-gray-700">Mostrar teléfono</span>
-                            <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->mostrar_telefono_publico ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                                {{ $configuracion->mostrar_telefono_publico ? 'Activo' : 'Oculto' }}
-                            </span>
-                        </div>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
+                                <span class="text-sm font-medium text-gray-700">Mostrar teléfono</span>
+                                <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->mostrar_telefono_publico ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                    {{ $configuracion->mostrar_telefono_publico ? 'Activo' : 'Oculto' }}
+                                </span>
+                            </div>
 
-                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
-                            <span class="text-sm font-medium text-gray-700">Mostrar WhatsApp</span>
-                            <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->mostrar_whatsapp_publico ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                                {{ $configuracion->mostrar_whatsapp_publico ? 'Activo' : 'Oculto' }}
-                            </span>
-                        </div>
+                            <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
+                                <span class="text-sm font-medium text-gray-700">Mostrar WhatsApp</span>
+                                <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->mostrar_whatsapp_publico ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                    {{ $configuracion->mostrar_whatsapp_publico ? 'Activo' : 'Oculto' }}
+                                </span>
+                            </div>
 
-                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
-                            <span class="text-sm font-medium text-gray-700">Ubicación exacta</span>
-                            <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->ocultar_ubicacion_exacta ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' }}">
-                                {{ $configuracion->ocultar_ubicacion_exacta ? 'Oculta' : 'Visible' }}
-                            </span>
-                        </div>
+                            <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
+                                <span class="text-sm font-medium text-gray-700">Ubicación exacta</span>
+                                <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->ocultar_ubicacion_exacta ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700' }}">
+                                    {{ $configuracion->ocultar_ubicacion_exacta ? 'Oculta' : 'Visible' }}
+                                </span>
+                            </div>
 
-                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
-                            <span class="text-sm font-medium text-gray-700">Notificaciones</span>
-                            <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->recibir_notificaciones ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                                {{ $configuracion->recibir_notificaciones ? 'Activadas' : 'Desactivadas' }}
-                            </span>
-                        </div>
+                            <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
+                                <span class="text-sm font-medium text-gray-700">Notificaciones</span>
+                                <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->recibir_notificaciones ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                    {{ $configuracion->recibir_notificaciones ? 'Activadas' : 'Desactivadas' }}
+                                </span>
+                            </div>
 
-                        <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
-                            <span class="text-sm font-medium text-gray-700">Correos</span>
-                            <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->recibir_correos ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
-                                {{ $configuracion->recibir_correos ? 'Activados' : 'Desactivados' }}
-                            </span>
+                            <div class="flex items-center justify-between rounded-2xl bg-gray-50 border border-gray-100 px-4 py-3">
+                                <span class="text-sm font-medium text-gray-700">Correos</span>
+                                <span class="text-xs font-bold px-3 py-1 rounded-full {{ $configuracion->recibir_correos ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600' }}">
+                                    {{ $configuracion->recibir_correos ? 'Activados' : 'Desactivados' }}
+                                </span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                @endif
 
                 @if($esInstitucional && $organizacion)
                     <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
@@ -304,11 +363,61 @@
                         </div>
                     </div>
                 @endif
+
+                @if($esAdmin)
+                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
+                        <h3 class="text-xl font-bold text-gray-800 mb-5">Accesos administrativos</h3>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <a href="{{ route('admin.dashboard') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Dashboard</p>
+                                <p class="text-sm text-gray-500 mt-1">Vista general del sistema</p>
+                            </a>
+
+                            <a href="{{ route('admin.usuarios.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Usuarios</p>
+                                <p class="text-sm text-gray-500 mt-1">Gestionar cuentas registradas</p>
+                            </a>
+
+                            <a href="{{ route('admin.reportes.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Reportes</p>
+                                <p class="text-sm text-gray-500 mt-1">Revisar contenido reportado</p>
+                            </a>
+
+                            <a href="{{ route('admin.consejos.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Consejos</p>
+                                <p class="text-sm text-gray-500 mt-1">Aprobar o rechazar consejos</p>
+                            </a>
+
+                            <a href="{{ route('admin.extravios.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Extravíos</p>
+                                <p class="text-sm text-gray-500 mt-1">Supervisar publicaciones de extravío</p>
+                            </a>
+
+                            <a href="{{ route('admin.adopciones.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Adopciones</p>
+                                <p class="text-sm text-gray-500 mt-1">Supervisar adopciones</p>
+                            </a>
+
+                            <a href="{{ route('admin.veterinarias.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Veterinarias</p>
+                                <p class="text-sm text-gray-500 mt-1">Revisar y gestionar veterinarias</p>
+                            </a>
+
+                            <a href="{{ route('admin.refugios.index') }}" class="rounded-2xl border border-gray-100 bg-gray-50 hover:bg-white p-4 transition">
+                                <p class="font-bold text-gray-800">Refugios</p>
+                                <p class="text-sm text-gray-500 mt-1">Revisar y gestionar refugios</p>
+                            </a>
+                        </div>
+                    </div>
+                @endif
             </div>
 
             <div class="lg:col-span-8 space-y-8">
                 <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
-                    <h3 class="text-xl font-bold text-gray-800 mb-6">Editar información personal</h3>
+                    <h3 class="text-xl font-bold text-gray-800 mb-6">
+                        {{ $esInstitucional ? 'Editar información de la cuenta responsable' : 'Editar información personal' }}
+                    </h3>
 
                     <form action="{{ route('perfil.update') }}" method="POST" class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         @csrf
@@ -363,141 +472,248 @@
                     </form>
                 </div>
 
-                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                    <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
-                        <div class="flex justify-between items-center mb-6">
-                            <h3 class="text-xl font-bold text-gray-800">{{ $esInstitucional ? 'Actividad reciente' : 'Mis publicaciones' }}</h3>
-                            <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
-                                {{ $publicaciones->count() }}
-                            </span>
-                        </div>
+                @if($esAdmin)
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-gray-800">Resumen de plataforma</h3>
+                                <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
+                                    ADMIN
+                                </span>
+                            </div>
 
-                        <div class="space-y-4 flex-1">
-                            @forelse($publicaciones as $pub)
-                                @php
-                                    $imagenUrl = $pub->imagen ? asset('storage/' . ltrim($pub->imagen, '/')) : null;
-                                @endphp
-
-                                <a href="{{ $pub->url }}" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100 group">
-                                    <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
-                                        @if($imagenUrl)
-                                            <img src="{{ $imagenUrl }}" class="w-full h-full object-cover" alt="">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center text-gray-300 text-xs">
-                                                Sin imagen
-                                            </div>
-                                        @endif
-                                    </div>
-
-                                    <div class="flex-1 min-w-0">
-                                        <h4 class="font-bold text-gray-900 truncate">{{ $pub->titulo ?: 'Sin título' }}</h4>
-                                        <p class="text-xs text-gray-500 mb-1">{{ $pub->tipo }}</p>
-                                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $estadoPublicacionClase($pub->estado) }}">
-                                            {{ ucfirst(strtolower(str_replace('_', ' ', $pub->estado))) }}
-                                        </span>
-                                    </div>
-
-                                    <div class="text-gray-300 transition {{ $tema['text'] }}">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                        </svg>
-                                    </div>
-                                </a>
-                            @empty
-                                <div class="text-center py-10 border border-dashed border-gray-200 rounded-2xl bg-gray-50">
-                                    <p class="text-sm text-gray-500">Aún no hay actividad para mostrar.</p>
+                            <div class="space-y-4 flex-1">
+                                <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <span class="text-sm font-medium text-gray-700">Publicaciones de extravío</span>
+                                    <span class="font-bold text-gray-900">{{ $conteoExtravios }}</span>
                                 </div>
-                            @endforelse
+
+                                <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <span class="text-sm font-medium text-gray-700">Publicaciones de adopción</span>
+                                    <span class="font-bold text-gray-900">{{ $conteoAdopciones }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <span class="text-sm font-medium text-gray-700">Consejos publicados</span>
+                                    <span class="font-bold text-gray-900">{{ $conteoConsejos }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <span class="text-sm font-medium text-gray-700">Comentarios registrados</span>
+                                    <span class="font-bold text-gray-900">{{ $conteoComentarios }}</span>
+                                </div>
+
+                                <div class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100">
+                                    <span class="text-sm font-medium text-gray-700">Solicitudes de adopción</span>
+                                    <span class="font-bold text-gray-900">{{ $conteoSolicitudesRecibidas }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-6">
+                                <a href="{{ route('admin.dashboard') }}" class="inline-flex items-center justify-center px-4 py-3 rounded-xl text-white font-semibold {{ $tema['solid'] }} transition">
+                                    Ir al dashboard admin
+                                </a>
+                            </div>
                         </div>
 
-                        <div class="mt-6 flex flex-wrap gap-3">
-                            <a href="{{ route('extravios.index') }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ver mis reportes</a>
-                            <span class="text-gray-300">•</span>
-                            <a href="{{ route('adopciones.mis-adopciones') }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ver mis adopciones</a>
-                            @if($esInstitucional && $panelOrganizacionUrl)
-                                <span class="text-gray-300">•</span>
-                                <a href="{{ $panelOrganizacionUrl }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ir al panel institucional</a>
-                            @endif
+                        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
+                            <div class="flex justify-between items-center mb-6">
+                                <h3 class="text-xl font-bold text-gray-800">Gestión rápida</h3>
+                                <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
+                                    {{ $adminResumen['pendientes'] }} pendientes
+                                </span>
+                            </div>
+
+                            <div class="space-y-4 flex-1">
+                                <a href="{{ route('admin.usuarios.index') }}" class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                    <div>
+                                        <p class="font-bold text-gray-900">Gestionar usuarios</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $adminResumen['usuarios'] }} cuentas registradas</p>
+                                    </div>
+                                    <span class="{{ $tema['text'] }}">→</span>
+                                </a>
+
+                                <a href="{{ route('admin.veterinarias.index') }}" class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                    <div>
+                                        <p class="font-bold text-gray-900">Veterinarias</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $adminResumen['veterinarias'] }} registradas</p>
+                                    </div>
+                                    <span class="{{ $tema['text'] }}">→</span>
+                                </a>
+
+                                <a href="{{ route('admin.refugios.index') }}" class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                    <div>
+                                        <p class="font-bold text-gray-900">Refugios</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $adminResumen['refugios'] }} registrados</p>
+                                    </div>
+                                    <span class="{{ $tema['text'] }}">→</span>
+                                </a>
+
+                                <a href="{{ route('admin.reportes.index') }}" class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                    <div>
+                                        <p class="font-bold text-gray-900">Revisar reportes</p>
+                                        <p class="text-xs text-gray-500 mt-1">{{ $adminResumen['reportes'] }} reportes totales</p>
+                                    </div>
+                                    <span class="{{ $tema['text'] }}">→</span>
+                                </a>
+
+                                <a href="{{ route('admin.consejos.index') }}" class="flex items-center justify-between p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                    <div>
+                                        <p class="font-bold text-gray-900">Moderación de consejos</p>
+                                        <p class="text-xs text-gray-500 mt-1">Revisar publicaciones informativas</p>
+                                    </div>
+                                    <span class="{{ $tema['text'] }}">→</span>
+                                </a>
+                            </div>
+
+                            <div class="mt-6 text-center">
+                                <span class="text-gray-400 text-sm">Perfil adaptado para supervisión general</span>
+                            </div>
                         </div>
                     </div>
-
-                    @if($esInstitucional)
+                @else
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
                         <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
                             <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-bold text-gray-800">Solicitudes recibidas</h3>
+                                <h3 class="text-xl font-bold text-gray-800">{{ $esInstitucional ? 'Actividad reciente' : 'Mis publicaciones' }}</h3>
                                 <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
-                                    {{ $solicitudesRecibidas->count() }}
+                                    {{ $publicaciones->count() }}
                                 </span>
                             </div>
 
                             <div class="space-y-4 flex-1">
-                                @forelse($solicitudesRecibidas as $solicitud)
-                                    <a href="{{ $solicitud->url }}" class="flex items-start gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
-                                        <div class="{{ $tema['soft'] }} mt-1 flex-shrink-0 p-2 rounded-full border">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A4 4 0 017 17h10a4 4 0 011.879.468M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                            </svg>
+                                @forelse($publicaciones as $pub)
+                                    @php
+                                        $imagenUrl = $pub->imagen ? asset('storage/' . ltrim($pub->imagen, '/')) : null;
+                                    @endphp
+
+                                    <a href="{{ $pub->url }}" class="flex items-center gap-4 p-3 rounded-2xl hover:bg-gray-50 transition border border-transparent hover:border-gray-100 group">
+                                        <div class="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-gray-100">
+                                            @if($imagenUrl)
+                                                <img src="{{ $imagenUrl }}" class="w-full h-full object-cover" alt="">
+                                            @else
+                                                <div class="w-full h-full flex items-center justify-center text-gray-300 text-xs">
+                                                    Sin imagen
+                                                </div>
+                                            @endif
                                         </div>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium text-gray-800">
-                                                {{ $solicitud->nombre_completo }} solicitó adoptar a {{ $solicitud->mascota }}
-                                            </p>
-                                            <p class="text-xs text-gray-400 mt-1">
-                                                {{ \Carbon\Carbon::parse($solicitud->fecha)->locale('es')->diffForHumans() }}
-                                            </p>
-                                            <span class="inline-flex mt-2 text-[10px] font-bold px-2 py-1 rounded-full {{ $estadoPublicacionClase($solicitud->estado) }}">
-                                                {{ ucfirst(strtolower($solicitud->estado)) }}
+
+                                        <div class="flex-1 min-w-0">
+                                            <h4 class="font-bold text-gray-900 truncate">{{ $pub->titulo ?: 'Sin título' }}</h4>
+                                            <p class="text-xs text-gray-500 mb-1">{{ $pub->tipo }}</p>
+                                            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full {{ $estadoPublicacionClase($pub->estado) }}">
+                                                {{ ucfirst(strtolower(str_replace('_', ' ', $pub->estado))) }}
                                             </span>
                                         </div>
-                                    </a>
-                                @empty
-                                    <div class="text-center py-10 border border-dashed border-gray-200 rounded-2xl bg-gray-50">
-                                        <p class="text-sm text-gray-500">Aún no hay solicitudes recibidas.</p>
-                                    </div>
-                                @endforelse
-                            </div>
 
-                            <div class="mt-6 text-center">
-                                <span class="text-gray-400 text-sm">Se muestran las solicitudes más recientes</span>
-                            </div>
-                        </div>
-                    @else
-                        <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
-                            <div class="flex justify-between items-center mb-6">
-                                <h3 class="text-xl font-bold text-gray-800">Comentarios recientes</h3>
-                                <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
-                                    {{ $comentarios->count() }}
-                                </span>
-                            </div>
-
-                            <div class="space-y-4 flex-1">
-                                @forelse($comentarios as $com)
-                                    <a href="{{ $com->url }}" class="flex items-start gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
-                                        <div class="{{ $tema['soft'] }} mt-1 flex-shrink-0 p-2 rounded-full border">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                        <div class="text-gray-300 transition {{ $tema['text'] }}">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
                                             </svg>
                                         </div>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium text-gray-800 italic">"{{ \Illuminate\Support\Str::limit($com->texto, 110) }}"</p>
-                                            <p class="text-xs text-gray-400 mt-1">
-                                                En: {{ $com->contexto }} • {{ \Carbon\Carbon::parse($com->fecha)->locale('es')->diffForHumans() }}
-                                            </p>
-                                        </div>
                                     </a>
                                 @empty
                                     <div class="text-center py-10 border border-dashed border-gray-200 rounded-2xl bg-gray-50">
-                                        <p class="text-sm text-gray-500">Aún no has realizado comentarios.</p>
+                                        <p class="text-sm text-gray-500">Aún no hay actividad para mostrar.</p>
                                     </div>
                                 @endforelse
                             </div>
 
-                            <div class="mt-6 text-center">
-                                <span class="text-gray-400 text-sm">Se muestran los comentarios más recientes</span>
+                            <div class="mt-6 flex flex-wrap gap-3">
+                                <a href="{{ route('extravios.index') }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ver mis reportes</a>
+                                <span class="text-gray-300">•</span>
+                                <a href="{{ route('adopciones.mis-adopciones') }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ver mis adopciones</a>
+
+                                @if($esInstitucional)
+                                    <span class="text-gray-300">•</span>
+                                    <a href="{{ route('consejos.mis-consejos') }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ver mis consejos</a>
+                                @endif
+
+                                @if($esInstitucional && $panelOrganizacionUrl)
+                                    <span class="text-gray-300">•</span>
+                                    <a href="{{ $panelOrganizacionUrl }}" class="text-sm font-medium {{ $tema['text'] }} hover:underline">Ir al panel institucional</a>
+                                @endif
                             </div>
                         </div>
-                    @endif
-                </div>
+
+                        @if($esInstitucional)
+                            <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-xl font-bold text-gray-800">Solicitudes recibidas</h3>
+                                    <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
+                                        {{ $solicitudesRecibidas->count() }}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-4 flex-1">
+                                    @forelse($solicitudesRecibidas as $solicitud)
+                                        <a href="{{ $solicitud->url }}" class="flex items-start gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                            <div class="{{ $tema['soft'] }} mt-1 flex-shrink-0 p-2 rounded-full border">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A4 4 0 017 17h10a4 4 0 011.879.468M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-gray-800">
+                                                    {{ $solicitud->nombre_completo }} solicitó adoptar a {{ $solicitud->mascota }}
+                                                </p>
+                                                <p class="text-xs text-gray-400 mt-1">
+                                                    {{ \Carbon\Carbon::parse($solicitud->fecha)->locale('es')->diffForHumans() }}
+                                                </p>
+                                                <span class="inline-flex mt-2 text-[10px] font-bold px-2 py-1 rounded-full {{ $estadoPublicacionClase($solicitud->estado) }}">
+                                                    {{ ucfirst(strtolower($solicitud->estado)) }}
+                                                </span>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="text-center py-10 border border-dashed border-gray-200 rounded-2xl bg-gray-50">
+                                            <p class="text-sm text-gray-500">Aún no hay solicitudes recibidas.</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <div class="mt-6 text-center">
+                                    <span class="text-gray-400 text-sm">Se muestran las solicitudes más recientes</span>
+                                </div>
+                            </div>
+                        @else
+                            <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 flex flex-col h-full">
+                                <div class="flex justify-between items-center mb-6">
+                                    <h3 class="text-xl font-bold text-gray-800">Comentarios recientes</h3>
+                                    <span class="text-white text-xs font-bold px-2 py-1 rounded-full {{ $tema['solid'] }}">
+                                        {{ $comentarios->count() }}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-4 flex-1">
+                                    @forelse($comentarios as $com)
+                                        <a href="{{ $com->url }}" class="flex items-start gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:bg-white transition">
+                                            <div class="{{ $tema['soft'] }} mt-1 flex-shrink-0 p-2 rounded-full border">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                                </svg>
+                                            </div>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-medium text-gray-800 italic">"{{ \Illuminate\Support\Str::limit($com->texto, 110) }}"</p>
+                                                <p class="text-xs text-gray-400 mt-1">
+                                                    En: {{ $com->contexto }} • {{ \Carbon\Carbon::parse($com->fecha)->locale('es')->diffForHumans() }}
+                                                </p>
+                                            </div>
+                                        </a>
+                                    @empty
+                                        <div class="text-center py-10 border border-dashed border-gray-200 rounded-2xl bg-gray-50">
+                                            <p class="text-sm text-gray-500">Aún no has realizado comentarios.</p>
+                                        </div>
+                                    @endforelse
+                                </div>
+
+                                <div class="mt-6 text-center">
+                                    <span class="text-gray-400 text-sm">Se muestran los comentarios más recientes</span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 <div class="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
                     <h3 class="text-xl font-bold text-gray-800 mb-6">Configuración del perfil</h3>

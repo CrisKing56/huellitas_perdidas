@@ -11,15 +11,111 @@ use Illuminate\Support\Facades\Schema;
 class RefugioController extends Controller
 {
     // Muestra el catálogo de refugios
-    public function index()
+    public function index(Request $request)
     {
-        $refugios = Organizacion::with(['direccion', 'fotos', 'refugioDetalle'])
-            ->where('tipo', 'REFUGIO')
-            ->where('estado_revision', 'APROBADA')
-            ->orderBy('created_at', 'desc')
-            ->paginate(9);
+        $q = trim((string) $request->get('q', ''));
+        $orden = trim((string) $request->get('orden', 'recientes'));
 
-        return view('refugios.index', compact('refugios'));
+        $latitud = $request->filled('latitud') && is_numeric($request->latitud)
+            ? (float) $request->latitud
+            : null;
+
+        $longitud = $request->filled('longitud') && is_numeric($request->longitud)
+            ? (float) $request->longitud
+            : null;
+
+        $tieneTablaUbicaciones = Schema::hasTable('ubicaciones');
+
+        $query = DB::table('organizaciones as o')
+            ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
+            ->leftJoin('organizacion_fotos as f', function ($join) {
+                $join->on('f.organizacion_id', '=', 'o.id_organizacion')
+                    ->where('f.orden', '=', 1);
+            })
+            ->where('o.tipo', 'REFUGIO')
+            ->where('o.estado_revision', 'APROBADA');
+
+        if ($tieneTablaUbicaciones) {
+            $query->leftJoin('ubicaciones as ub', 'ub.id_ubicacion', '=', 'o.ubicacion_id');
+        }
+
+        $query->select(
+            'o.id_organizacion',
+            'o.nombre',
+            'o.descripcion',
+            'o.telefono',
+            'd.calle_numero',
+            'd.colonia',
+            'd.ciudad',
+            'd.estado as estado_direccion',
+            'f.url as imagen'
+        );
+
+        if ($tieneTablaUbicaciones) {
+            $query->addSelect(
+                'ub.latitud',
+                'ub.longitud'
+            );
+        } else {
+            $query->selectRaw('NULL as latitud, NULL as longitud');
+        }
+
+        if ($q !== '') {
+            $query->where(function ($subquery) use ($q) {
+                $subquery->where('o.nombre', 'like', "%{$q}%")
+                    ->orWhere('o.descripcion', 'like', "%{$q}%")
+                    ->orWhere('o.telefono', 'like', "%{$q}%")
+                    ->orWhere('d.calle_numero', 'like', "%{$q}%")
+                    ->orWhere('d.colonia', 'like', "%{$q}%")
+                    ->orWhere('d.ciudad', 'like', "%{$q}%")
+                    ->orWhere('d.estado', 'like', "%{$q}%");
+            });
+        }
+
+        $puedeOrdenarPorCercania = $tieneTablaUbicaciones && $latitud !== null && $longitud !== null;
+
+        if ($puedeOrdenarPorCercania) {
+            $query->selectRaw(
+                '(6371 * acos(cos(radians(?)) * cos(radians(ub.latitud)) * cos(radians(ub.longitud) - radians(?)) + sin(radians(?)) * sin(radians(ub.latitud)))) as distancia_km',
+                [$latitud, $longitud, $latitud]
+            );
+        } else {
+            $query->selectRaw('NULL as distancia_km');
+        }
+
+        switch ($orden) {
+            case 'nombre':
+                $query->orderBy('o.nombre');
+                break;
+
+            case 'cercanas':
+                if ($puedeOrdenarPorCercania) {
+                    $query->orderBy('distancia_km');
+                } else {
+                    $query->orderByDesc('o.id_organizacion');
+                }
+                break;
+
+            case 'recientes':
+            default:
+                $query->orderByDesc('o.id_organizacion');
+                break;
+        }
+
+        $refugios = $query->paginate(9)->withQueryString();
+
+        $filtros = [
+            'q' => $q,
+            'orden' => $orden,
+            'latitud' => $latitud,
+            'longitud' => $longitud,
+        ];
+
+        return view('refugios.index', compact(
+            'refugios',
+            'filtros',
+            'puedeOrdenarPorCercania'
+        ));
     }
 
     // Muestra el perfil individual de un refugio
