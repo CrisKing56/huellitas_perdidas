@@ -14,8 +14,12 @@
         'admins' => 0,
     ];
 
-    $badgeRol = function ($rol) {
-        return match ($rol) {
+    $q = $q ?? request('q', '');
+    $rol = $rol ?? request('rol', '');
+    $estado = $estado ?? request('estado', '');
+
+    $badgeRol = function ($rolValue) {
+        return match ($rolValue) {
             'ADMIN' => 'bg-purple-100 text-purple-700 border-purple-200',
             'VETERINARIA' => 'bg-sky-100 text-sky-700 border-sky-200',
             'REFUGIO' => 'bg-emerald-100 text-emerald-700 border-emerald-200',
@@ -23,8 +27,8 @@
         };
     };
 
-    $badgeEstado = function ($estado) {
-        return match ($estado) {
+    $badgeEstado = function ($estadoValue) {
+        return match ($estadoValue) {
             'ACTIVA' => 'bg-green-100 text-green-700 border-green-200',
             'SUSPENDIDA' => 'bg-yellow-100 text-yellow-700 border-yellow-200',
             'ELIMINADA' => 'bg-red-100 text-red-700 border-red-200',
@@ -34,78 +38,30 @@
 @endphp
 
 <div class="space-y-8">
-    
-    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">Administración de usuarios</h1>
-        <p class="text-gray-600 text-sm mt-1">Gestiona todos los usuarios registrados</p>
-    </div>
-    
-    <a href="{{ route('admin.usuarios.create') }}"
-           class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-sm transition">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-            </svg>
-            Agregar usuario
-    </a>
-</div>
-
-<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-    <form method="GET" action="{{ route('admin.usuarios.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-        
-        <div class="md:col-span-1">
-            <label class="block text-sm font-medium text-gray-600 mb-2">Buscar</label>
-            <input type="text" name="q" value="{{ request('q') }}" placeholder="Nombre, correo o ID..." class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
-        </div>
-
-        <div class="md:col-span-1">
-            <label class="block text-sm font-medium text-gray-600 mb-2">Rol</label>
-            <select name="rol" class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
-                <option value="">Todos los roles</option>
-                <option value="ADMIN" {{ request('rol') == 'ADMIN' ? 'selected' : '' }}>Administrador</option>
-                <option value="USUARIO" {{ request('rol') == 'USUARIO' ? 'selected' : '' }}>Usuario normal</option>
-            </select>
-        </div>
-
-        <div class="md:col-span-1">
-            <label class="block text-sm font-medium text-gray-600 mb-2">Estado</label>
-            <select name="estado" class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
-                <option value="">Todos los estados</option>
-                <option value="ACTIVA" {{ request('estado') == 'ACTIVA' ? 'selected' : '' }}>Activa</option>
-                <option value="SUSPENDIDA" {{ request('estado') == 'SUSPENDIDA' ? 'selected' : '' }}>Suspendida</option>
-            </select>
-        </div>
-
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-            <label class="block text-sm mb-2 text-transparent select-none hidden md:block">&nbsp;</label>
-            <div class="flex flex-col gap-3">
-                <div class="grid grid-cols-2 gap-3">
-                    <button type="submit" class="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition flex items-center justify-center">Filtrar</button>
-                    <a href="{{ route('admin.usuarios.index') }}" class="w-full h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition flex items-center justify-center">Limpiar</a>
-                </div>
-                
-                <a href="{{ route('reportes.usuarios.pdf', request()->query()) }}" class="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                    Exportar PDF
-                </a>
-            </div>
+            <h1 class="text-2xl font-bold text-gray-900">Administración de usuarios</h1>
+            <p class="text-gray-600 text-sm mt-1">Gestiona todos los usuarios registrados</p>
         </div>
-    </form>
-</div>
 
-<div class="bg-white rounded-lg shadow-sm overflow-hidden">
-    <table class="w-full">
-        <thead class="bg-gray-50 border-b border-gray-200">
-        <tr>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Usuario</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rol</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
-            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Acciones</th>
-        </tr>
-        </thead>
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route('reportes.usuarios.pdf', request()->query()) }}"
+               class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl shadow-sm transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+                Exportar PDF
+            </a>
 
-        
+            <a href="{{ route('admin.usuarios.create') }}"
+               class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-sm transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Agregar usuario
+            </a>
+        </div>
     </div>
 
     @if(session('success'))
@@ -153,17 +109,18 @@
     </div>
 
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
-        <form method="GET" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
+        <form method="GET" action="{{ route('admin.usuarios.index') }}" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             <div class="xl:col-span-2">
                 <label class="block text-sm font-semibold text-gray-700 mb-2">Buscar</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-gray-400 pointer-events-none">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
                     </span>
                     <input name="q"
-                           value="{{ $q ?? '' }}"
+                           value="{{ $q }}"
                            type="text"
                            placeholder="Buscar por nombre, correo o ID..."
                            class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
@@ -176,7 +133,7 @@
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
                     <option value="">Todos</option>
                     @foreach(['USUARIO','ADMIN','VETERINARIA','REFUGIO'] as $itemRol)
-                        <option value="{{ $itemRol }}" @selected(($rol ?? '') === $itemRol)>{{ $itemRol }}</option>
+                        <option value="{{ $itemRol }}" @selected($rol === $itemRol)>{{ $itemRol }}</option>
                     @endforeach
                 </select>
             </div>
@@ -187,7 +144,7 @@
                         class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition">
                     <option value="">Todos</option>
                     @foreach(['ACTIVA','SUSPENDIDA','ELIMINADA'] as $itemEstado)
-                        <option value="{{ $itemEstado }}" @selected(($estado ?? '') === $itemEstado)>{{ $itemEstado }}</option>
+                        <option value="{{ $itemEstado }}" @selected($estado === $itemEstado)>{{ $itemEstado }}</option>
                     @endforeach
                 </select>
             </div>
@@ -235,6 +192,7 @@
                                     <div>
                                         <p class="font-bold text-gray-900">{{ $u->nombre }}</p>
                                         <p class="text-xs text-gray-500 mt-1">ID: {{ $u->id_usuario }}</p>
+
                                         @if($esUsuarioActual)
                                             <span class="inline-flex mt-2 px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold uppercase">
                                                 Tu cuenta

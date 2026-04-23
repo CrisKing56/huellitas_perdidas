@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Services\DatabaseBackupService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 
 class AdminBackupController extends Controller
 {
@@ -48,20 +49,21 @@ class AdminBackupController extends Controller
     public function download(string $file)
     {
         $file = basename($file);
+        $relativePath = $this->backupService->downloadPath($file);
 
-        if (!$this->backupService->exists($file)) {
-            abort(404);
+        if (!Storage::disk('local')->exists($relativePath)) {
+            abort(404, 'No se encontró el archivo de respaldo.');
         }
 
-        $path = storage_path('app/' . $this->backupService->downloadPath($file));
+        $absolutePath = Storage::disk('local')->path($relativePath);
 
-        if (!file_exists($path)) {
-            abort(404);
-        }
-
-        return response()->download($path, $file, [
-            'Content-Type' => 'application/sql',
-        ]);
+        return response()->download(
+            $absolutePath,
+            $file,
+            [
+                'Content-Type' => 'application/octet-stream',
+            ]
+        );
     }
 
     public function destroy(string $file)

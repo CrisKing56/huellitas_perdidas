@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\DB;
+
 // =========================
 // CONTROLLERS
 // =========================
@@ -10,7 +11,6 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegistroOrganizacionFlujoController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\ReporteController;
 
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
@@ -36,11 +36,12 @@ use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminBackupController;
 
 use App\Http\Controllers\ContactoController;
-
+use App\Http\Controllers\SocialController;
+use App\Http\Controllers\ReporteController;
 
 use App\Models\PublicacionExtravio;
 use App\Models\PublicacionAdopcion;
-use App\Http\Controllers\SocialController;
+
 
 
 Route::middleware([
@@ -73,15 +74,18 @@ Route::middleware([
     Route::get('/detalle', function () {
         return view('mascota-detalle');
     })->name('detalle');
+
     Route::view('/app-movil', 'app-movil')->name('app.movil');
+
     Route::get('/reportar', function () {
         return view('reportar-mascota');
     })->name('reportar.mascota');
 
     Route::get('/contactanos', [ContactoController::class, 'index'])->name('contactanos');
     Route::post('/contactanos', [ContactoController::class, 'enviar'])
-    ->middleware('throttle:5,1')
-    ->name('contactanos.enviar');
+        ->middleware('throttle:5,1')
+        ->name('contactanos.enviar');
+
     /*
     |--------------------------------------------------------------------------
     | AUTENTICACIÓN
@@ -146,6 +150,15 @@ Route::middleware([
 
     /*
     |--------------------------------------------------------------------------
+    | LOGIN CON FACEBOOK
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/auth/facebook', [SocialController::class, 'redirectFacebook'])->name('facebook.login');
+    Route::get('/auth/facebook/callback', [SocialController::class, 'callbackFacebook']);
+
+    /*
+    |--------------------------------------------------------------------------
     | REGISTRO DE ORGANIZACIONES
     |--------------------------------------------------------------------------
     */
@@ -176,7 +189,9 @@ Route::middleware([
     */
 
     Route::get('/adopciones', [AdopcionController::class, 'index'])->name('adopciones.index');
-    Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])->whereNumber('id')->name('adopciones.show');
+    Route::get('/adopciones/{id}', [AdopcionController::class, 'show'])
+        ->whereNumber('id')
+        ->name('adopciones.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -185,7 +200,9 @@ Route::middleware([
     */
 
     Route::get('/consejos', [ConsejoController::class, 'index'])->name('consejos.index');
-    Route::get('/consejos/{id}', [ConsejoController::class, 'show'])->whereNumber('id')->name('consejos.show');
+    Route::get('/consejos/{id}', [ConsejoController::class, 'show'])
+        ->whereNumber('id')
+        ->name('consejos.show');
 
     /*
     |--------------------------------------------------------------------------
@@ -228,15 +245,6 @@ Route::middleware([
 
         Route::get('/veterinaria/panel', [VeterinariaController::class, 'dashboard'])->name('veterinaria.dashboard');
         Route::get('/refugio/panel', [RefugioController::class, 'dashboard'])->name('refugio.dashboard');
-
-        Route::post('/veterinarias/{id}/resenas', [VeterinariaController::class, 'storeResena'])
-            ->whereNumber('id')
-            ->name('veterinarias.resenas.store');
-
-        Route::delete('/veterinarias/{id}/resenas/{resenaId}', [VeterinariaController::class, 'destroyResena'])
-            ->whereNumber('id')
-            ->whereNumber('resenaId')
-            ->name('veterinarias.resenas.destroy');
     });
 
     /*
@@ -371,9 +379,26 @@ Route::middleware([
         Route::delete('/consejos/{id}', [ConsejoController::class, 'destroy'])
             ->whereNumber('id')
             ->name('consejos.destroy');
+
         Route::post('/consejos/{id}/reportar', [ReporteConsejoController::class, 'store'])
             ->whereNumber('id')
             ->name('consejos.reportar');
+
+        /*
+        |--------------------------------------------------------------------------
+        | RESEÑAS DE VETERINARIAS
+        |--------------------------------------------------------------------------
+        */
+
+        Route::post('/veterinarias/{id}/resenas', [VeterinariaController::class, 'storeResena'])
+            ->whereNumber('id')
+            ->name('veterinarias.resenas.store');
+
+        Route::delete('/veterinarias/{id}/resenas/{resenaId}', [VeterinariaController::class, 'destroyResena'])
+            ->whereNumber('id')
+            ->whereNumber('resenaId')
+            ->name('veterinarias.resenas.destroy');
+
         /*
         |--------------------------------------------------------------------------
         | PANEL ADMINISTRADOR
@@ -385,7 +410,6 @@ Route::middleware([
             Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
             // Usuarios
-// Usuarios
             Route::get('/admin/usuarios', [AdminUsuarioController::class, 'index'])->name('admin.usuarios.index');
             Route::get('/admin/usuarios/create', [AdminUsuarioController::class, 'create'])->name('admin.usuarios.create');
             Route::post('/admin/usuarios', [AdminUsuarioController::class, 'store'])->name('admin.usuarios.store');
@@ -394,6 +418,16 @@ Route::middleware([
             Route::patch('/admin/usuarios/{id_usuario}/activar', [AdminUsuarioController::class, 'activate'])->name('admin.usuarios.activate');
             Route::patch('/admin/usuarios/{id_usuario}/suspender', [AdminUsuarioController::class, 'suspend'])->name('admin.usuarios.suspend');
             Route::delete('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'destroy'])->name('admin.usuarios.destroy');
+
+            // Respaldos
+            Route::get('/admin/backups', [AdminBackupController::class, 'index'])->name('admin.backups.index');
+            Route::post('/admin/backups', [AdminBackupController::class, 'store'])->name('admin.backups.store');
+            Route::get('/admin/backups/{file}/download', [AdminBackupController::class, 'download'])
+                ->where('file', '.*')
+                ->name('admin.backups.download');
+            Route::delete('/admin/backups/{file}', [AdminBackupController::class, 'destroy'])
+                ->where('file', '.*')
+                ->name('admin.backups.destroy');
 
             // Veterinarias
             Route::get('/admin/veterinarias', [AdminVeterinariaController::class, 'index'])->name('admin.veterinarias.index');
@@ -416,16 +450,14 @@ Route::middleware([
             Route::get('/admin/reportes/{id}', [AdminReporteController::class, 'show'])->name('admin.reportes.show');
             Route::post('/admin/reportes/{id}/en-revision', [AdminReporteController::class, 'marcarEnRevision'])->name('admin.reportes.enRevision');
             Route::post('/admin/reportes/{id}/resolver', [AdminReporteController::class, 'resolver'])->name('admin.reportes.resolver');
-            Route::get('/admin/reportes/mascotas/pdf', [ReporteController::class, 'generarReporteMascotas'])->name('reportes.mascotas.pdf');
-            Route::get('/admin/reportes/adopciones/pdf', [ReporteController::class, 'generarReporteAdopciones'])->name('reportes.adopciones.pdf');
-            Route::get('/admin/reportes/veterinarias/pdf', [ReporteController::class, 'generarReporteVeterinarias'])->name('reportes.veterinarias.pdf');
-            Route::get('/admin/reportes/refugios/pdf', [ReporteController::class, 'generarReporteRefugios'])->name('reportes.refugios.pdf');
-            Route::get('/admin/reportes/usuarios/pdf', [ReporteController::class, 'generarReporteUsuarios'])->name('reportes.usuarios.pdf');
+
             // Consejos
             Route::get('/admin/consejos', [AdminConsejoController::class, 'index'])->name('admin.consejos.index');
             Route::get('/admin/consejos/{id}', [AdminConsejoController::class, 'show'])->whereNumber('id')->name('admin.consejos.show');
             Route::post('/admin/consejos/{id}/aprobar', [AdminConsejoController::class, 'aprobar'])->whereNumber('id')->name('admin.consejos.aprobar');
             Route::post('/admin/consejos/{id}/rechazar', [AdminConsejoController::class, 'rechazar'])->whereNumber('id')->name('admin.consejos.rechazar');
+
+            // Reportes de consejos
             Route::get('/admin/reportes-consejos', [AdminReporteConsejoController::class, 'index'])->name('admin.reportes-consejos.index');
             Route::get('/admin/reportes-consejos/{id}', [AdminReporteConsejoController::class, 'show'])->whereNumber('id')->name('admin.reportes-consejos.show');
             Route::post('/admin/reportes-consejos/{id}/en-revision', [AdminReporteConsejoController::class, 'marcarEnRevision'])->whereNumber('id')->name('admin.reportes-consejos.en-revision');
@@ -443,15 +475,21 @@ Route::middleware([
             Route::post('/admin/adopciones/{id}/pausar', [AdminAdopcionController::class, 'pausar'])->whereNumber('id')->name('admin.adopciones.pausar');
             Route::post('/admin/adopciones/{id}/reactivar', [AdminAdopcionController::class, 'reactivar'])->whereNumber('id')->name('admin.adopciones.reactivar');
 
-            Route::get('/admin/backups', [AdminBackupController::class, 'index'])->name('admin.backups.index');
-            Route::post('/admin/backups', [AdminBackupController::class, 'store'])->name('admin.backups.store');
-            Route::get('/admin/backups/{file}/download', [AdminBackupController::class, 'download'])->name('admin.backups.download');
-            Route::delete('/admin/backups/{file}', [AdminBackupController::class, 'destroy'])->name('admin.backups.destroy');
+            // PDFs de reportes
+            Route::get('/admin/reportes/mascotas/pdf', [ReporteController::class, 'generarReporteMascotas'])
+                ->name('reportes.mascotas.pdf');
+
+            Route::get('/admin/reportes/adopciones/pdf', [ReporteController::class, 'generarReporteAdopciones'])
+                ->name('reportes.adopciones.pdf');
+
+            Route::get('/admin/reportes/veterinarias/pdf', [ReporteController::class, 'generarReporteVeterinarias'])
+                ->name('reportes.veterinarias.pdf');
+
+            Route::get('/admin/reportes/refugios/pdf', [ReporteController::class, 'generarReporteRefugios'])
+                ->name('reportes.refugios.pdf');
+
+            Route::get('/admin/reportes/usuarios/pdf', [ReporteController::class, 'generarReporteUsuarios'])
+                ->name('reportes.usuarios.pdf');
         });
     });
 });
-Route::get('/refugios', [RefugioController::class, 'index'])->name('refugios.index');
-Route::get('/refugios/{id}', [RefugioController::class, 'show'])->name('refugios.show');
-
-Route::get('/auth/facebook', [SocialController::class, 'redirectFacebook'])->name('facebook.login');
-Route::get('/auth/facebook/callback', [SocialController::class, 'callbackFacebook']);

@@ -2,15 +2,12 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Mascotas Extraviadas - Huellitas Perdidas</title>
     <style>
-        /* Configuraciones básicas para DomPDF */
-        @page {
-            margin: 1cm;
-        }
+        @page { margin: 1cm; }
+
         body {
-            font-family: 'Helvetica', Arial, sans-serif;
+            font-family: Helvetica, Arial, sans-serif;
             font-size: 11px;
             line-height: 1.4;
             color: #334155;
@@ -18,17 +15,18 @@
             padding: 0;
         }
 
-        /* Encabezado Principal */
         .header {
             width: 100%;
             margin-bottom: 30px;
-            border-bottom: 3px solid #ea580c; /* Naranja Huellitas */
+            border-bottom: 3px solid #ea580c;
             padding-bottom: 15px;
         }
+
         .header table {
             width: 100%;
             border: none;
         }
+
         .title {
             color: #ea580c;
             font-size: 24px;
@@ -36,23 +34,25 @@
             margin: 0;
             text-transform: uppercase;
         }
+
         .subtitle {
             font-size: 14px;
             color: #64748b;
             margin: 5px 0 0 0;
         }
+
         .info-meta {
             text-align: right;
             font-size: 10px;
             color: #94a3b8;
         }
 
-        /* Tabla de Datos */
         table {
             width: 100%;
             border-collapse: collapse;
             background-color: #ffffff;
         }
+
         th {
             background-color: #ea580c;
             color: #ffffff;
@@ -62,16 +62,17 @@
             text-transform: uppercase;
             border: 1px solid #ea580c;
         }
+
         td {
             padding: 8px;
             border-bottom: 1px solid #e2e8f0;
             vertical-align: middle;
         }
+
         tr:nth-child(even) {
-            background-color: #fff7ed; /* Fondo naranja muy tenue */
+            background-color: #fff7ed;
         }
 
-        /* Badges de Estado */
         .badge {
             padding: 4px 8px;
             border-radius: 12px;
@@ -80,11 +81,11 @@
             text-align: center;
             display: inline-block;
         }
+
         .badge-activa { background-color: #fef3c7; color: #92400e; }
         .badge-resuelta { background-color: #dcfce7; color: #166534; }
         .badge-eliminada { background-color: #fee2e2; color: #991b1b; }
 
-        /* Pie de página */
         .footer {
             position: fixed;
             bottom: 0;
@@ -95,8 +96,14 @@
             padding: 10px 0;
             border-top: 1px solid #e2e8f0;
         }
+
         .page-number:before {
             content: "Página " counter(page);
+        }
+
+        .small {
+            font-size: 10px;
+            color: #64748b;
         }
     </style>
 </head>
@@ -121,9 +128,9 @@
     <table>
         <thead>
             <tr>
-                <th style="width: 50px;">ID</th>
+                <th style="width: 55px;">ID</th>
                 <th>Nombre Mascota</th>
-                <th>Especie / Raza</th>
+                <th>Datos</th>
                 <th>Zona / Barrio</th>
                 <th>Fecha Extravío</th>
                 <th>Estado</th>
@@ -131,26 +138,38 @@
         </thead>
         <tbody>
             @forelse($mascotas as $mascota)
+                @php
+                    $claseEstado = match($mascota->estado) {
+                        'ACTIVA' => 'badge-activa',
+                        'RESUELTA', 'ENCONTRADA' => 'badge-resuelta',
+                        'ELIMINADA', 'OCULTA' => 'badge-eliminada',
+                        default => 'badge-activa'
+                    };
+
+                    $zona = $mascota->colonia_barrio ?: ($mascota->calle_referencias ?: 'No especificada');
+                    $fechaExtravio = $mascota->fecha_extravio
+                        ? \Carbon\Carbon::parse($mascota->fecha_extravio)->format('d/m/Y')
+                        : 'No especificada';
+                @endphp
+
                 <tr>
                     <td><strong>#{{ $mascota->id_publicacion }}</strong></td>
-                    <td>{{ $mascota->nombre }}</td>
                     <td>
-                        {{ ucfirst(strtolower($mascota->especie)) }}<br>
-                        <small style="color: #64748b;">Tamaño: {{ $mascota->tamano }}</small>
+                        <strong>{{ $mascota->nombre ?? 'Sin nombre' }}</strong><br>
+                        <span class="small">
+                            {{ \Illuminate\Support\Str::limit($mascota->descripcion ?? 'Sin descripción', 70) }}
+                        </span>
                     </td>
-                    <td>{{ $mascota->colonia_barrio ?? $mascota->ultimo_avistamiento }}</td>
-                    <td>{{ \Carbon\Carbon::parse($mascota->fecha_extravio)->format('d/m/Y') }}</td>
                     <td>
-                        @php
-                            $claseEstado = match($mascota->estado) {
-                                'ACTIVA' => 'badge-activa',
-                                'RESUELTA', 'ENCONTRADA' => 'badge-resuelta',
-                                'ELIMINADA', 'OCULTA' => 'badge-eliminada',
-                                default => 'badge-activa'
-                            };
-                        @endphp
+                        <strong>Sexo:</strong> {{ $mascota->sexo ?? 'No especificado' }}<br>
+                        <strong>Tamaño:</strong> {{ $mascota->tamano ?? 'No especificado' }}<br>
+                        <strong>Color:</strong> {{ $mascota->color ?? 'No especificado' }}
+                    </td>
+                    <td>{{ $zona }}</td>
+                    <td>{{ $fechaExtravio }}</td>
+                    <td>
                         <span class="badge {{ $claseEstado }}">
-                            {{ $mascota->estado }}
+                            {{ $mascota->estado ?? 'ACTIVA' }}
                         </span>
                     </td>
                 </tr>

@@ -3,15 +3,25 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\PublicacionExtravio;
-use App\Models\PublicacionAdopcion; 
+use App\Models\PublicacionAdopcion;
 use App\Models\Organizacion;
 use App\Models\User;
 
-
 class ReporteController extends Controller
 {
+    /**
+     * Helper central para crear PDFs sin depender del Facade Pdf.
+     */
+    private function makePdf(string $view, array $data = [], string $paper = 'letter', string $orientation = 'landscape')
+    {
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView($view, $data);
+        $pdf->setPaper($paper, $orientation);
+
+        return $pdf;
+    }
+
     // ==========================================
     // 1. REPORTE DE MASCOTAS EXTRAVIADAS
     // ==========================================
@@ -19,23 +29,24 @@ class ReporteController extends Controller
     {
         $query = PublicacionExtravio::query();
 
-        // Filtro de búsqueda general (q)
         if ($request->filled('q')) {
-            $query->where(function($q) use ($request) {
-                $q->where('nombre', 'LIKE', '%' . $request->q . '%')
-                  ->orWhere('id_publicacion', $request->q)
-                  ->orWhere('colonia_barrio', 'LIKE', '%' . $request->q . '%');
+            $texto = trim($request->q);
+
+            $query->where(function ($q) use ($texto) {
+                $q->where('nombre', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('id_publicacion', $texto)
+                    ->orWhere('colonia_barrio', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('calle_referencias', 'LIKE', '%' . $texto . '%');
             });
         }
 
-        // Filtro de estado
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
-        
+
         $mascotas = $query->orderBy('created_at', 'desc')->get();
-        $pdf = Pdf::loadView('admin.reportes.pdf_mascotas', compact('mascotas'));
-        $pdf->setPaper('letter', 'landscape');
+
+        $pdf = $this->makePdf('admin.reportes.pdf_mascotas', compact('mascotas'));
 
         return $pdf->download('Reporte_Mascotas_Extraviadas.pdf');
     }
@@ -47,26 +58,32 @@ class ReporteController extends Controller
     {
         $query = PublicacionAdopcion::query();
 
-        // Filtro de búsqueda general (q)
         if ($request->filled('q')) {
-            $query->where(function($q) use ($request) {
-                $q->where('nombre', 'LIKE', '%' . $request->q . '%')
-                  ->orWhere('id_publicacion', $request->q)
-                  ->orWhereHas('autor', function($queryAutor) use ($request) {
-                      $queryAutor->where('nombre', 'LIKE', '%' . $request->q . '%');
-                  })
-                  ->orWhere('colonia_barrio', 'LIKE', '%' . $request->q . '%');
+            $texto = trim($request->q);
+
+            $query->where(function ($q) use ($texto) {
+                $q->where('nombre', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('id_publicacion', $texto)
+                    ->orWhere('colonia_barrio', 'LIKE', '%' . $texto . '%');
+
+                // Solo si existe la relación "autor" en tu modelo
+                try {
+                    $q->orWhereHas('autor', function ($queryAutor) use ($texto) {
+                        $queryAutor->where('nombre', 'LIKE', '%' . $texto . '%');
+                    });
+                } catch (\Throwable $e) {
+                    // Evita romper si la relación no está definida correctamente
+                }
             });
         }
 
-        // Filtro de estado
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
         $adopciones = $query->orderBy('created_at', 'desc')->get();
-        $pdf = Pdf::loadView('admin.reportes.pdf_adopciones', compact('adopciones'));
-        $pdf->setPaper('letter', 'landscape');
+
+        $pdf = $this->makePdf('admin.reportes.pdf_adopciones', compact('adopciones'));
 
         return $pdf->download('Reporte_Adopciones_Huellitas.pdf');
     }
@@ -76,22 +93,20 @@ class ReporteController extends Controller
     // ==========================================
     public function generarReporteVeterinarias(Request $request)
     {
-        // Filtro nativo para traer solo Veterinarias (Columna corregida)
         $query = Organizacion::query()->where('tipo', 'VETERINARIA');
 
-        // Filtro de búsqueda simple (solo por nombre para evitar el error de columnas ajenas)
         if ($request->filled('q')) {
-            $query->where('nombre', 'LIKE', '%' . $request->q . '%');
+            $texto = trim($request->q);
+            $query->where('nombre', 'LIKE', '%' . $texto . '%');
         }
 
-        // Filtro por Estado de Revisión
         if ($request->filled('estado_revision')) {
             $query->where('estado_revision', $request->estado_revision);
         }
 
         $veterinarias = $query->orderBy('created_at', 'desc')->get();
-        $pdf = Pdf::loadView('admin.reportes.pdf_veterinarias', compact('veterinarias'));
-        $pdf->setPaper('letter', 'landscape');
+
+        $pdf = $this->makePdf('admin.reportes.pdf_veterinarias', compact('veterinarias'));
 
         return $pdf->download('Reporte_Veterinarias_Huellitas.pdf');
     }
@@ -104,7 +119,8 @@ class ReporteController extends Controller
         $query = Organizacion::query()->where('tipo', 'REFUGIO');
 
         if ($request->filled('q')) {
-            $query->where('nombre', 'LIKE', '%' . $request->q . '%');
+            $texto = trim($request->q);
+            $query->where('nombre', 'LIKE', '%' . $texto . '%');
         }
 
         if ($request->filled('estado_revision')) {
@@ -112,8 +128,8 @@ class ReporteController extends Controller
         }
 
         $refugios = $query->orderBy('created_at', 'desc')->get();
-        $pdf = Pdf::loadView('admin.reportes.pdf_refugios', compact('refugios'));
-        $pdf->setPaper('letter', 'landscape');
+
+        $pdf = $this->makePdf('admin.reportes.pdf_refugios', compact('refugios'));
 
         return $pdf->download('Reporte_Refugios_Huellitas.pdf');
     }
@@ -125,29 +141,28 @@ class ReporteController extends Controller
     {
         $query = User::query();
 
-        // Filtro de búsqueda (ID, nombre o correo)
         if ($request->filled('q')) {
-            $query->where(function($q) use ($request) {
-                $q->where('nombre', 'LIKE', '%' . $request->q . '%')
-                  ->orWhere('correo', 'LIKE', '%' . $request->q . '%')
-                  ->orWhere('id_usuario', $request->q);
+            $texto = trim($request->q);
+
+            $query->where(function ($q) use ($texto) {
+                $q->where('nombre', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('correo', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('telefono', 'LIKE', '%' . $texto . '%')
+                    ->orWhere('id_usuario', $texto);
             });
         }
 
-        // Filtro por Rol (ADMIN, USUARIO, etc)
         if ($request->filled('rol')) {
             $query->where('rol', $request->rol);
         }
 
-        // Filtro por Estado (ACTIVA, SUSPENDIDA)
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
         $usuarios = $query->orderBy('created_at', 'desc')->get();
-        
-        $pdf = Pdf::loadView('admin.reportes.pdf_usuarios', compact('usuarios'));
-        $pdf->setPaper('letter', 'landscape');
+
+        $pdf = $this->makePdf('admin.reportes.pdf_usuarios', compact('usuarios'));
 
         return $pdf->download('Reporte_Usuarios_Huellitas.pdf');
     }

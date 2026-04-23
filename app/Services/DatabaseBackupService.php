@@ -102,7 +102,7 @@ class DatabaseBackupService
 
     public function listBackups(): array
     {
-        $files = collect(Storage::disk('local')->files($this->backupDirectory))
+        return collect(Storage::disk('local')->files($this->backupDirectory))
             ->filter(fn ($file) => str_ends_with($file, '.sql'))
             ->map(function ($file) {
                 return [
@@ -115,8 +115,6 @@ class DatabaseBackupService
             ->sortByDesc('last_modified')
             ->values()
             ->all();
-
-        return $files;
     }
 
     public function exists(string $filename): bool
