@@ -21,6 +21,7 @@ Route::prefix('mobile')->group(function () {
     // AUTH
     // =====================
     Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/login/google', [AuthController::class, 'loginGoogle']);
     Route::post('/register', [AuthController::class, 'register']);
 
     // =====================
@@ -45,17 +46,14 @@ Route::prefix('mobile')->group(function () {
     Route::get('/adopciones', [MobilePublicacionController::class, 'adopciones']);
     Route::get('/mis-adopciones/{idUsuario}', [MobilePublicacionController::class, 'misAdopciones']);
 
-    // solicitudes: específicas primero
     Route::post('/adopciones/{id}/solicitudes', [MobileSolicitudAdopcionController::class, 'store']);
     Route::get('/adopciones/solicitudes/enviadas/{idUsuario}', [MobileSolicitudAdopcionController::class, 'enviadas']);
     Route::get('/adopciones/solicitudes/recibidas/{idUsuario}', [MobileSolicitudAdopcionController::class, 'recibidas']);
     Route::post('/adopciones/solicitudes/{id}/estado', [MobileSolicitudAdopcionController::class, 'updateEstado']);
 
-    // acciones de publicación
     Route::post('/adopciones/{id}/marcar-adoptada', [MobileAdopcionController::class, 'marcarAdoptada']);
     Route::post('/adopciones/{id}/volver-en-proceso', [MobileAdopcionController::class, 'volverEnProceso']);
 
-    // detalle al final
     Route::get('/adopciones/{id}', [MobileAdopcionController::class, 'detalle']);
 
     // =====================

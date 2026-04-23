@@ -27,10 +27,26 @@
                 $veterinaria->ciudad,
                 $veterinaria->estado_direccion,
             ])->filter()->implode(', ');
+
+            $promedio = (float) ($resumenResenas->promedio_calificacion ?? 0);
+            $totalResenas = (int) ($resumenResenas->total_resenas ?? 0);
+            $miCalificacion = (int) old('calificacion', $miResena->calificacion ?? 0);
+            $miComentario = old('comentario', $miResena->comentario ?? '');
+
+            $esDuenoDeVeterinaria = auth()->check() && ((int) auth()->user()->id_usuario === (int) $veterinaria->usuario_dueno_id);
+
+            $textoCalificacion = match ($miCalificacion) {
+                1 => 'Muy mala',
+                2 => 'Mala',
+                3 => 'Regular',
+                4 => 'Buena',
+                5 => 'Excelente',
+                default => 'Selecciona una calificación',
+            };
         @endphp
 
         <div class="mb-6">
-            <div class="flex items-center gap-3 mb-2">
+            <div class="flex flex-wrap items-center gap-3 mb-2">
                 <span class="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
                     Veterinaria
                 </span>
@@ -43,7 +59,38 @@
             <p class="text-lg text-gray-500 mt-1">
                 {{ $direccionCompleta ?: 'Dirección no disponible' }}
             </p>
+
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-gray-200 shadow-sm">
+                    <div class="flex items-center">
+                        @for($i = 1; $i <= 5; $i++)
+                            <svg class="w-4 h-4 {{ $i <= round($promedio) ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.291c.3.922-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.196-1.539-1.118l1.07-3.291a1 1 0 00-.364-1.118L2.98 8.719c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.951-.69l1.068-3.292z"></path>
+                            </svg>
+                        @endfor
+                    </div>
+
+                    @if($totalResenas > 0)
+                        <span class="text-sm font-bold text-gray-900">{{ number_format($promedio, 1) }}</span>
+                        <span class="text-sm text-gray-500">({{ $totalResenas }} reseñas)</span>
+                    @else
+                        <span class="text-sm text-gray-500">Sin reseñas todavía</span>
+                    @endif
+                </div>
+            </div>
         </div>
+
+        @if(session('success_resena'))
+            <div class="mb-6 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                {{ session('success_resena') }}
+            </div>
+        @endif
+
+        @if(session('error_resena'))
+            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {{ session('error_resena') }}
+            </div>
+        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
@@ -242,6 +289,162 @@
                     @endif
                 </div>
 
+                {{-- RESEÑAS Y CALIFICACIONES --}}
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div>
+                            <h3 class="text-xl font-bold text-gray-900">Reseñas y calificaciones</h3>
+                            <p class="text-sm text-gray-500 mt-1">
+                                Opiniones de usuarios sobre esta veterinaria.
+                            </p>
+                        </div>
+
+                        <div class="flex items-center gap-3 rounded-xl bg-gray-50 border border-gray-100 px-4 py-3">
+                            <div class="flex items-center">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <svg class="w-5 h-5 {{ $i <= round($promedio) ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.291c.3.922-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.196-1.539-1.118l1.07-3.291a1 1 0 00-.364-1.118L2.98 8.719c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.951-.69l1.068-3.292z"></path>
+                                    </svg>
+                                @endfor
+                            </div>
+
+                            @if($totalResenas > 0)
+                                <div>
+                                    <p class="text-lg font-extrabold text-gray-900">{{ number_format($promedio, 1) }}/5</p>
+                                    <p class="text-xs text-gray-500">{{ $totalResenas }} reseñas</p>
+                                </div>
+                            @else
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-700">Sin reseñas</p>
+                                    <p class="text-xs text-gray-500">Sé la primera persona en calificar</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    @auth
+                        @if(!$esDuenoDeVeterinaria)
+                            <div class="mb-8 rounded-2xl border border-orange-100 bg-orange-50 p-5">
+                                <h4 class="text-lg font-bold text-gray-900 mb-4">
+                                    {{ $miResena ? 'Editar mi reseña' : 'Escribir una reseña' }}
+                                </h4>
+
+                                <form action="{{ route('veterinarias.resenas.store', $veterinaria->id_organizacion) }}" method="POST" class="space-y-5">
+                                    @csrf
+
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-3">Tu calificación</label>
+
+                                        <input type="hidden" name="calificacion" id="calificacion-input" value="{{ $miCalificacion }}">
+
+                                        <div class="flex items-center gap-2 flex-wrap" id="rating-stars">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <button type="button"
+                                                        class="star-btn inline-flex items-center justify-center w-12 h-12 rounded-xl border border-gray-200 bg-white text-gray-300 hover:border-yellow-300 hover:bg-yellow-50 transition"
+                                                        data-value="{{ $i }}"
+                                                        aria-label="Calificar con {{ $i }} estrella{{ $i > 1 ? 's' : '' }}">
+                                                    <svg class="w-6 h-6 pointer-events-none" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.291c.3.922-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.196-1.539-1.118l1.07-3.291a1 1 0 00-.364-1.118L2.98 8.719c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.951-.69l1.068-3.292z"></path>
+                                                    </svg>
+                                                </button>
+                                            @endfor
+                                        </div>
+
+                                        <p id="rating-text" class="mt-3 text-sm font-medium text-gray-600">{{ $textoCalificacion }}</p>
+
+                                        @error('calificacion')
+                                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 mb-2">Comentario</label>
+                                        <textarea name="comentario" rows="4"
+                                            class="w-full px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition"
+                                            placeholder="Cuéntale a otras personas tu experiencia con esta veterinaria...">{{ $miComentario }}</textarea>
+                                        @error('comentario')
+                                            <p class="text-red-500 text-sm mt-2">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+
+                                    <div class="flex flex-wrap gap-3">
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-sm transition">
+                                            {{ $miResena ? 'Actualizar reseña' : 'Publicar reseña' }}
+                                        </button>
+                                    </div>
+                                </form>
+
+                                @if($miResena)
+                                    <form action="{{ route('veterinarias.resenas.destroy', [$veterinaria->id_organizacion, $miResena->id_resena]) }}" method="POST" class="mt-3">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center px-5 py-3 bg-white hover:bg-gray-50 text-red-600 font-semibold rounded-xl border border-red-200 transition"
+                                            onclick="return confirm('¿Deseas eliminar tu reseña?')">
+                                            Eliminar mi reseña
+                                        </button>
+                                    </form>
+                                @endif
+                            </div>
+                        @else
+                            <div class="mb-8 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm text-yellow-800">
+                                No puedes calificar tu propia veterinaria.
+                            </div>
+                        @endif
+                    @else
+                        <div class="mb-8 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+                            Inicia sesión para dejar una reseña y calificación.
+                        </div>
+                    @endauth
+
+                    <div class="space-y-4">
+                        @forelse($resenas as $resena)
+                            <div class="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                                    <div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <h5 class="font-bold text-gray-900">{{ $resena->usuario_nombre }}</h5>
+
+                                            @auth
+                                                @if((int) auth()->user()->id_usuario === (int) $resena->usuario_id)
+                                                    <span class="px-2 py-1 rounded-full bg-orange-100 text-orange-700 text-[11px] font-bold uppercase">
+                                                        Tu reseña
+                                                    </span>
+                                                @endif
+                                            @endauth
+                                        </div>
+
+                                        <div class="mt-1 flex items-center gap-2">
+                                            <div class="flex items-center">
+                                                @for($i = 1; $i <= 5; $i++)
+                                                    <svg class="w-4 h-4 {{ $i <= (int) $resena->calificacion ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.291c.3.922-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.196-1.539-1.118l1.07-3.291a1 1 0 00-.364-1.118L2.98 8.719c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.951-.69l1.068-3.292z"></path>
+                                                    </svg>
+                                                @endfor
+                                            </div>
+
+                                            <span class="text-xs text-gray-500">
+                                                {{ \Carbon\Carbon::parse($resena->creado_en)->locale('es')->diffForHumans() }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                @if(!empty($resena->comentario))
+                                    <p class="text-gray-700 leading-relaxed mt-3 whitespace-pre-line">{{ $resena->comentario }}</p>
+                                @else
+                                    <p class="text-gray-400 text-sm italic mt-3">Esta reseña no incluye comentario escrito.</p>
+                                @endif
+                            </div>
+                        @empty
+                            <div class="rounded-2xl border border-dashed border-gray-200 bg-white p-8 text-center text-gray-500">
+                                Aún no hay reseñas para esta veterinaria.
+                            </div>
+                        @endforelse
+                    </div>
+                </div>
+
             </div>
 
             <div class="space-y-6">
@@ -288,9 +491,32 @@
                         @endif
                     </div>
 
-                    
-
                     <hr class="my-6 border-gray-100">
+
+                    <div class="mb-6 rounded-xl bg-orange-50 border border-orange-100 p-4">
+                        <p class="text-xs text-gray-500 font-bold uppercase tracking-wide mb-2">Calificación actual</p>
+                        <div class="flex items-center gap-3">
+                            <div class="flex items-center">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <svg class="w-5 h-5 {{ $i <= round($promedio) ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.291c.3.922-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.196-1.539-1.118l1.07-3.291a1 1 0 00-.364-1.118L2.98 8.719c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.951-.69l1.068-3.292z"></path>
+                                    </svg>
+                                @endfor
+                            </div>
+
+                            @if($totalResenas > 0)
+                                <div>
+                                    <p class="text-lg font-extrabold text-gray-900">{{ number_format($promedio, 1) }}/5</p>
+                                    <p class="text-xs text-gray-500">{{ $totalResenas }} reseñas</p>
+                                </div>
+                            @else
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-700">Sin reseñas</p>
+                                    <p class="text-xs text-gray-500">Todavía no hay calificaciones</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
 
                     <p class="text-xs text-gray-500 mb-2 font-medium">Acciones</p>
                     <div class="grid grid-cols-1 gap-3">
@@ -320,4 +546,63 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ratingInput = document.getElementById('calificacion-input');
+        const ratingText = document.getElementById('rating-text');
+        const starButtons = document.querySelectorAll('.star-btn');
+
+        if (!ratingInput || !ratingText || !starButtons.length) {
+            return;
+        }
+
+        const textos = {
+            0: 'Selecciona una calificación',
+            1: 'Muy mala',
+            2: 'Mala',
+            3: 'Regular',
+            4: 'Buena',
+            5: 'Excelente'
+        };
+
+        function pintarEstrellas(valor) {
+            starButtons.forEach((button) => {
+                const buttonValue = parseInt(button.dataset.value);
+
+                if (buttonValue <= valor) {
+                    button.classList.remove('text-gray-300', 'border-gray-200', 'bg-white');
+                    button.classList.add('text-yellow-500', 'border-yellow-300', 'bg-yellow-50');
+                } else {
+                    button.classList.remove('text-yellow-500', 'border-yellow-300', 'bg-yellow-50');
+                    button.classList.add('text-gray-300', 'border-gray-200', 'bg-white');
+                }
+            });
+
+            ratingText.textContent = textos[valor] ?? textos[0];
+        }
+
+        let valorActual = parseInt(ratingInput.value || 0);
+        pintarEstrellas(valorActual);
+
+        starButtons.forEach((button) => {
+            button.addEventListener('mouseenter', function () {
+                pintarEstrellas(parseInt(this.dataset.value));
+            });
+
+            button.addEventListener('click', function () {
+                valorActual = parseInt(this.dataset.value);
+                ratingInput.value = valorActual;
+                pintarEstrellas(valorActual);
+            });
+        });
+
+        const contenedor = document.getElementById('rating-stars');
+        if (contenedor) {
+            contenedor.addEventListener('mouseleave', function () {
+                pintarEstrellas(valorActual);
+            });
+        }
+    });
+</script>
 @endsection

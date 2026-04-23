@@ -30,7 +30,7 @@
                     Catálogo de veterinarias
                 </h1>
                 <p class="text-sm text-gray-500 mt-2 max-w-2xl">
-                    Encuentra veterinarias registradas en la plataforma para consultar información, ubicación, costos y medios de contacto.
+                    Encuentra veterinarias registradas en la plataforma para consultar información, ubicación, costos, reseñas y medios de contacto.
                 </p>
             </div>
 
@@ -182,6 +182,12 @@
                             $rangoCosto = 'Desde $' . number_format((float) $vet->costo_minimo, 2);
                         }
                     }
+
+                    $promedioCalificacion = !is_null($vet->promedio_calificacion ?? null)
+                        ? (float) $vet->promedio_calificacion
+                        : null;
+
+                    $totalResenas = (int) ($vet->total_resenas ?? 0);
                 @endphp
 
                 <article class="bg-white rounded-3xl shadow-sm hover:shadow-lg transition duration-300 border border-gray-100 overflow-hidden group flex flex-col h-full">
@@ -220,9 +226,33 @@
 
                     <div class="p-5 flex-1 flex flex-col">
                         <div class="mb-3 flex items-start justify-between gap-3">
-                            <h3 class="text-lg font-bold text-gray-900 leading-tight">
-                                {{ $vet->nombre }}
-                            </h3>
+                            <div class="min-w-0">
+                                <h3 class="text-lg font-bold text-gray-900 leading-tight">
+                                    {{ $vet->nombre }}
+                                </h3>
+
+                                @if($totalResenas > 0 && !is_null($promedioCalificacion))
+                                    <div class="mt-2 flex items-center gap-2 flex-wrap">
+                                        <div class="flex items-center">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <svg class="w-4 h-4 {{ $i <= round($promedioCalificacion) ? 'text-yellow-400' : 'text-gray-300' }}" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.291c.3.922-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.176 0l-2.8 2.034c-.784.57-1.838-.196-1.539-1.118l1.07-3.291a1 1 0 00-.364-1.118L2.98 8.719c-.783-.57-.38-1.81.588-1.81H7.03a1 1 0 00.951-.69l1.068-3.292z"></path>
+                                                </svg>
+                                            @endfor
+                                        </div>
+
+                                        <span class="text-sm font-semibold text-gray-700">
+                                            {{ number_format($promedioCalificacion, 1) }}
+                                        </span>
+
+                                        <span class="text-xs text-gray-400">
+                                            ({{ $totalResenas }} {{ $totalResenas === 1 ? 'reseña' : 'reseñas' }})
+                                        </span>
+                                    </div>
+                                @else
+                                    <p class="mt-2 text-xs text-gray-400">Sin reseñas todavía</p>
+                                @endif
+                            </div>
 
                             @if($rangoCosto)
                                 <span class="flex-shrink-0 text-[11px] font-bold px-3 py-1 rounded-full bg-orange-50 text-orange-700 border border-orange-100">

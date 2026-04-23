@@ -129,7 +129,7 @@
 
                     <div class="flex items-center gap-3 min-w-0">
                         <a href="{{ route('verification.notice') }}" class="flex items-center gap-3 min-w-0">
-                            <img src="{{ asset('img/logo1.png') }}" alt="Logo Huellitas" class="h-11 w-11 object-contain">
+                            <img src="{{ asset('img/Logo1.png') }}" alt="Logo Huellitas" class="h-11 w-11 object-contain">
                             <div class="min-w-0">
                                 <span class="block text-xl sm:text-2xl font-bold text-gray-900 leading-none truncate">
                                     Huellitas perdidas

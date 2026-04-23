@@ -223,6 +223,15 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
 
         Route::get('/veterinaria/panel', [VeterinariaController::class, 'dashboard'])->name('veterinaria.dashboard');
         Route::get('/refugio/panel', [RefugioController::class, 'dashboard'])->name('refugio.dashboard');
+
+        Route::post('/veterinarias/{id}/resenas', [VeterinariaController::class, 'storeResena'])
+            ->whereNumber('id')
+            ->name('veterinarias.resenas.store');
+
+        Route::delete('/veterinarias/{id}/resenas/{resenaId}', [VeterinariaController::class, 'destroyResena'])
+            ->whereNumber('id')
+            ->whereNumber('resenaId')
+            ->name('veterinarias.resenas.destroy');
     });
 
     /*

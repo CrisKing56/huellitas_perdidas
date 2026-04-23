@@ -25,6 +25,7 @@ class VeterinariaController extends Controller
 
         $tieneTablaUbicaciones = Schema::hasTable('ubicaciones');
         $tieneTablaCostos = Schema::hasTable('organizacion_costo_servicio');
+        $tieneTablaResenas = Schema::hasTable('resenas');
 
         $query = DB::table('organizaciones as o')
             ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
@@ -53,6 +54,21 @@ class VeterinariaController extends Controller
             });
         }
 
+        if ($tieneTablaResenas) {
+            $subResenas = DB::table('resenas')
+                ->select(
+                    'organizacion_id',
+                    DB::raw('ROUND(AVG(calificacion), 1) as promedio_calificacion'),
+                    DB::raw('COUNT(*) as total_resenas')
+                )
+                ->where('estado', 'VISIBLE')
+                ->groupBy('organizacion_id');
+
+            $query->leftJoinSub($subResenas, 'res', function ($join) {
+                $join->on('res.organizacion_id', '=', 'o.id_organizacion');
+            });
+        }
+
         $query->select(
             'o.id_organizacion',
             'o.nombre',
@@ -66,21 +82,21 @@ class VeterinariaController extends Controller
         );
 
         if ($tieneTablaUbicaciones) {
-            $query->addSelect(
-                'ub.latitud',
-                'ub.longitud'
-            );
+            $query->addSelect('ub.latitud', 'ub.longitud');
         } else {
             $query->selectRaw('NULL as latitud, NULL as longitud');
         }
 
         if ($tieneTablaCostos) {
-            $query->addSelect(
-                'costos.costo_minimo',
-                'costos.costo_maximo'
-            );
+            $query->addSelect('costos.costo_minimo', 'costos.costo_maximo');
         } else {
             $query->selectRaw('NULL as costo_minimo, NULL as costo_maximo');
+        }
+
+        if ($tieneTablaResenas) {
+            $query->addSelect('res.promedio_calificacion', 'res.total_resenas');
+        } else {
+            $query->selectRaw('NULL as promedio_calificacion, 0 as total_resenas');
         }
 
         if ($q !== '') {
@@ -233,7 +249,150 @@ class VeterinariaController extends Controller
             ->orderBy('orden')
             ->get();
 
-        return view('veterinarias.show', compact('veterinaria', 'horarios', 'servicios', 'costos', 'fotos'));
+        $resumenResenas = (object) [
+            'promedio_calificacion' => null,
+            'total_resenas' => 0,
+        ];
+
+        $resenas = collect();
+        $miResena = null;
+
+        if (Schema::hasTable('resenas')) {
+            $resumenResenas = DB::table('resenas')
+                ->where('organizacion_id', $id)
+                ->where('estado', 'VISIBLE')
+                ->selectRaw('ROUND(AVG(calificacion), 1) as promedio_calificacion, COUNT(*) as total_resenas')
+                ->first();
+
+            $resenas = DB::table('resenas as r')
+                ->join('usuarios as u', 'u.id_usuario', '=', 'r.usuario_id')
+                ->where('r.organizacion_id', $id)
+                ->where('r.estado', 'VISIBLE')
+                ->orderByDesc('r.creado_en')
+                ->select(
+                    'r.id_resena',
+                    'r.organizacion_id',
+                    'r.usuario_id',
+                    'r.calificacion',
+                    'r.comentario',
+                    'r.estado',
+                    'r.creado_en',
+                    'u.nombre as usuario_nombre'
+                )
+                ->get();
+
+            if (Auth::check()) {
+                $miResena = DB::table('resenas')
+                    ->where('organizacion_id', $id)
+                    ->where('usuario_id', Auth::user()->id_usuario)
+                    ->whereIn('estado', ['VISIBLE', 'OCULTO'])
+                    ->orderByDesc('id_resena')
+                    ->first();
+            }
+        }
+
+        return view('veterinarias.show', compact(
+            'veterinaria',
+            'horarios',
+            'servicios',
+            'costos',
+            'fotos',
+            'resumenResenas',
+            'resenas',
+            'miResena'
+        ));
+    }
+
+    public function storeResena(Request $request, $id)
+    {
+        abort_if(!Auth::check(), 403);
+
+        $request->validate([
+            'calificacion' => ['required', 'integer', 'min:1', 'max:5'],
+            'comentario' => ['nullable', 'string', 'max:1000'],
+        ], [
+            'calificacion.required' => 'La calificación es obligatoria.',
+            'calificacion.integer' => 'La calificación no es válida.',
+            'calificacion.min' => 'La calificación mínima es 1.',
+            'calificacion.max' => 'La calificación máxima es 5.',
+            'comentario.max' => 'El comentario no debe exceder 1000 caracteres.',
+        ]);
+
+        $veterinaria = DB::table('organizaciones')
+            ->where('id_organizacion', $id)
+            ->where('tipo', 'VETERINARIA')
+            ->where('estado_revision', 'APROBADA')
+            ->first();
+
+        abort_if(!$veterinaria, 404);
+
+        $usuarioId = Auth::user()->id_usuario;
+
+        if ((int) $veterinaria->usuario_dueno_id === (int) $usuarioId) {
+            return redirect()
+                ->route('veterinarias.show', $id)
+                ->with('error_resena', 'No puedes calificar tu propia veterinaria.');
+        }
+
+        $comentario = $request->filled('comentario')
+            ? trim($request->comentario)
+            : null;
+
+        $existente = DB::table('resenas')
+            ->where('organizacion_id', $id)
+            ->where('usuario_id', $usuarioId)
+            ->orderByDesc('id_resena')
+            ->first();
+
+        if ($existente) {
+            DB::table('resenas')
+                ->where('id_resena', $existente->id_resena)
+                ->update([
+                    'calificacion' => (int) $request->calificacion,
+                    'comentario' => $comentario,
+                    'estado' => 'VISIBLE',
+                ]);
+
+            return redirect()
+                ->route('veterinarias.show', $id)
+                ->with('success_resena', 'Tu reseña fue actualizada correctamente.');
+        }
+
+        DB::table('resenas')->insert([
+            'organizacion_id' => $id,
+            'usuario_id' => $usuarioId,
+            'calificacion' => (int) $request->calificacion,
+            'comentario' => $comentario,
+            'estado' => 'VISIBLE',
+            'creado_en' => now(),
+        ]);
+
+        return redirect()
+            ->route('veterinarias.show', $id)
+            ->with('success_resena', 'Tu reseña fue registrada correctamente.');
+    }
+
+    public function destroyResena($id, $resenaId)
+    {
+        abort_if(!Auth::check(), 403);
+
+        $resena = DB::table('resenas')
+            ->where('id_resena', $resenaId)
+            ->where('organizacion_id', $id)
+            ->where('usuario_id', Auth::user()->id_usuario)
+            ->first();
+
+        abort_if(!$resena, 404);
+
+        DB::table('resenas')
+            ->where('id_resena', $resenaId)
+            ->update([
+                'estado' => 'ELIMINADO',
+            ]);
+
+        return redirect()
+            ->route('veterinarias.show', $id)
+            ->with('success_resena', 'Tu reseña fue eliminada correctamente.');
     }
 
     public function dashboard()
