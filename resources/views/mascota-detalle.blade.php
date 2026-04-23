@@ -176,7 +176,7 @@
                                 {{ $publicacion->estado }}
                             </span>
 
-                            <span class="inline-flex items-center rounded-full bg-orange-50 text-orange-600 px-3 py-1 text-[11px] font-semibold border border-orange-100">
+                            <span class="inline-flex items-center rounded-full bg-orange-50 text-orange-600 px-3 py-1 text-[11px] font-semibold border border-orange-100 uppercase tracking-wide">
                                 {{ $especieTexto }}
                             </span>
 
@@ -324,7 +324,7 @@
                             </div>
 
                             <div class="mt-4 pt-4 border-t border-gray-200">
-                                <p class="text-xs text-gray-400 mb-1">Teléfono</p>
+                                <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide">Teléfono</p>
                                 <p class="text-sm font-semibold text-gray-800 break-words">
                                     {{ $publicacion->autor->whatsapp ?? $publicacion->autor->telefono ?? 'No visible' }}
                                 </p>

@@ -79,4 +79,5 @@ class Organizacion extends Model
     {
         return $this->hasMany(Consejo::class, 'autor_organizacion_id', 'id_organizacion');
     }
+
 }

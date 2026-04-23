@@ -132,7 +132,7 @@
                             <img src="{{ asset('img/Logo1.png') }}" alt="Logo Huellitas" class="h-11 w-11 object-contain">
                             <div class="min-w-0">
                                 <span class="block text-xl sm:text-2xl font-bold text-gray-900 leading-none truncate">
-                                    Huellitas perdidas
+                                    Huellitas Perdidas
                                 </span>
                                 <span class="block text-xs text-orange-500 font-medium mt-1">
                                     Verificación pendiente
@@ -167,7 +167,7 @@
                             <img src="{{ asset('img/logo1.png') }}" alt="Logo Huellitas" class="h-11 w-11 object-contain">
                             <div class="min-w-0">
                                 <span class="block text-xl sm:text-2xl font-bold text-gray-900 leading-none truncate">
-                                    Huellitas perdidas
+                                    Huellitas Perdidas
                                 </span>
                             </div>
                         </a>
@@ -176,7 +176,7 @@
                     <div class="hidden lg:flex items-center gap-8 text-sm text-gray-700">
                         <a href="{{ route('mascotas.index2') }}"
                         class="navbar-main-link hover:text-primary transition">
-                            Mascotas perdidas
+                            Mascotas Perdidas
                         </a>
 
                         <a href="{{ route('adopciones.index') }}"
@@ -483,7 +483,7 @@
                         <div class="flex items-center gap-3 mb-4">
                             <img src="{{ asset('img/logo1.png') }}" alt="Logo" class="h-10 w-10 object-contain">
                             <div>
-                                <span class="block text-lg font-bold text-white">Huellitas perdidas</span>
+                                <span class="block text-lg font-bold text-white">Huellitas Perdidas</span>
                                 <span class="text-xs text-gray-400">Mascotas, adopción y ayuda</span>
                             </div>
                         </div>

@@ -134,7 +134,7 @@
                                 {{ str_replace('_', ' ', $adopcion->estado) }}
                             </span>
 
-                            <span class="inline-flex items-center rounded-full bg-green-50 text-green-600 px-3 py-1 text-[11px] font-semibold border border-green-100">
+                            <span class="inline-flex items-center rounded-full bg-green-50 text-green-600 px-3 py-1 text-[11px] font-semibold border border-green-100 uppercase tracking-wide">
                                 {{ $especieTexto }}
                             </span>
 

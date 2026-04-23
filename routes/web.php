@@ -10,6 +10,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegistroOrganizacionFlujoController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ReporteController;
 
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
@@ -415,7 +416,11 @@ Route::middleware([
             Route::get('/admin/reportes/{id}', [AdminReporteController::class, 'show'])->name('admin.reportes.show');
             Route::post('/admin/reportes/{id}/en-revision', [AdminReporteController::class, 'marcarEnRevision'])->name('admin.reportes.enRevision');
             Route::post('/admin/reportes/{id}/resolver', [AdminReporteController::class, 'resolver'])->name('admin.reportes.resolver');
-
+            Route::get('/admin/reportes/mascotas/pdf', [ReporteController::class, 'generarReporteMascotas'])->name('reportes.mascotas.pdf');
+            Route::get('/admin/reportes/adopciones/pdf', [ReporteController::class, 'generarReporteAdopciones'])->name('reportes.adopciones.pdf');
+            Route::get('/admin/reportes/veterinarias/pdf', [ReporteController::class, 'generarReporteVeterinarias'])->name('reportes.veterinarias.pdf');
+            Route::get('/admin/reportes/refugios/pdf', [ReporteController::class, 'generarReporteRefugios'])->name('reportes.refugios.pdf');
+            Route::get('/admin/reportes/usuarios/pdf', [ReporteController::class, 'generarReporteUsuarios'])->name('reportes.usuarios.pdf');
             // Consejos
             Route::get('/admin/consejos', [AdminConsejoController::class, 'index'])->name('admin.consejos.index');
             Route::get('/admin/consejos/{id}', [AdminConsejoController::class, 'show'])->whereNumber('id')->name('admin.consejos.show');
