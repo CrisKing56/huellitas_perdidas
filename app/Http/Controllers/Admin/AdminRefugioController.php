@@ -6,36 +6,31 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Organizacion;
+
 
 class AdminRefugioController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $refugios = DB::table('organizaciones as o')
-            ->join('usuarios as u', 'u.id_usuario', '=', 'o.usuario_dueno_id')
-            ->leftJoin('direcciones as d', 'd.id_direccion', '=', 'o.direccion_id')
-            ->where('o.tipo', 'REFUGIO')
-            ->select(
-                'o.id_organizacion',
-                'o.nombre',
-                'o.descripcion',
-                'o.telefono',
-                'o.estado_revision',
-                'o.motivo_rechazo',
-                'u.correo',
-                'u.nombre as nombre_usuario',
-                'u.estado as estado_usuario',
-                'd.calle_numero',
-                'd.colonia',
-                'd.ciudad',
-                'd.estado as estado_direccion'
-            )
-            ->orderByDesc('o.id_organizacion')
-            ->get();
+        // Estadísticas
+        $activos = Organizacion::where('tipo', 'REFUGIO')->where('estado_revision', 'APROBADA')->get();
+        $pendientes = Organizacion::where('tipo', 'REFUGIO')->where('estado_revision', 'PENDIENTE')->get();
+        $rechazados = Organizacion::where('tipo', 'REFUGIO')->where('estado_revision', 'RECHAZADA')->get();
 
-        $activos = $refugios->where('estado_revision', 'APROBADA');
-        $pendientes = $refugios->where('estado_revision', 'PENDIENTE');
-        $rechazados = $refugios->where('estado_revision', 'RECHAZADA');
+        // Consulta principal para la tabla
+        $query = Organizacion::where('tipo', 'REFUGIO');
+
+        if ($request->filled('q')) {
+            $query->where('nombre', 'LIKE', '%' . $request->q . '%');
+        }
+
+        if ($request->filled('estado_revision')) {
+            $query->where('estado_revision', $request->estado_revision);
+        }
+
+        // Si usas paginación déjalo con paginate(10), si no, cámbialo a get()
+        $refugios = $query->orderBy('created_at', 'desc')->paginate(10); 
 
         return view('admin.refugios.index', compact('refugios', 'activos', 'pendientes', 'rechazados'));
     }

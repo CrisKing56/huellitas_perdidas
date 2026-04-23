@@ -34,24 +34,78 @@
 @endphp
 
 <div class="space-y-8">
-    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-5">
-        <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.18em] text-orange-500 mb-2">
-                Gestión de cuentas
-            </p>
-            <h1 class="text-3xl font-bold text-gray-900">Administración de usuarios</h1>
-            <p class="text-sm text-gray-500 mt-2 max-w-2xl">
-                Consulta, filtra y administra las cuentas registradas dentro de la plataforma.
-            </p>
-        </div>
-
-        <a href="{{ route('admin.usuarios.create') }}"
+    
+    <div class="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Administración de usuarios</h1>
+        <p class="text-gray-600 text-sm mt-1">Gestiona todos los usuarios registrados</p>
+    </div>
+    
+    <a href="{{ route('admin.usuarios.create') }}"
            class="inline-flex items-center justify-center gap-2 px-5 py-3 bg-orange-500 hover:bg-orange-600 text-white font-semibold rounded-xl shadow-sm transition">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
             </svg>
             Agregar usuario
-        </a>
+    </a>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+    <form method="GET" action="{{ route('admin.usuarios.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        
+        <div class="md:col-span-1">
+            <label class="block text-sm font-medium text-gray-600 mb-2">Buscar</label>
+            <input type="text" name="q" value="{{ request('q') }}" placeholder="Nombre, correo o ID..." class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
+        </div>
+
+        <div class="md:col-span-1">
+            <label class="block text-sm font-medium text-gray-600 mb-2">Rol</label>
+            <select name="rol" class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
+                <option value="">Todos los roles</option>
+                <option value="ADMIN" {{ request('rol') == 'ADMIN' ? 'selected' : '' }}>Administrador</option>
+                <option value="USUARIO" {{ request('rol') == 'USUARIO' ? 'selected' : '' }}>Usuario normal</option>
+            </select>
+        </div>
+
+        <div class="md:col-span-1">
+            <label class="block text-sm font-medium text-gray-600 mb-2">Estado</label>
+            <select name="estado" class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
+                <option value="">Todos los estados</option>
+                <option value="ACTIVA" {{ request('estado') == 'ACTIVA' ? 'selected' : '' }}>Activa</option>
+                <option value="SUSPENDIDA" {{ request('estado') == 'SUSPENDIDA' ? 'selected' : '' }}>Suspendida</option>
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm mb-2 text-transparent select-none hidden md:block">&nbsp;</label>
+            <div class="flex flex-col gap-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="submit" class="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition flex items-center justify-center">Filtrar</button>
+                    <a href="{{ route('admin.usuarios.index') }}" class="w-full h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition flex items-center justify-center">Limpiar</a>
+                </div>
+                
+                <a href="{{ route('reportes.usuarios.pdf', request()->query()) }}" class="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Exportar PDF
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="bg-white rounded-lg shadow-sm overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Usuario</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Rol</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
+            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Acciones</th>
+        </tr>
+        </thead>
+
+        
     </div>
 
     @if(session('success'))

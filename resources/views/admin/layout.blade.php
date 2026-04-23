@@ -101,15 +101,6 @@
                 <span>Publicaciones (Adopciones)</span>
             </a>
 
-            <button type="button"
-                    class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4-.8L3 20l1.2-3.2A7.773 7.773 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                </svg>
-                <span>Comentarios</span>
-            </button>
-
             <a href="{{ route('admin.veterinarias.index') }}"
                class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
                {{ request()->routeIs('admin.veterinarias.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">

@@ -27,6 +27,58 @@
         </div>
     </div>
 
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-2">
+        <form method="GET" action="{{ route('admin.veterinarias.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-600 mb-2">Buscar</label>
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ request('q') }}"
+                    placeholder="Nombre, correo, o ubicación..."
+                    class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500"
+                >
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-600 mb-2">Estado de Revisión</label>
+                <select name="estado_revision" class="w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-orange-500 focus:ring-orange-500">
+                    <option value="">Todos</option>
+                    <option value="APROBADA" {{ request('estado_revision') == 'APROBADA' ? 'selected' : '' }}>Aprobada</option>
+                    <option value="PENDIENTE" {{ request('estado_revision') == 'PENDIENTE' ? 'selected' : '' }}>Pendiente</option>
+                    <option value="RECHAZADA" {{ request('estado_revision') == 'RECHAZADA' ? 'selected' : '' }}>Rechazada</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm mb-2 text-transparent select-none hidden md:block">&nbsp;</label>
+                
+                <div class="flex flex-col gap-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <button type="submit" class="w-full h-12 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold transition flex items-center justify-center">
+                            Filtrar
+                        </button>
+                        <a href="{{ route('admin.veterinarias.index') }}" class="w-full h-12 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition flex items-center justify-center">
+                            Limpiar
+                        </a>
+                    </div>
+                    
+                    <button 
+                    type="submit" 
+                    formmethod="GET" 
+                    formaction="{{ route('reportes.usuarios.pdf') }}" 
+                    class="w-full h-12 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold transition flex items-center justify-center gap-2"
+                    >
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Exportar PDF
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100">
             <h2 class="text-xl font-bold text-gray-800">Listado de veterinarias</h2>
