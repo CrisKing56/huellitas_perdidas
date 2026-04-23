@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -35,14 +36,43 @@ class LoginController extends Controller
             return $this->redirectByRole(Auth::user());
         }
 
-        $credentials = $request->validate([
+        $request->validate([
             'correo' => ['required', 'email'],
             'password' => ['required'],
+        ], [
+            'correo.required' => 'El correo es obligatorio.',
+            'correo.email' => 'Ingresa un correo válido.',
+            'password.required' => 'La contraseña es obligatoria.',
         ]);
+
+        $user = User::where('correo', $request->correo)->first();
+
+        if (!$user) {
+            return back()->withErrors([
+                'correo' => 'Las credenciales no coinciden con nuestros registros.',
+            ])->onlyInput('correo');
+        }
+
+        $provider = strtoupper((string) ($user->auth_provider ?? 'LOCAL'));
+
+        if ($provider === 'GOOGLE' && empty($user->password_hash)) {
+            return back()->withErrors([
+                'correo' => 'Esta cuenta fue registrada con Google. Inicia sesión usando Google.',
+            ])->onlyInput('correo');
+        }
+
+        if ($provider === 'FACEBOOK' && empty($user->password_hash)) {
+            return back()->withErrors([
+                'correo' => 'Esta cuenta fue registrada con Facebook. Inicia sesión usando Facebook.',
+            ])->onlyInput('correo');
+        }
 
         $remember = $request->boolean('remember');
 
-        if (!Auth::attempt($credentials, $remember)) {
+        if (!Auth::attempt([
+            'correo' => $request->correo,
+            'password' => $request->password,
+        ], $remember)) {
             return back()->withErrors([
                 'correo' => 'Las credenciales no coinciden con nuestros registros.',
             ])->onlyInput('correo');
@@ -57,8 +87,36 @@ class LoginController extends Controller
             return $bloqueo;
         }
 
-        if (in_array($user->rol, ['VETERINARIA', 'REFUGIO'])) {
-            $tipo = strtolower($user->rol);
+        $provider = strtoupper((string) ($user->auth_provider ?? 'LOCAL'));
+        $rol = strtoupper((string) ($user->rol ?? ''));
+
+        if ($provider === 'LOCAL' && is_null($user->email_verified_at)) {
+            Auth::logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('verification.notice')
+                ->with('warning', 'Debes verificar tu correo antes de continuar.');
+        }
+
+        if (in_array($rol, ['VETERINARIA', 'REFUGIO'])) {
+            $tipo = strtolower($rol);
+
+            $organizacion = DB::table('organizaciones')
+                ->where('usuario_dueno_id', $user->id_usuario)
+                ->where('tipo', $rol)
+                ->first();
+
+            if (!$organizacion) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'correo' => 'No se encontró la organización vinculada a esta cuenta.',
+                ])->onlyInput('correo');
+            }
 
             if (is_null($user->email_verified_at)) {
                 Auth::logout();
@@ -72,22 +130,7 @@ class LoginController extends Controller
                 ]);
             }
 
-            $organizacion = DB::table('organizaciones')
-                ->where('usuario_dueno_id', $user->id_usuario)
-                ->where('tipo', $user->rol)
-                ->first();
-
-            if (!$organizacion) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                return back()->withErrors([
-                    'correo' => 'No se encontró la organización vinculada a esta cuenta.',
-                ])->onlyInput('correo');
-            }
-
-            if ($organizacion->estado_revision === 'PENDIENTE') {
+            if (($organizacion->estado_revision ?? null) === 'PENDIENTE') {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -98,7 +141,7 @@ class LoginController extends Controller
                 ]);
             }
 
-            if ($organizacion->estado_revision === 'RECHAZADA') {
+            if (($organizacion->estado_revision ?? null) === 'RECHAZADA') {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -129,7 +172,7 @@ class LoginController extends Controller
             return null;
         }
 
-        if ($user->estado === 'ACTIVA') {
+        if (($user->estado ?? 'ACTIVA') === 'ACTIVA') {
             return null;
         }
 
@@ -137,13 +180,13 @@ class LoginController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        if ($user->estado === 'SUSPENDIDA') {
+        if (($user->estado ?? null) === 'SUSPENDIDA') {
             return back()->withErrors([
                 'correo' => 'Tu cuenta fue suspendida temporalmente por el administrador. Si consideras que esto es un error, contacta al administrador.',
             ])->onlyInput('correo');
         }
 
-        if ($user->estado === 'ELIMINADA') {
+        if (($user->estado ?? null) === 'ELIMINADA') {
             return back()->withErrors([
                 'correo' => 'Tu cuenta ya no está disponible para iniciar sesión. Contacta al administrador si necesitas más información.',
             ])->onlyInput('correo');
