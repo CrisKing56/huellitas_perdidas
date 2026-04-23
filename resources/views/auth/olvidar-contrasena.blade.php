@@ -2,10 +2,10 @@
 
 @section('content')
 <div class="bg-gray-50 min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    
     <div class="max-w-md w-full space-y-8 bg-white p-10 rounded-3xl shadow-xl">
-        
+
         <div class="text-center">
+            <img src="{{ asset('img/logo1.png') }}" alt="Huellitas Perdidas" class="h-16 mx-auto mb-4">
             <h2 class="text-3xl font-extrabold text-gray-900 mb-2">
                 ¿Olvidaste tu contraseña?
             </h2>
@@ -14,20 +14,43 @@
             </p>
         </div>
 
+        @if (session('status'))
+            <div class="bg-green-100 border border-green-200 text-green-700 px-4 py-3 rounded-xl text-sm">
+                {{ session('status') }}
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-sm">
+                <ul class="list-disc list-inside space-y-1">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <form class="mt-8 space-y-6" action="{{ route('password.email') }}" method="POST">
             @csrf
-            
+
             <div>
-                <label for="email" class="block text-sm font-bold text-gray-700 mb-2">Correo electrónico</label>
+                <label for="correo" class="block text-sm font-bold text-gray-700 mb-2">Correo electrónico</label>
                 <div class="relative rounded-md shadow-sm">
                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                         <svg class="h-5 w-5 text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                     </div>
-                    <input type="email" name="email" id="email" required 
-                           class="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm transition bg-gray-50/30" 
-                           placeholder="tucorreo@ejemplo.com">
+                    <input
+                        type="email"
+                        name="correo"
+                        id="correo"
+                        value="{{ old('correo') }}"
+                        required
+                        maxlength="120"
+                        autocomplete="email"
+                        class="block w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm transition bg-gray-50/30"
+                        placeholder="tucorreo@ejemplo.com">
                 </div>
             </div>
 
@@ -44,13 +67,12 @@
 
         <div class="text-center border-t border-gray-100 pt-6">
             <p class="text-sm text-gray-400">
-                ¿Recordaste tu contraseña? 
+                ¿Recordaste tu contraseña?
                 <a href="{{ route('login') }}" class="font-bold text-orange-500 hover:text-orange-600 transition hover:underline ml-1">
                     Iniciar sesión
                 </a>
             </p>
         </div>
-
     </div>
 </div>
 @endsection

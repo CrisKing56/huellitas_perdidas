@@ -24,6 +24,27 @@
                 <p class="text-gray-500 text-sm">Bienvenido de nuevo, ingresa para continuar.</p>
             </div>
 
+            @if (session('status'))
+                <div class="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-xl mb-5 text-sm">
+                    <strong class="font-bold">¡Listo!</strong>
+                    <p class="mt-1">{{ session('status') }}</p>
+                </div>
+            @endif
+
+            @if (session('success'))
+                <div class="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-xl mb-5 text-sm">
+                    <strong class="font-bold">Éxito</strong>
+                    <p class="mt-1">{{ session('success') }}</p>
+                </div>
+            @endif
+
+            @if (session('warning'))
+                <div class="bg-yellow-100 border border-yellow-300 text-yellow-700 px-4 py-3 rounded-xl mb-5 text-sm">
+                    <strong class="font-bold">Atención</strong>
+                    <p class="mt-1">{{ session('warning') }}</p>
+                </div>
+            @endif
+
             @if ($errors->any())
                 <div class="bg-red-100 border border-red-300 text-red-700 px-4 py-3 rounded-xl mb-5 text-sm">
                     <strong class="font-bold">¡Ups!</strong>
@@ -51,6 +72,7 @@
                                value="{{ old('correo') }}"
                                placeholder="tu@email.com"
                                required
+                               autocomplete="email"
                                class="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition bg-gray-50/50 text-gray-700 placeholder-gray-400">
                     </div>
                 </div>
@@ -68,11 +90,13 @@
                                name="password"
                                placeholder="••••••••"
                                required
+                               autocomplete="current-password"
                                class="w-full pl-12 pr-12 py-3 rounded-xl border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition bg-gray-50/50 text-gray-700 placeholder-gray-400">
 
                         <button type="button"
                                 id="togglePassword"
-                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-orange-500">
+                                class="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-orange-500"
+                                aria-label="Mostrar u ocultar contraseña">
                             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
@@ -87,7 +111,7 @@
                         Recordarme
                     </label>
 
-                    <a href="#" class="text-orange-500 hover:text-orange-600 font-medium hover:underline">
+                    <a href="{{ route('password.request') }}" class="text-orange-500 hover:text-orange-600 font-medium hover:underline">
                         ¿Olvidaste tu contraseña?
                     </a>
                 </div>
@@ -114,12 +138,10 @@
                     Google
                 </a>
 
-                <a href="{{ route('facebook.login') }}">
-                <button type="button"
-                        class="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600 font-medium text-sm">
+                <a href="{{ route('facebook.login') }}"
+                   class="flex items-center justify-center px-4 py-2.5 border border-gray-200 rounded-xl hover:bg-gray-50 transition text-gray-600 font-medium text-sm">
                     <img src="https://www.svgrepo.com/show/475647/facebook-color.svg" class="h-5 w-5 mr-2" alt="Facebook">
                     Facebook
-                </button>
                 </a>
             </div>
 

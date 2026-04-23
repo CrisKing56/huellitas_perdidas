@@ -11,7 +11,7 @@ use App\Http\Controllers\LoginController;
 use App\Http\Controllers\RegistroOrganizacionFlujoController;
 use App\Http\Controllers\GoogleLoginController;
 use App\Http\Controllers\UserController;
-
+use App\Http\Controllers\PasswordResetController;
 use App\Http\Controllers\ExtravioController;
 use App\Http\Controllers\AdopcionController;
 use App\Http\Controllers\SolicitudAdopcionController;
@@ -85,6 +85,19 @@ Route::middleware([
     Route::post('/contactanos', [ContactoController::class, 'enviar'])
         ->middleware('throttle:5,1')
         ->name('contactanos.enviar');
+
+
+    Route::get('/olvide-contrasena', [PasswordResetController::class, 'showLinkRequestForm'])
+    ->name('password.request');
+
+    Route::post('/olvide-contrasena', [PasswordResetController::class, 'sendResetLinkEmail'])
+        ->name('password.email');
+
+    Route::get('/restablecer-contrasena/{token}', [PasswordResetController::class, 'showResetForm'])
+        ->name('password.reset');
+
+    Route::post('/restablecer-contrasena', [PasswordResetController::class, 'reset'])
+        ->name('password.update');
 
     /*
     |--------------------------------------------------------------------------
