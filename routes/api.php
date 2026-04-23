@@ -55,6 +55,7 @@ Route::prefix('mobile')->group(function () {
     Route::post('/adopciones/{id}/volver-en-proceso', [MobileAdopcionController::class, 'volverEnProceso']);
 
     Route::get('/adopciones/{id}', [MobileAdopcionController::class, 'detalle']);
+    Route::post('/adopciones', [MobileAdopcionController::class, 'store']);
 
     // =====================
     // ORGANIZACIONES

@@ -8,9 +8,15 @@ use Illuminate\Support\Facades\DB;
 
 class LoginController extends Controller
 {
-    public function showLoginForm()
+    public function showLoginForm(Request $request)
     {
         if (Auth::check()) {
+            $bloqueo = $this->handleInactiveAccount($request, Auth::user());
+
+            if ($bloqueo) {
+                return $bloqueo;
+            }
+
             return $this->redirectByRole(Auth::user());
         }
 
@@ -20,6 +26,12 @@ class LoginController extends Controller
     public function login(Request $request)
     {
         if (Auth::check()) {
+            $bloqueo = $this->handleInactiveAccount($request, Auth::user());
+
+            if ($bloqueo) {
+                return $bloqueo;
+            }
+
             return $this->redirectByRole(Auth::user());
         }
 
@@ -40,26 +52,9 @@ class LoginController extends Controller
 
         $user = Auth::user();
 
-        if ($user->estado !== 'ACTIVA') {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            if ($user->estado === 'SUSPENDIDA') {
-                return back()->withErrors([
-                    'correo' => 'Tu cuenta fue suspendida temporalmente por el administrador. Si consideras que esto es un error, contacta al administrador.',
-                ])->onlyInput('correo');
-            }
-
-            if ($user->estado === 'ELIMINADA') {
-                return back()->withErrors([
-                    'correo' => 'Tu cuenta ya no está disponible para iniciar sesión. Contacta al administrador si necesitas más información.',
-                ])->onlyInput('correo');
-            }
-
-            return back()->withErrors([
-                'correo' => 'Tu cuenta no se encuentra activa. Contacta al administrador.',
-            ])->onlyInput('correo');
+        $bloqueo = $this->handleInactiveAccount($request, $user);
+        if ($bloqueo) {
+            return $bloqueo;
         }
 
         if (in_array($user->rol, ['VETERINARIA', 'REFUGIO'])) {
@@ -126,6 +121,37 @@ class LoginController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function handleInactiveAccount(Request $request, $user)
+    {
+        if (!$user) {
+            return null;
+        }
+
+        if ($user->estado === 'ACTIVA') {
+            return null;
+        }
+
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if ($user->estado === 'SUSPENDIDA') {
+            return back()->withErrors([
+                'correo' => 'Tu cuenta fue suspendida temporalmente por el administrador. Si consideras que esto es un error, contacta al administrador.',
+            ])->onlyInput('correo');
+        }
+
+        if ($user->estado === 'ELIMINADA') {
+            return back()->withErrors([
+                'correo' => 'Tu cuenta ya no está disponible para iniciar sesión. Contacta al administrador si necesitas más información.',
+            ])->onlyInput('correo');
+        }
+
+        return back()->withErrors([
+            'correo' => 'Tu cuenta no se encuentra activa. Contacta al administrador.',
+        ])->onlyInput('correo');
     }
 
     private function redirectByRole($user)

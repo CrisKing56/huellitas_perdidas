@@ -32,6 +32,7 @@ use App\Http\Controllers\Admin\AdminReporteConsejoController;
 use App\Http\Controllers\Admin\AdminExtravioController;
 use App\Http\Controllers\Admin\AdminAdopcionController;
 use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminBackupController;
 
 use App\Http\Controllers\ContactoController;
 
@@ -41,7 +42,10 @@ use App\Models\PublicacionAdopcion;
 use App\Http\Controllers\SocialController;
 
 
-Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(function () {
+Route::middleware([
+    \App\Http\Middleware\EnsureUserIsVerified::class,
+    \App\Http\Middleware\EnsureAccountIsActive::class,
+])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
@@ -380,11 +384,14 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
             Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
 
             // Usuarios
+// Usuarios
             Route::get('/admin/usuarios', [AdminUsuarioController::class, 'index'])->name('admin.usuarios.index');
             Route::get('/admin/usuarios/create', [AdminUsuarioController::class, 'create'])->name('admin.usuarios.create');
             Route::post('/admin/usuarios', [AdminUsuarioController::class, 'store'])->name('admin.usuarios.store');
             Route::get('/admin/usuarios/{id_usuario}/edit', [AdminUsuarioController::class, 'edit'])->name('admin.usuarios.edit');
             Route::put('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'update'])->name('admin.usuarios.update');
+            Route::patch('/admin/usuarios/{id_usuario}/activar', [AdminUsuarioController::class, 'activate'])->name('admin.usuarios.activate');
+            Route::patch('/admin/usuarios/{id_usuario}/suspender', [AdminUsuarioController::class, 'suspend'])->name('admin.usuarios.suspend');
             Route::delete('/admin/usuarios/{id_usuario}', [AdminUsuarioController::class, 'destroy'])->name('admin.usuarios.destroy');
 
             // Veterinarias
@@ -430,6 +437,11 @@ Route::middleware([\App\Http\Middleware\EnsureUserIsVerified::class])->group(fun
             Route::get('/admin/adopciones/{id}', [AdminAdopcionController::class, 'show'])->whereNumber('id')->name('admin.adopciones.show');
             Route::post('/admin/adopciones/{id}/pausar', [AdminAdopcionController::class, 'pausar'])->whereNumber('id')->name('admin.adopciones.pausar');
             Route::post('/admin/adopciones/{id}/reactivar', [AdminAdopcionController::class, 'reactivar'])->whereNumber('id')->name('admin.adopciones.reactivar');
+
+            Route::get('/admin/backups', [AdminBackupController::class, 'index'])->name('admin.backups.index');
+            Route::post('/admin/backups', [AdminBackupController::class, 'store'])->name('admin.backups.store');
+            Route::get('/admin/backups/{file}/download', [AdminBackupController::class, 'download'])->name('admin.backups.download');
+            Route::delete('/admin/backups/{file}', [AdminBackupController::class, 'destroy'])->name('admin.backups.destroy');
         });
     });
 });

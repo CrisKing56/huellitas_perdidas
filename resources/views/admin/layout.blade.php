@@ -37,11 +37,9 @@
 <body class="bg-panelbg text-gray-800">
 <div class="min-h-screen flex">
 
-    {{-- Overlay móvil --}}
     <div id="sidebarOverlay"
          class="fixed inset-0 bg-black/40 z-40 hidden lg:hidden"></div>
 
-    {{-- Sidebar --}}
     <aside id="adminSidebar"
            class="fixed lg:static inset-y-0 left-0 z-50 w-72 bg-sidebar text-gray-300 flex flex-col transform -translate-x-full lg:translate-x-0 transition-transform duration-300 shadow-2xl lg:shadow-none">
 
@@ -84,21 +82,21 @@
             </a>
 
             <a href="{{ route('admin.extravios.index') }}"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
-            {{ request()->routeIs('admin.extravios.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+               {{ request()->routeIs('admin.extravios.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M9 17v-2a4 4 0 014-4h6M3 7h18M5 7l1.5 11h11L19 7"/>
+                          d="M9 17v-2a4 4 0 014-4h6M3 7h18M5 7l1.5 11h11L19 7"/>
                 </svg>
                 <span>Publicaciones (Extraviados)</span>
             </a>
 
             <a href="{{ route('admin.adopciones.index') }}"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
-            {{ request()->routeIs('admin.adopciones.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+               {{ request()->routeIs('admin.adopciones.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 12h4l3 8 4-16 3 8h2"/>
+                          d="M4 12h4l3 8 4-16 3 8h2"/>
                 </svg>
                 <span>Publicaciones (Adopciones)</span>
             </a>
@@ -153,15 +151,25 @@
             </a>
 
             <a href="{{ route('admin.reportes-consejos.index') }}"
-            class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
-            {{ request()->routeIs('admin.reportes-consejos.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+               {{ request()->routeIs('admin.reportes-consejos.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M7 8h10M7 12h6m-9 8h16a2 2 0 002-2V6a2 2 0 00-2-2H8l-4 4v10a2 2 0 002 2z"/>
+                          d="M7 8h10M7 12h6m-9 8h16a2 2 0 002-2V6a2 2 0 00-2-2H8l-4 4v10a2 2 0 002 2z"/>
                 </svg>
                 <span>Reportes de consejos</span>
             </a>
-            
+
+            <a href="{{ route('admin.backups.index') }}"
+               class="flex items-center gap-3 px-4 py-3 rounded-xl transition font-medium
+               {{ request()->routeIs('admin.backups.*') ? 'bg-primary text-white shadow-lg shadow-orange-500/20' : 'hover:bg-white/10 text-gray-200' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1M12 4v12m0 0l-4-4m4 4l4-4"/>
+                </svg>
+                <span>Respaldos</span>
+            </a>
+
             <button type="button"
                     class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition font-medium hover:bg-white/10 text-gray-200">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -179,10 +187,7 @@
         </div>
     </aside>
 
-    {{-- Main --}}
     <div class="flex-1 flex flex-col min-w-0">
-
-        {{-- Topbar --}}
         <header class="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-200">
             <div class="px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
                 <div class="flex items-center gap-4 min-w-0">
@@ -236,7 +241,6 @@
             </div>
         </header>
 
-        {{-- Contenido --}}
         <div class="flex-1 flex flex-col min-h-0">
             <main class="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto admin-scroll">
                 @if(session('success'))
@@ -257,7 +261,7 @@
             <footer class="bg-white border-t border-gray-200 px-4 sm:px-6 lg:px-8 py-4 text-sm text-gray-500">
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                     <p>Panel Administrador · Huellitas Perdidas © {{ date('Y') }}</p>
-                    <p class="text-xs text-gray-400">Gestión de usuarios, refugios, veterinarias, consejos y reportes</p>
+                    <p class="text-xs text-gray-400">Gestión de usuarios, refugios, veterinarias, consejos, reportes y respaldos</p>
                 </div>
             </footer>
         </div>

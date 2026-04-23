@@ -101,6 +101,29 @@ class AuthController extends Controller
             $user = Auth::user();
             $rol = strtoupper((string) ($user->rol ?? ''));
 
+            // NUEVO: bloquear cuentas suspendidas o eliminadas
+            if (($user->estado ?? 'ACTIVA') !== 'ACTIVA') {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                if (($user->estado ?? null) === 'SUSPENDIDA') {
+                    return back()->withErrors([
+                        'correo' => 'Tu cuenta fue suspendida temporalmente por el administrador. Si consideras que esto es un error, contacta al administrador.',
+                    ])->withInput();
+                }
+
+                if (($user->estado ?? null) === 'ELIMINADA') {
+                    return back()->withErrors([
+                        'correo' => 'Tu cuenta ya no está disponible para iniciar sesión. Contacta al administrador si necesitas más información.',
+                    ])->withInput();
+                }
+
+                return back()->withErrors([
+                    'correo' => 'Tu cuenta no se encuentra activa. Contacta al administrador.',
+                ])->withInput();
+            }
+
             // Si es cuenta LOCAL y no ha verificado su correo, lo mandamos a verificar
             if (($user->auth_provider ?? 'LOCAL') === 'LOCAL' && is_null($user->email_verified_at)) {
                 return redirect()
