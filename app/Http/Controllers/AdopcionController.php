@@ -160,7 +160,6 @@ class AdopcionController extends Controller
             }
         }
 
-        // respaldo extra por si llegan con otra estructura
         if (empty($archivos)) {
             foreach ($request->allFiles() as $valor) {
                 $archivos = array_merge($archivos, $this->flattenFiles($valor));
@@ -366,7 +365,19 @@ class AdopcionController extends Controller
             }
         }
 
-        return view('adopciones.show', compact('adopcion', 'puedeVerContacto', 'solicitudAceptada'));
+        $mascotasRelacionadas = PublicacionAdopcion::with(['fotoPrincipal', 'fotos', 'especie', 'raza'])
+            ->where('estado', 'DISPONIBLE')
+            ->where('id_publicacion', '!=', $adopcion->id_publicacion)
+            ->orderBy('created_at', 'desc')
+            ->take(4)
+            ->get();
+
+        return view('adopciones.show', compact(
+            'adopcion',
+            'puedeVerContacto',
+            'solicitudAceptada',
+            'mascotasRelacionadas'
+        ));
     }
 
     public function edit($id)

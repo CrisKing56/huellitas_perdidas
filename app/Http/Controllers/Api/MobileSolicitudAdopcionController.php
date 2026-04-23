@@ -8,6 +8,7 @@ use App\Models\SolicitudAdopcion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use App\Services\NotificacionService;
 
 class MobileSolicitudAdopcionController extends Controller
 {
@@ -19,6 +20,11 @@ class MobileSolicitudAdopcionController extends Controller
             ?? 0);
 
         return $id > 0 ? $id : null;
+    }
+
+    private function notificaciones(): NotificacionService
+    {
+        return app(NotificacionService::class);
     }
 
     private function correoUsuario($usuario): ?string
@@ -237,6 +243,24 @@ class MobileSolicitudAdopcionController extends Controller
                 'tiene_patio' => ['required', 'boolean'],
                 'todos_de_acuerdo' => ['required', 'boolean'],
                 'motivo_adopcion' => ['required', 'string'],
+            ],
+            [
+                'required' => 'El campo :attribute es obligatorio.',
+                'integer' => 'El campo :attribute debe ser un número entero.',
+                'min.numeric' => 'El campo :attribute debe ser al menos :min.',
+                'max.numeric' => 'El campo :attribute no puede ser mayor que :max.',
+                'max.string' => 'El campo :attribute no puede tener más de :max caracteres.',
+                'in' => 'Selecciona una opción válida para :attribute.',
+                'boolean' => 'Selecciona una opción válida para :attribute.',
+            ],
+            [
+                'nombre_completo' => 'nombre completo',
+                'edad' => 'edad',
+                'estado_civil' => 'estado civil',
+                'tipo_vivienda' => 'tipo de vivienda',
+                'tiene_patio' => 'tiene patio',
+                'todos_de_acuerdo' => 'todos están de acuerdo',
+                'motivo_adopcion' => 'motivo de adopción',
             ]
         );
 
@@ -244,7 +268,7 @@ class MobileSolicitudAdopcionController extends Controller
             'publicacion_id' => $mascota->id_publicacion,
             'solicitante_usuario_id' => $idUsuario,
             'nombre_completo' => trim($request->nombre_completo),
-            'edad' => $request->edad,
+            'edad' => (int) $request->edad,
             'estado_civil' => $request->estado_civil,
             'tipo_vivienda' => $request->tipo_vivienda,
             'tiene_patio' => (int) $request->tiene_patio,
@@ -253,8 +277,16 @@ class MobileSolicitudAdopcionController extends Controller
             'estado' => 'ENVIADA',
         ]);
 
-        $solicitud->load(['publicacion.fotoPrincipal', 'publicacion.especie', 'publicacion.raza', 'publicacion.autor', 'solicitante']);
+        $solicitud->load([
+            'publicacion.fotoPrincipal',
+            'publicacion.especie',
+            'publicacion.raza',
+            'publicacion.autor',
+            'solicitante',
+        ]);
+
         $this->enviarCorreoSolicitudRecibida($solicitud);
+        $this->notificaciones()->solicitudRecibida($solicitud);
 
         return response()->json([
             'ok' => true,
@@ -360,8 +392,11 @@ class MobileSolicitudAdopcionController extends Controller
             }
 
             $otrasSolicitudes = SolicitudAdopcion::with([
+                    'publicacion.fotoPrincipal',
+                    'publicacion.especie',
+                    'publicacion.raza',
                     'publicacion.autor',
-                    'solicitante',
+                    'solicitante'
                 ])
                 ->where('publicacion_id', $solicitud->publicacion_id)
                 ->where('id_solicitud', '!=', $solicitud->id_solicitud)
@@ -372,16 +407,18 @@ class MobileSolicitudAdopcionController extends Controller
                 $otraSolicitud->estado = 'RECHAZADA';
                 $otraSolicitud->save();
                 $this->enviarCorreoSolicitudRechazada($otraSolicitud);
+                $this->notificaciones()->solicitudRechazada($otraSolicitud);
             }
 
             $this->enviarCorreoSolicitudAceptada($solicitud);
+            $this->notificaciones()->solicitudAceptada($solicitud);
         }
 
         if ($request->estado === 'RECHAZADA') {
             $this->enviarCorreoSolicitudRechazada($solicitud);
+            $this->notificaciones()->solicitudRechazada($solicitud);
         }
 
-        $solicitud->refresh();
         $solicitud->load([
             'publicacion.fotoPrincipal',
             'publicacion.especie',
@@ -392,7 +429,7 @@ class MobileSolicitudAdopcionController extends Controller
 
         return response()->json([
             'ok' => true,
-            'message' => 'El estado de la solicitud fue actualizado correctamente.',
+            'message' => 'La solicitud fue actualizada correctamente.',
             'data' => $this->mapSolicitud($solicitud),
         ]);
     }
@@ -408,6 +445,7 @@ class MobileSolicitudAdopcionController extends Controller
             ], 422);
         }
 
+        /** @var \App\Models\PublicacionAdopcion|null $publicacion */
         $publicacion = PublicacionAdopcion::find($id);
 
         if (!$publicacion) {
@@ -420,7 +458,7 @@ class MobileSolicitudAdopcionController extends Controller
         if ((int) ($publicacion->autor_usuario_id ?? 0) !== (int) $idUsuario) {
             return response()->json([
                 'ok' => false,
-                'message' => 'No tienes permiso para actualizar esta publicación',
+                'message' => 'No tienes permiso para modificar esta publicación',
             ], 403);
         }
 
@@ -429,7 +467,7 @@ class MobileSolicitudAdopcionController extends Controller
 
         return response()->json([
             'ok' => true,
-            'message' => 'La mascota fue marcada como adoptada.',
+            'message' => 'La publicación fue marcada como adoptada',
         ]);
     }
 
@@ -444,6 +482,7 @@ class MobileSolicitudAdopcionController extends Controller
             ], 422);
         }
 
+        /** @var \App\Models\PublicacionAdopcion|null $publicacion */
         $publicacion = PublicacionAdopcion::find($id);
 
         if (!$publicacion) {
@@ -456,7 +495,7 @@ class MobileSolicitudAdopcionController extends Controller
         if ((int) ($publicacion->autor_usuario_id ?? 0) !== (int) $idUsuario) {
             return response()->json([
                 'ok' => false,
-                'message' => 'No tienes permiso para actualizar esta publicación',
+                'message' => 'No tienes permiso para modificar esta publicación',
             ], 403);
         }
 
@@ -465,7 +504,7 @@ class MobileSolicitudAdopcionController extends Controller
 
         return response()->json([
             'ok' => true,
-            'message' => 'La publicación volvió a estado En proceso.',
+            'message' => 'La publicación volvió a estado EN_PROCESO',
         ]);
     }
 }

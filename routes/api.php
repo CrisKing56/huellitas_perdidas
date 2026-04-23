@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\MobileOrganizacionController;
 use App\Http\Controllers\Api\MobilePerfilController;
 use App\Http\Controllers\Api\MobileSolicitudAdopcionController;
 use App\Http\Controllers\Api\MobileAdopcionController;
+use App\Http\Controllers\Api\MobileNotificacionController;
 
 Route::prefix('mobile')->group(function () {
 
@@ -69,4 +70,12 @@ Route::prefix('mobile')->group(function () {
     Route::get('/profile/{idUsuario}', [MobilePerfilController::class, 'show']);
     Route::post('/profile/{idUsuario}/update', [MobilePerfilController::class, 'update']);
     Route::post('/profile/{idUsuario}/settings', [MobilePerfilController::class, 'settings']);
+
+        // =====================
+    // NOTIFICACIONES
+    // =====================
+    Route::get('/notificaciones/{idUsuario}', [MobileNotificacionController::class, 'index']);
+    Route::get('/notificaciones/{idUsuario}/count', [MobileNotificacionController::class, 'count']);
+    Route::post('/notificaciones/{id}/leer', [MobileNotificacionController::class, 'leer']);
+    Route::post('/notificaciones/{idUsuario}/leer-todas', [MobileNotificacionController::class, 'leerTodas']);
 });

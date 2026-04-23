@@ -82,6 +82,12 @@
     $urlFacebook = "https://www.facebook.com/sharer/sharer.php?u=" . $urlActual;
 
     $descripcionCartel = \Illuminate\Support\Str::limit($publicacion->descripcion ?? '', 230);
+
+    $mostrarAccionesDueno = $esAutor;
+    $mostrarAccionesVisitante = !$esAutor;
+    $mostrarWhatsapp = !$esAutor && !empty($whatsappUrl);
+    $puedeCompartirExternamente = $esAutor;
+    $puedeDescargarCartel = $esAutor;
 @endphp
 
 <style>
@@ -154,6 +160,16 @@
 
 <div class="bg-white min-h-screen no-print">
     <div class="max-w-7xl mx-auto px-6 py-8 lg:py-10">
+
+        <div class="mb-6">
+            <a href="{{ route('mascotas.index2') }}"
+               class="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 hover:text-orange-600 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Volver a mascotas extraviadas
+            </a>
+        </div>
 
         @if (session('success'))
             <div class="mb-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-green-700">
@@ -311,9 +327,9 @@
                             </div>
                         </div>
 
-                        <div class="rounded-2xl border border-gray-100 bg-gray-50 p-4">
+                        <div class="rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white p-4">
                             <div class="flex items-center gap-4">
-                                <div class="w-12 h-12 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-lg flex-shrink-0">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-white flex items-center justify-center font-bold text-lg flex-shrink-0 shadow-sm">
                                     {{ mb_strtoupper(mb_substr($publicacion->autor->nombre ?? 'U', 0, 1)) }}
                                 </div>
 
@@ -323,7 +339,7 @@
                                 </div>
                             </div>
 
-                            <div class="mt-4 pt-4 border-t border-gray-200">
+                            <div class="mt-4 pt-4 border-t border-orange-100">
                                 <p class="text-xs text-gray-400 mb-1 uppercase tracking-wide">Teléfono</p>
                                 <p class="text-sm font-semibold text-gray-800 break-words">
                                     {{ $publicacion->autor->whatsapp ?? $publicacion->autor->telefono ?? 'No visible' }}
@@ -334,55 +350,116 @@
                         @if($esAutor)
                             <div class="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                                 <p class="text-sm font-semibold text-blue-800">
-                                    Esta publicación es tuya. No puedes escribirte a ti mismo por WhatsApp.
+                                    Esta publicación es tuya. Aquí puedes administrarla, compartirla y descargar su cartel.
                                 </p>
                             </div>
                         @endif
 
-                        <div class="space-y-3">
-                            @if($whatsappUrl && !$esAutor)
+                        <div class="space-y-4">
+                            @if($mostrarAccionesDueno)
+                                <div class="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-red-50 p-4">
+                                    <p class="text-sm font-bold text-gray-900">Acciones del dueño</p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Estas herramientas son privadas para que tú administres y difundas tu publicación.
+                                    </p>
+                                </div>
+
                                 <a
-                                    href="{{ $whatsappUrl }}"
-                                    target="_blank"
-                                    class="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
+                                    href="{{ route('extravios.edit', $publicacion->id_publicacion) }}"
+                                    class="w-full inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
                                 >
-                                    <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
-                                        <path d="M19.11 17.39c-.3-.15-1.77-.87-2.05-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.8-1.67-2.1-.18-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.67-1.62-.92-2.23-.24-.57-.48-.5-.67-.51h-.57c-.2 0-.52.08-.8.38-.27.3-1.05 1.02-1.05 2.48s1.08 2.88 1.23 3.08c.15.2 2.13 3.25 5.17 4.56.72.31 1.28.5 1.72.64.72.23 1.37.2 1.89.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/>
-                                        <path d="M16.03 3.2C9.03 3.2 3.34 8.88 3.34 15.9c0 2.23.58 4.4 1.68 6.32L3 29l6.98-1.83a12.62 12.62 0 0 0 6.05 1.54h.01c7 0 12.69-5.69 12.69-12.7 0-3.39-1.32-6.58-3.72-8.98a12.58 12.58 0 0 0-8.98-3.72zm0 23.25h-.01a10.52 10.52 0 0 1-5.36-1.47l-.38-.23-4.14 1.09 1.1-4.03-.25-.41a10.51 10.51 0 0 1-1.62-5.5c0-5.8 4.72-10.52 10.53-10.52 2.81 0 5.45 1.09 7.43 3.08a10.45 10.45 0 0 1 3.08 7.44c0 5.8-4.72 10.52-10.52 10.52z"/>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
-                                    Contactar por WhatsApp
+                                    Editar publicación
                                 </a>
-                            @elseif(!$esAutor)
-                                <button
-                                    type="button"
-                                    disabled
-                                    class="w-full inline-flex items-center justify-center bg-gray-300 text-white font-bold py-3.5 px-5 rounded-xl cursor-not-allowed"
+
+                                @if($publicacion->estado === 'ACTIVA')
+                                    <form action="{{ route('extravios.resolve', $publicacion->id_publicacion) }}" method="POST">
+                                        @csrf
+                                        @method('PATCH')
+                                        <button
+                                            type="submit"
+                                            onclick="return confirm('¿Seguro que quieres marcar esta publicación como resuelta?');"
+                                            class="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
+                                        >
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                            </svg>
+                                            Marcar como resuelta
+                                        </button>
+                                    </form>
+                                @endif
+
+                                @if($puedeCompartirExternamente)
+                                    <a
+                                        href="{{ $urlFacebook }}"
+                                        target="_blank"
+                                        class="w-full inline-flex items-center justify-center gap-2 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold py-3.5 px-5 rounded-xl transition"
+                                    >
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 10.998 10.125 11.854v-8.385H7.078v-3.47h3.047V9.428c0-3.007 1.792-4.67 4.533-4.67 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.49 0-1.956.926-1.956 1.874v2.252h3.328l-.532 3.469h-2.796v8.385C19.612 23.07 24 18.09 24 12.073z"/>
+                                        </svg>
+                                        Compartir en Facebook
+                                    </a>
+                                @endif
+
+                                @if($puedeDescargarCartel)
+                                    <button
+                                        type="button"
+                                        onclick="imprimirCartel()"
+                                        class="w-full inline-flex items-center justify-center gap-2 border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold py-3.5 px-5 rounded-xl transition"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
+                                        </svg>
+                                        Descargar cartel PDF
+                                    </button>
+                                @endif
+
+                                <a
+                                    href="#avistamientos"
+                                    class="w-full inline-flex items-center justify-center gap-2 border border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700 font-semibold py-3.5 px-5 rounded-xl transition"
                                 >
-                                    Sin número disponible
-                                </button>
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405M19 17l-2.293-2.293A1 1 0 0016 14h-1m-6 0H8a1 1 0 00-.707.293L5 16.586M5 17H0m5 0l1.405-1.405M9 7a3 3 0 116 0v1a3 3 0 11-6 0V7z"/>
+                                    </svg>
+                                    Ver avistamientos recibidos
+                                </a>
                             @endif
 
-                            <a
-                                href="{{ $urlFacebook }}"
-                                target="_blank"
-                                class="w-full inline-flex items-center justify-center gap-2 border border-orange-100 bg-orange-50 hover:bg-orange-100 text-orange-600 font-semibold py-3.5 px-5 rounded-xl transition"
-                            >
-                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073c0 6.019 4.388 10.998 10.125 11.854v-8.385H7.078v-3.47h3.047V9.428c0-3.007 1.792-4.67 4.533-4.67 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.49 0-1.956.926-1.956 1.874v2.252h3.328l-.532 3.469h-2.796v8.385C19.612 23.07 24 18.09 24 12.073z"/>
-                                </svg>
-                                Compartir en Facebook
-                            </a>
+                            @if($mostrarAccionesVisitante)
+                                @if($mostrarWhatsapp)
+                                    <a
+                                        href="{{ $whatsappUrl }}"
+                                        target="_blank"
+                                        class="w-full inline-flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-5 rounded-xl shadow-sm transition"
+                                    >
+                                        <svg class="w-5 h-5" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+                                            <path d="M19.11 17.39c-.3-.15-1.77-.87-2.05-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.08-.3-.15-1.27-.47-2.42-1.5-.9-.8-1.5-1.8-1.67-2.1-.18-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.18.2-.3.3-.5.1-.2.05-.38-.03-.53-.08-.15-.67-1.62-.92-2.23-.24-.57-.48-.5-.67-.51h-.57c-.2 0-.52.08-.8.38-.27.3-1.05 1.02-1.05 2.48s1.08 2.88 1.23 3.08c.15.2 2.13 3.25 5.17 4.56.72.31 1.28.5 1.72.64.72.23 1.37.2 1.89.12.58-.09 1.77-.72 2.02-1.42.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35z"/>
+                                            <path d="M16.03 3.2C9.03 3.2 3.34 8.88 3.34 15.9c0 2.23.58 4.4 1.68 6.32L3 29l6.98-1.83a12.62 12.62 0 0 0 6.05 1.54h.01c7 0 12.69-5.69 12.69-12.7 0-3.39-1.32-6.58-3.72-8.98a12.58 12.58 0 0 0-8.98-3.72zm0 23.25h-.01a10.52 10.52 0 0 1-5.36-1.47l-.38-.23-4.14 1.09 1.1-4.03-.25-.41a10.51 10.51 0 0 1-1.62-5.5c0-5.8 4.72-10.52 10.53-10.52 2.81 0 5.45 1.09 7.43 3.08a10.45 10.45 0 0 1 3.08 7.44c0 5.8-4.72 10.52-10.52 10.52z"/>
+                                        </svg>
+                                        Contactar por WhatsApp
+                                    </a>
+                                @else
+                                    <button
+                                        type="button"
+                                        disabled
+                                        class="w-full inline-flex items-center justify-center bg-gray-300 text-white font-bold py-3.5 px-5 rounded-xl cursor-not-allowed"
+                                    >
+                                        Sin número disponible
+                                    </button>
+                                @endif
 
-                            <button
-                                type="button"
-                                onclick="imprimirCartel()"
-                                class="w-full inline-flex items-center justify-center gap-2 border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold py-3.5 px-5 rounded-xl transition"
-                            >
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/>
-                                </svg>
-                                Descargar cartel PDF
-                            </button>
+                                <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4">
+                                    <p class="text-sm font-semibold text-gray-800">
+                                        El cartel PDF y la difusión en Facebook son herramientas exclusivas del dueño de la publicación.
+                                    </p>
+                                    <p class="text-xs text-gray-500 mt-1">
+                                        Tú sí puedes ayudar dejando comentarios, reportando avistamientos o compartiendo el enlace manualmente.
+                                    </p>
+                                </div>
+                            @endif
                         </div>
 
                         @if(session('success_reporte'))

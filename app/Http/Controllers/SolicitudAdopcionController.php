@@ -8,12 +8,18 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
+use App\Services\NotificacionService;
 
 class SolicitudAdopcionController extends Controller
 {
     private function usuarioIdActual()
     {
         return Auth::user()->id_usuario ?? null;
+    }
+
+    private function notificaciones(): NotificacionService
+    {
+        return app(NotificacionService::class);
     }
 
     private function correoUsuario($usuario): ?string
@@ -42,7 +48,9 @@ class SolicitudAdopcionController extends Controller
                 'duenoNombre' => $dueno->nombre ?? 'Usuario',
                 'solicitanteNombre' => $solicitud->nombre_completo,
                 'publicacion' => $publicacion,
-                'urlSolicitudes' => route('adopciones.solicitudes.recibidas', ['publicacion' => $publicacion->id_publicacion]),
+                'urlSolicitudes' => route('adopciones.solicitudes.recibidas', [
+                    'publicacion' => $publicacion->id_publicacion
+                ]),
             ])->render();
 
             Mail::html($html, function ($message) use ($correoDestino, $publicacion) {
@@ -192,8 +200,8 @@ class SolicitudAdopcionController extends Controller
                 'edad' => 'edad',
                 'estado_civil' => 'estado civil',
                 'tipo_vivienda' => 'tipo de vivienda',
-                'tiene_patio' => 'si tienes patio',
-                'todos_de_acuerdo' => 'si todos están de acuerdo',
+                'tiene_patio' => 'tiene patio',
+                'todos_de_acuerdo' => 'todos están de acuerdo',
                 'motivo_adopcion' => 'motivo de adopción',
             ]
         );
@@ -202,7 +210,7 @@ class SolicitudAdopcionController extends Controller
             'publicacion_id' => $mascota->id_publicacion,
             'solicitante_usuario_id' => $this->usuarioIdActual(),
             'nombre_completo' => trim($request->nombre_completo),
-            'edad' => $request->edad,
+            'edad' => (int) $request->edad,
             'estado_civil' => $request->estado_civil,
             'tipo_vivienda' => $request->tipo_vivienda,
             'tiene_patio' => (int) $request->tiene_patio,
@@ -212,7 +220,9 @@ class SolicitudAdopcionController extends Controller
         ]);
 
         $solicitud->load(['publicacion.autor', 'solicitante']);
+
         $this->enviarCorreoSolicitudRecibida($solicitud);
+        $this->notificaciones()->solicitudRecibida($solicitud);
 
         return redirect()
             ->route('adopciones.solicitudes.enviadas')
@@ -296,17 +306,20 @@ class SolicitudAdopcionController extends Controller
                 $otraSolicitud->estado = 'RECHAZADA';
                 $otraSolicitud->save();
                 $this->enviarCorreoSolicitudRechazada($otraSolicitud);
+                $this->notificaciones()->solicitudRechazada($otraSolicitud);
             }
 
             $this->enviarCorreoSolicitudAceptada($solicitud);
+            $this->notificaciones()->solicitudAceptada($solicitud);
         }
 
         if ($request->estado === 'RECHAZADA') {
             $this->enviarCorreoSolicitudRechazada($solicitud);
+            $this->notificaciones()->solicitudRechazada($solicitud);
         }
 
         return redirect()
-            ->route('adopciones.solicitudes.recibidas', $request->filled('publicacion') ? ['publicacion' => $request->publicacion] : [])
-            ->with('success', 'El estado de la solicitud fue actualizado correctamente.');
+            ->back()
+            ->with('success', 'La solicitud fue actualizada correctamente.');
     }
 }
