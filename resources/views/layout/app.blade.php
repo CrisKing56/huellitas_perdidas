@@ -72,7 +72,9 @@
             max-width: 420px;
             margin: 0 auto;
             max-height: calc(100vh - 104px);
-            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
             -webkit-overflow-scrolling: touch;
         }
 
@@ -384,7 +386,7 @@
                                         </div>
                                     </div>
 
-                                    <div class="p-3 space-y-2">
+                                    <div class="flex-1 overflow-y-auto p-3 space-y-2">
                                         <a href="{{ route('inicio') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
                                             Inicio
                                         </a>
@@ -452,15 +454,19 @@
                                             <a href="{{ route('adopciones.solicitudes.recibidas') }}" class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-gray-700 hover:bg-orange-50 hover:text-primary transition">
                                                 Solicitudes recibidas
                                             </a>
+                                        @endauth
+                                    </div>
 
-                                            <form action="{{ route('logout') }}" method="POST" class="pt-2">
+                                    @auth
+                                        <div class="border-t border-gray-100 p-3 bg-white">
+                                            <form action="{{ route('logout') }}" method="POST">
                                                 @csrf
                                                 <button type="submit" class="w-full rounded-xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-500 hover:bg-red-100 transition">
                                                     Cerrar sesión
                                                 </button>
                                             </form>
-                                        @endauth
-                                    </div>
+                                        </div>
+                                    @endauth
                                 </div>
                             </div>
                         </details>
